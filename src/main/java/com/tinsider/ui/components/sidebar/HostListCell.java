@@ -22,7 +22,7 @@ public class HostListCell extends ListCell<HostProfile> {
             card.getStyleClass().add("host-card");
 
             Label badge = new Label();
-            String firstLetter = item.getName().isEmpty() ? "?" : item.getName().substring(0, 1).toUpperCase();
+            String firstLetter = (item.getName() == null || item.getName().isEmpty()) ? "?" : item.getName().substring(0, 1).toUpperCase();
             badge.setText(firstLetter);
             badge.setAlignment(Pos.CENTER);
             badge.setPrefSize(32, 32);
@@ -32,16 +32,18 @@ public class HostListCell extends ListCell<HostProfile> {
 
             VBox details = new VBox(2);
             
-            String pName = item.getName();
+            String pName = item.getName() != null ? item.getName() : "";
             if (pName.length() > 21) {
                 pName = pName.substring(0, 19) + "...";
             }
             Label nameLabel = new Label(pName);
             nameLabel.getStyleClass().add("host-name");
 
-            String subText = item.getUsername() + "@" + item.getIp();
+            String username = item.getUsername() != null ? item.getUsername() : "";
+            String ip = item.getIp() != null ? item.getIp() : "";
+            String subText = username + "@" + ip;
             if (item.getUrl() != null && !item.getUrl().isEmpty()) {
-                subText = item.getUsername() + "@" + item.getUrl();
+                subText = username + "@" + item.getUrl();
             }
             if (subText.length() > 26) {
                 subText = subText.substring(0, 24) + "...";

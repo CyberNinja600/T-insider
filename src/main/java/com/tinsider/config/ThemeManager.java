@@ -104,6 +104,14 @@ public class ThemeManager {
         setDefaultIfMissing("controls.input.border", "BackgroundColor");
         setDefaultIfMissing("controls.input.foreground", "TextColor");
 
+        setDefaultIfMissing("search.bar.background", "SelectionColor");
+        setDefaultIfMissing("search.bar.border", "BackgroundColor");
+        setDefaultIfMissing("search.bar.foreground", "TextColor");
+        setDefaultIfMissing("search.bar.hover.background", "SelectionColor");
+        setDefaultIfMissing("search.bar.active.border", "CursorColor");
+        setDefaultIfMissing("search.bar.active.background", "SelectionColor");
+        setDefaultIfMissing("search.bar.background.opacity", "1.0");
+
         setDefaultIfMissing("dropdown.list.background", "BackgroundColor");
         setDefaultIfMissing("dropdown.list.border", "SelectionColor");
         setDefaultIfMissing("dropdown.item.background", "BackgroundColor");

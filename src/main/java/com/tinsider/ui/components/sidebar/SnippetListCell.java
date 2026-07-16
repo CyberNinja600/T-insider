@@ -29,10 +29,12 @@ public class SnippetListCell extends ListCell<Snippet> {
             badge.getStyleClass().add("snippet-badge");
 
             VBox details = new VBox(2);
-            Label titleLabel = new Label(item.getTitle());
+            String title = item.getTitle() != null ? item.getTitle() : "";
+            Label titleLabel = new Label(title);
             titleLabel.getStyleClass().add("snippet-title");
 
-            String preview = item.getCode().trim().replace("\n", " ");
+            String code = item.getCode() != null ? item.getCode() : "";
+            String preview = code.trim().replace("\n", " ");
             if (preview.length() > 22) {
                 preview = preview.substring(0, 20) + "...";
             }

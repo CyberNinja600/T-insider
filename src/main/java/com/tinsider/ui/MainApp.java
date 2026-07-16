@@ -744,6 +744,13 @@ public class MainApp extends Application {
         com.jediterm.core.Color inputBorder = theme.getColor("controls.input.border", theme.getBackgroundColor());
         com.jediterm.core.Color inputFg = theme.getColor("controls.input.foreground", theme.getTextColor());
 
+        com.jediterm.core.Color searchBg = theme.getColor("search.bar.background", theme.getSelectionColor());
+        com.jediterm.core.Color searchBorder = theme.getColor("search.bar.border", theme.getBackgroundColor());
+        com.jediterm.core.Color searchFg = theme.getColor("search.bar.foreground", theme.getTextColor());
+        com.jediterm.core.Color searchHoverBg = theme.getColor("search.bar.hover.background", theme.getSelectionColor());
+        com.jediterm.core.Color searchActiveBorder = theme.getColor("search.bar.active.border", theme.getCursorColor());
+        com.jediterm.core.Color searchActiveBg = theme.getColor("search.bar.active.background", theme.getSelectionColor());
+
         com.jediterm.core.Color dropListBg = theme.getColor("dropdown.list.background", theme.getBackgroundColor());
         com.jediterm.core.Color dropListBorder = theme.getColor("dropdown.list.border", theme.getSelectionColor());
         com.jediterm.core.Color dropItemBg = theme.getColor("dropdown.item.background", theme.getBackgroundColor());
@@ -826,6 +833,7 @@ public class MainApp extends Application {
         double dialogBgOpacity = 1.0;
         double dialogBorderOpacity = 1.0;
         double dialogHeaderBgOpacity = 0.5;
+        double searchBarBgOpacity = 1.0;
 
 
         try {
@@ -846,6 +854,7 @@ public class MainApp extends Application {
             dialogBgOpacity = Double.parseDouble(ThemeManager.getProperty("dialog.background.opacity", "1.0"));
             dialogBorderOpacity = Double.parseDouble(ThemeManager.getProperty("dialog.border.opacity", "1.0"));
             dialogHeaderBgOpacity = Double.parseDouble(ThemeManager.getProperty("dialog.header.background.opacity", "0.5"));
+            searchBarBgOpacity = Double.parseDouble(ThemeManager.getProperty("search.bar.background.opacity", "1.0"));
         } catch (Exception ignored) {}
 
         // Format raw colors to RGBA with parsed opacities
@@ -884,6 +893,13 @@ public class MainApp extends Application {
         String hexInputBorder = toHex(inputBorder);
         String hexInputFg = toHex(inputFg);
 
+        String rgbaSearchBg = toRgba(searchBg, searchBarBgOpacity);
+        String hexSearchBorder = toHex(searchBorder);
+        String hexSearchFg = toHex(searchFg);
+        String hexSearchHoverBg = toHex(searchHoverBg);
+        String hexSearchActiveBorder = toHex(searchActiveBorder);
+        String hexSearchActiveBg = toHex(searchActiveBg);
+
         String hexDropListBg = toHex(dropListBg);
         String hexDropListBorder = toHex(dropListBorder);
         String hexDropItemBg = toHex(dropItemBg);
@@ -917,9 +933,9 @@ public class MainApp extends Application {
                             ".combo-box .list-cell { -fx-text-fill: " + hexComboFg + "; }\n" +
                             ".combo-box:hover { -fx-background-color: " + hexBtnHoverBg + "; }\n" +
                             ".combo-box:focused { -fx-border-color: " + hexComboBorder + "; }\n" +
-                            ".text-field { -fx-background-color: " + hexInputBg + "; -fx-text-fill: " + hexInputFg + "; -fx-border-color: " + hexInputBorder + "; }\n" +
-                            ".text-field:hover { -fx-background-color: " + hexBtnHoverBg + "; }\n" +
-                            ".text-field:focused { -fx-border-color: " + hexInputBorder + "; }\n" +
+                            ".text-field { -fx-background-color: " + rgbaSearchBg + "; -fx-text-fill: " + hexSearchFg + "; -fx-border-color: " + hexSearchBorder + "; }\n" +
+                            ".text-field:hover { -fx-background-color: " + hexSearchHoverBg + "; }\n" +
+                            ".text-field:focused { -fx-background-color: " + hexSearchActiveBg + "; -fx-border-color: " + hexSearchActiveBorder + "; }\n" +
                             ".scroll-pane { -fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0; -fx-border-color: transparent; }\n" +
                             ".scroll-pane .viewport { -fx-background-color: transparent; }\n" +
                             ".list-view { -fx-background-color: " + hexCardsListBg + "; -fx-control-inner-background: " + hexCardsListBg + "; -fx-border-color: " + hexCardsListBorder + "; }\n" +
@@ -1049,9 +1065,9 @@ public class MainApp extends Application {
         String query = hostsSearchField != null ? hostsSearchField.getText().toLowerCase().trim() : "";
         for (HostProfile item : hosts) {
             if (!query.isEmpty()) {
-                boolean match = item.getName().toLowerCase().contains(query) ||
-                                item.getIp().toLowerCase().contains(query) ||
-                                item.getUsername().toLowerCase().contains(query) ||
+                boolean match = (item.getName() != null && item.getName().toLowerCase().contains(query)) ||
+                                (item.getIp() != null && item.getIp().toLowerCase().contains(query)) ||
+                                (item.getUsername() != null && item.getUsername().toLowerCase().contains(query)) ||
                                 (item.getUrl() != null && item.getUrl().toLowerCase().contains(query));
                 if (!match) continue;
             }
@@ -1064,7 +1080,7 @@ public class MainApp extends Application {
             card.setCursor(javafx.scene.Cursor.HAND);
 
             Label badge = new Label();
-            String firstLetter = item.getName().isEmpty() ? "?" : item.getName().substring(0, 1).toUpperCase();
+            String firstLetter = (item.getName() == null || item.getName().isEmpty()) ? "?" : item.getName().substring(0, 1).toUpperCase();
             badge.setText(firstLetter);
             badge.setAlignment(Pos.CENTER);
             badge.setPrefSize(32, 32);
@@ -1073,16 +1089,18 @@ public class MainApp extends Application {
             badge.getStyleClass().add("host-badge");
 
             VBox details = new VBox(2);
-            String pName = item.getName();
+            String pName = item.getName() != null ? item.getName() : "";
             if (pName.length() > 21) {
                 pName = pName.substring(0, 19) + "...";
             }
             Label nameLabel = new Label(pName);
             nameLabel.getStyleClass().add("host-name");
 
-            String subText = item.getUsername() + "@" + item.getIp();
+            String username = item.getUsername() != null ? item.getUsername() : "";
+            String ip = item.getIp() != null ? item.getIp() : "";
+            String subText = username + "@" + ip;
             if (item.getUrl() != null && !item.getUrl().isEmpty()) {
-                subText = item.getUsername() + "@" + item.getUrl();
+                subText = username + "@" + item.getUrl();
             }
             if (subText.length() > 26) {
                 subText = subText.substring(0, 24) + "...";
@@ -1180,13 +1198,13 @@ public class MainApp extends Application {
 
         // 1. Render Packages on top
         for (SnippetPackage pkg : packages) {
-            boolean pkgMatches = pkg.getName().toLowerCase().contains(query);
+            boolean pkgMatches = pkg.getName() != null && pkg.getName().toLowerCase().contains(query);
             
             List<Snippet> matchingSnippetsInPkg = new ArrayList<>();
             for (Snippet item : snippets) {
                 if (pkg.getId().equals(item.getPackageId())) {
-                    boolean snippetMatches = item.getTitle().toLowerCase().contains(query) ||
-                                             item.getCode().toLowerCase().contains(query);
+                    boolean snippetMatches = (item.getTitle() != null && item.getTitle().toLowerCase().contains(query)) ||
+                                             (item.getCode() != null && item.getCode().toLowerCase().contains(query));
                     if (query.isEmpty() || snippetMatches || pkgMatches) {
                         matchingSnippetsInPkg.add(item);
                     }
@@ -1339,13 +1357,13 @@ public class MainApp extends Application {
 
         // 1. Grouped by Package
         for (SnippetPackage pkg : packages) {
-            boolean pkgMatches = pkg.getName().toLowerCase().contains(query);
+            boolean pkgMatches = pkg.getName() != null && pkg.getName().toLowerCase().contains(query);
             
             List<Snippet> matchingSnippetsInPkg = new ArrayList<>();
             for (Snippet item : snippets) {
                 if (pkg.getId().equals(item.getPackageId())) {
-                    boolean snippetMatches = item.getTitle().toLowerCase().contains(query) ||
-                                             item.getCode().toLowerCase().contains(query);
+                    boolean snippetMatches = (item.getTitle() != null && item.getTitle().toLowerCase().contains(query)) ||
+                                             (item.getCode() != null && item.getCode().toLowerCase().contains(query));
                     if (query.isEmpty() || snippetMatches || pkgMatches) {
                         matchingSnippetsInPkg.add(item);
                     }
