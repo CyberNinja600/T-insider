@@ -1,0 +1,127 @@
+/* Global Scene settings */
+.root {
+    -fx-background-color: #090F22;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-background-radius: 0px;
+    -fx-border-radius: 0px;
+    -fx-border-width: 1px;
+}
+
+/* Flat button styling */
+.button {
+    -fx-background-color: #161B30;
+    -fx-text-fill: #e2e8f0;
+    -fx-border-color: #2a3356;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-font-size: 12px;
+    -fx-cursor: hand;
+}
+.button:hover {
+    -fx-background-color: #212846;
+    -fx-text-fill: #ffffff;
+}
+.button:pressed {
+    -fx-background-color: #0e1222;
+}
+.button:disabled {
+    -fx-opacity: 0.4;
+    -fx-cursor: default;
+}
+
+/* ComboBox flat styling */
+.combo-box {
+    -fx-background-color: #161B30;
+    -fx-text-fill: white;
+    -fx-border-color: #2a3356;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+.combo-box:hover {
+    -fx-background-color: #212846;
+}
+.combo-box:focused {
+    -fx-border-color: #00adb5;
+}
+.combo-box .list-cell {
+    -fx-text-fill: white;
+    -fx-padding: 4px 8px;
+}
+.combo-box-popup .list-view {
+    -fx-background-color: #090F22;
+    -fx-control-inner-background: #090F22;
+    -fx-border-color: #161B30;
+    -fx-border-width: 1px;
+}
+.combo-box-popup .list-view .list-cell {
+    -fx-text-fill: white;
+    -fx-padding: 6px 12px; /* Beautifully spaced out dropdown items */
+}
+.combo-box-popup .list-view .list-cell:hover {
+    -fx-background-color: #161B30;
+    -fx-text-fill: #00adb5;
+}
+.combo-box-popup .list-view .list-cell:selected {
+    -fx-background-color: #161B30;
+    -fx-text-fill: #00adb5;
+}
+
+/* TextField flat styling */
+.text-field {
+    -fx-background-color: #161B30;
+    -fx-text-fill: white;
+    -fx-border-color: #2a3356;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-padding: 6px;
+}
+.text-field:hover {
+    -fx-background-color: #212846;
+}
+.text-field:focused {
+    -fx-border-color: #00adb5;
+}
+
+/* Label styling */
+.label {
+    -fx-text-fill: #cbd5e1;
+}
+
+/* JavaFX ListView Custom ScrollBar styling */
+.list-view .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-width: 8px;
+}
+.list-view .scroll-bar:horizontal {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-height: 8px;
+}
+.list-view .scroll-bar .track {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+}
+.list-view .scroll-bar .thumb {
+    -fx-background-color: #161B30;
+    -fx-background-radius: 4px;
+    -fx-background-insets: 1px;
+}
+.list-view .scroll-bar .thumb:hover {
+    -fx-background-color: #212846;
+}
+.list-view .scroll-bar .thumb:pressed {
+    -fx-background-color: #00adb5; /* Cyan highlight on pressed */
+}
+.list-view .scroll-bar .increment-button,
+.list-view .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+}
+.list-view .scroll-bar .increment-arrow,
+.list-view .scroll-bar .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0;
+}

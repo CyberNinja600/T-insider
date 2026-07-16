@@ -1,0 +1,121 @@
+/* TabPane and Tab flat styling */
+.tab-pane {
+    -fx-background-color: #090F22;
+    -fx-tab-min-height: 24px;
+    -fx-tab-max-height: 24px;
+    -fx-tab-min-width: 15px; /* Set lower limit to 20px so the '+' button can shrink! */
+    -fx-tab-max-width: 180px;
+}
+.tab-pane .tab-content-area {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0px;
+    -fx-padding: 0px;
+}
+.tab-pane .tab-header-area {
+    -fx-padding: 4px 20px 0px 0px; /* Safe 20px right margin spacing */
+}
+.tab-pane .headers-region {
+    -fx-padding: 0px;
+}
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: #11172a; /* Slightly lighter header background for contrast */
+}
+.tab {
+    -fx-background-color: transparent; /* Unselected tabs are transparent to show header bg */
+    -fx-background-insets: 0 1 0 0; /* 1px separator gap between tabs */
+    -fx-padding: 3px 12px; /* Slimmer, compact padding */
+    -fx-background-radius: 4px 4px 0 0; /* Rounded on top corners only, like classic browsers */
+    -fx-border-color: transparent;
+    -fx-border-radius: 4px 4px 0 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-pref-width: 120px; /* Keep standard tabs wide! */
+    -fx-min-width: 20px; /* Allow standard tabs to shrink down dynamically when maxed out */
+}
+.tab:focused {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.tab .tab-label {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 11px; /* Slightly smaller, more compact font */
+    -fx-padding: 0 8px 0 0; /* 8px right padding prevents any overlap with the close button! */
+}
+.tab:hover {
+    -fx-background-color: #161B30;
+}
+.tab:selected {
+    -fx-background-color: #090F22; /* Merges perfectly into the terminal background color */
+    -fx-background-insets: 0 1 -1 0; /* Overlaps bottom line by 1px to seal any gap completely! */
+    -fx-border-color: #00adb5 transparent transparent transparent; /* Thin, elegant accent border on top */
+    -fx-border-width: 2px 0 0 0;
+}
+.tab:selected .tab-label {
+    -fx-text-fill: #00adb5; /* Text color pops with the theme's active accent color */
+}
+.tab:selected .tab-close-button {
+    -fx-background-color: #cbd5e1;
+}
+.tab .tab-close-button {
+    -fx-background-color: #94a3b8;
+}
+.tab .tab-close-button:hover {
+    -fx-background-color: #ff5555;
+}
+
+/* Tab-plus-button (+) overlay button styling - Native Tab version */
+.tab-pane .tab.add-tab {
+    -fx-background-color: #161B30;
+    -fx-border-color: #2a3356;
+    /* -fx-border-width: 3px; */
+    -fx-cursor: hand;
+}
+.tab-pane .tab.add-tab:hover {
+    -fx-background-color: #212846;
+    /* -fx-border-color: #00adb5; */
+}
+.tab-pane .tab.add-tab .tab-label {
+    -fx-text-fill: #00adb5;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-alignment: center;
+}
+
+/* Tab overflow control button styling - Hidden completely */
+.tab-pane > .tab-header-area > .control-buttons-tab {
+    -fx-padding: 0;
+    -fx-max-width: 0;
+    -fx-min-width: 0;
+    -fx-pref-width: 0;
+    -fx-opacity: 0;
+    visibility: hidden;
+}
+.tab-pane > .tab-header-area > .control-buttons-tab > .tab-down-button {
+    -fx-padding: 0;
+    visibility: hidden;
+}
+
+/* ContextMenu (dropdown tab list) styling */
+.context-menu {
+    -fx-background-color: #11172a;
+    -fx-border-color: #2a3356;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-padding: 4px 0;
+}
+.menu-item {
+    -fx-background-color: transparent;
+    -fx-padding: 6px 12px;
+}
+.menu-item .label {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 11px;
+}
+.menu-item:hover {
+    -fx-background-color: #161B30;
+}
+.menu-item:hover .label {
+    -fx-text-fill: #00adb5;
+}

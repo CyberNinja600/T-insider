@@ -1,0 +1,22 @@
+# Standard Java/Maven build files
+target/
+
+# IDE/editor metadata directories
+.idea/
+*.iml
+
+# Log files
+*.log
+
+# Custom theme files
+*.terminal
+themes/*.terminal
+
+# Hosts, snippets, settings, and packages configuration files
+config/hosts.json
+config/packages.json
+config/snippets.json
+config/settings.json
+
+# Setup configuration file
+setup.properties

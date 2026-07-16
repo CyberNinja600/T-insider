@@ -1,0 +1,5 @@
+@import "base/common.css";
+@import "components/sidebar/sidebar.css";
+@import "components/toolbar/toolbar.css";
+@import "components/terminal/terminal.css";
+@import "dialogs/dialog.css";

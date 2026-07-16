@@ -1,0 +1,58 @@
+/* Top control bar styling */
+.top-bar {
+    -fx-background-color: #090F22;
+    -fx-border-color: #161B30;
+    -fx-border-width: 0 0 1 0; /* Bottom border only */
+}
+
+/* Custom Title Bar */
+.custom-title-bar {
+    -fx-background-color: #090F22;
+    -fx-border-color: #161B30;
+    -fx-border-width: 0 0 1 0; /* Bottom border */
+    -fx-background-radius: 0px;
+}
+.button.title-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #94a3b8; /* Muted gray, clearly visible at all times when idle */
+    -fx-border-color: transparent;
+    -fx-border-width: 0px; /* Force-remove default button border width */
+    -fx-pref-width: 46px;
+    -fx-pref-height: 36px;
+    -fx-min-width: 46px;
+    -fx-min-height: 36px;
+    -fx-max-width: 46px;
+    -fx-max-height: 36px;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.button.title-btn:hover {
+    -fx-background-color: #161B30; /* Soft SelectionColor background box on hover */
+    -fx-text-fill: #00adb5; /* Glow the icon outline in cyan */
+}
+
+.button.title-btn-close {
+    -fx-background-color: transparent;
+    -fx-text-fill: #94a3b8; /* Muted gray, clearly visible at all times when idle */
+    -fx-border-color: transparent;
+    -fx-border-width: 0px; /* Force-remove default button border width */
+    -fx-pref-width: 46px;
+    -fx-pref-height: 36px;
+    -fx-min-width: 46px;
+    -fx-min-height: 36px;
+    -fx-max-width: 46px;
+    -fx-max-height: 36px;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+.button.title-btn-close:hover {
+    -fx-background-color: #ff5555; /* Modern red close background box on hover */
+    -fx-text-fill: #ffffff; /* Contrast white icon on hover */
+}
+

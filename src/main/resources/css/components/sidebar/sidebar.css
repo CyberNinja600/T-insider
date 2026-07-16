@@ -1,0 +1,141 @@
+/* Sidebar styling */
+.sidebar {
+    -fx-background-color: #090F22;
+    -fx-border-color: #161B30;
+    -fx-border-width: 0 1 0 0; /* Right border only */
+}
+
+/* App Retro 3D Pixel Art Title Logo styling */
+.app-title {
+    -fx-font-family: "Impact", "Consolas", monospace;
+    -fx-font-size: 20px;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(three-pass-box, #00adb5, 0, 0, 2, 2); /* Sharp solid 3D shadow! */
+}
+
+/* ListView flat styling */
+.list-view {
+    -fx-background-color: #090F22;
+    -fx-control-inner-background: #090F22;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-color: #161B30;
+    -fx-border-radius: 4px;
+}
+.list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 4px 0px; /* Vertical gap between cards */
+}
+.list-cell:filled:hover .host-card,
+.list-cell:filled:hover .snippet-card {
+    -fx-background-color: #212846;
+    -fx-border-color: #00adb5;
+}
+.list-cell:filled:selected .host-card,
+.list-cell:filled:selected .snippet-card {
+    -fx-background-color: #161B30;
+    -fx-border-color: #00adb5;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 173, 181, 0.4), 8, 0, 0, 0); /* Subtle cyan neon glow! */
+}
+
+/* Custom Host Card styling */
+.host-card {
+    -fx-background-color: #161B30;
+    -fx-border-color: #2a3356;
+    -fx-border-width: 1px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-background-insets: 0;
+}
+.host-badge {
+    -fx-background-color: #00adb5;
+    -fx-text-fill: #ffffff;
+    -fx-background-radius: 16px; /* Perfect circle badge! */
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+.host-name {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #cbd5e1;
+}
+.host-username {
+    -fx-font-size: 11px;
+    -fx-text-fill: #94a3b8;
+}
+
+/* Custom Snippet Card styling */
+.snippet-card {
+    -fx-background-color: #161B30;
+    -fx-border-color: #2a3356;
+    -fx-border-width: 1px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-background-insets: 0;
+}
+.snippet-badge {
+    -fx-background-color: #00adb5;
+    -fx-text-fill: #ffffff;
+    -fx-background-radius: 16px; /* Perfect circle badge! */
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+}
+.snippet-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #cbd5e1;
+}
+.snippet-preview {
+    -fx-font-size: 11px;
+    -fx-text-fill: #94a3b8;
+    -fx-font-family: "Consolas", monospace; /* Code font! */
+}
+
+/* Slim Left Navigation Rail */
+.slim-nav-rail {
+    -fx-background-color: #090F22;
+    -fx-border-color: #161B30;
+    -fx-border-width: 0 1 0 0; /* Right border only */
+}
+
+/* Slim Nav Rail Buttons */
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #94a3b8;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 10px 5px;
+    -fx-cursor: hand;
+    -fx-background-radius: 4px;
+}
+.nav-button:hover {
+    -fx-text-fill: #00adb5;
+    -fx-background-color: #161B30;
+}
+.nav-button:selected {
+    -fx-text-fill: #00adb5;
+    -fx-background-color: #161B30;
+    -fx-border-color: transparent transparent transparent #00adb5;
+    -fx-border-width: 0 0 0 3px;
+}
+
+/* Dashboard Management Views */
+.dashboard-view {
+    -fx-background-color: #090F22;
+}
+
+/* Back To Dashboard Button (Terminal Mode) */
+.back-button {
+    -fx-background-color: #161B30;
+    -fx-border-color: #2a3356;
+    -fx-text-fill: #00adb5;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 8px;
+    -fx-cursor: hand;
+    -fx-background-radius: 4px;
+}
+.back-button:hover {
+    -fx-background-color: #212846;
+    -fx-border-color: #00adb5;
+}
