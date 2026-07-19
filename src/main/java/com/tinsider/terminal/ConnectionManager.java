@@ -25,17 +25,31 @@ public class ConnectionManager {
 
     public static PtyTtyConnector openLocalTerminal(String type) throws Exception {
         String[] cmd;
-        if (type.equalsIgnoreCase("PowerShell")) {
-            cmd = new String[]{"powershell.exe"};
-        } else if (type.equalsIgnoreCase("Bash")) {
-            File gitBash = new File("C:\\Program Files\\Git\\bin\\bash.exe");
-            if (gitBash.exists()) {
-                cmd = new String[]{gitBash.getAbsolutePath(), "--login"};
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+
+        if (!isWindows) {
+            String shell = System.getenv("SHELL");
+            if (shell == null || shell.isEmpty()) {
+                shell = "/bin/bash";
+            }
+            if (shell.endsWith("bash") || shell.endsWith("zsh") || shell.endsWith("sh")) {
+                cmd = new String[]{shell, "-l"};
             } else {
-                cmd = new String[]{"bash.exe", "--login"};
+                cmd = new String[]{shell};
             }
         } else {
-            cmd = new String[]{"cmd.exe"};
+            if (type.equalsIgnoreCase("PowerShell")) {
+                cmd = new String[]{"powershell.exe"};
+            } else if (type.equalsIgnoreCase("Bash")) {
+                File gitBash = new File("C:\\Program Files\\Git\\bin\\bash.exe");
+                if (gitBash.exists()) {
+                    cmd = new String[]{gitBash.getAbsolutePath(), "--login"};
+                } else {
+                    cmd = new String[]{"bash.exe", "--login"};
+                }
+            } else {
+                cmd = new String[]{"cmd.exe"};
+            }
         }
 
         Map<String, String> envs = new HashMap<>(System.getenv());

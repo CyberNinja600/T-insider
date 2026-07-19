@@ -94,7 +94,9 @@ public class TerminalTabFactory {
 
                 @Override
                 public java.awt.Font getTerminalFont() {
-                    return new java.awt.Font("Consolas", java.awt.Font.PLAIN, 13);
+                    String os = System.getProperty("os.name").toLowerCase();
+                    String fontName = os.contains("win") ? "Consolas" : "Monospaced";
+                    return new java.awt.Font(fontName, java.awt.Font.PLAIN, 13);
                 }
 
                 @Override

@@ -139,7 +139,9 @@ public class MainApp extends Application {
 
         // Load settings and restore shell type + theme selection
         Map<String, String> settings = StorageManager.loadSettings();
-        String savedShell = settings.getOrDefault("shell", "CMD");
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+        String defaultShell = isWindows ? "CMD" : "Bash";
+        String savedShell = settings.getOrDefault("shell", defaultShell);
         String savedThemeName = settings.getOrDefault("theme", "Default Space Blue");
 
         for (TerminalTheme theme : availableThemes) {
