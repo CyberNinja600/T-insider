@@ -24,3 +24,7 @@ setup.properties
 
 # Playwright MCP session data
 .playwright-mcp/
+
+# Theme files
+themes/
+
