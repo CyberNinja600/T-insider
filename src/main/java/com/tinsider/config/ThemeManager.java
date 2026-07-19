@@ -23,7 +23,7 @@ public class ThemeManager {
     }
 
     private static void loadConfig() {
-        File configFile = new File("./themes/theme.config.properties");
+        File configFile = new File("./config/theme.config.properties");
         try {
             if (configFile.exists()) {
                 try (FileInputStream in = new FileInputStream(configFile)) {

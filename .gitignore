@@ -4,13 +4,11 @@ target/
 # IDE/editor metadata directories
 .idea/
 *.iml
+.vscode/
 
 # Log files
+logs/
 *.log
-
-# Custom theme files
-*.terminal
-themes/*.terminal
 
 # Hosts, snippets, settings, and packages configuration files
 config/hosts.json
@@ -20,3 +18,9 @@ config/settings.json
 
 # Setup configuration file
 setup.properties
+
+# Portable JDK directory
+.jdks/
+
+# Playwright MCP session data
+.playwright-mcp/

@@ -103,7 +103,17 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("T-Insider Terminal App");
+        primaryStage.setTitle("T-Insider");
+
+        // Set the program icon
+        try {
+            java.io.InputStream iconStream = getClass().getResourceAsStream("/icon.png");
+            if (iconStream != null) {
+                primaryStage.getIcons().add(new javafx.scene.image.Image(iconStream));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // Load custom themes
         availableThemes.add(DEFAULT_THEME);
@@ -469,9 +479,9 @@ public class MainApp extends Application {
         primaryStage.setScene(scene);
 
         // Start Live Reloader for themes and properties files
-        com.tinsider.util.LiveReloader.startWatching("./themes", () -> {
+        Runnable themeReloader = () -> {
             Platform.runLater(() -> {
-                System.out.println("[LiveReloader] Theme files changed! Reloading UI colors and styles...");
+                System.out.println("[LiveReloader] Theme or config files changed! Reloading UI colors and styles...");
                 com.tinsider.config.ThemeManager.reloadConfig();
                 String currentThemeName = topToolBar.getSelectedTheme();
                 com.tinsider.config.TerminalTheme newTheme = null;
@@ -492,7 +502,9 @@ public class MainApp extends Application {
                     applyTheme(newTheme);
                 }
             });
-        });
+        };
+        com.tinsider.util.LiveReloader.startWatching("./themes", themeReloader);
+        com.tinsider.util.LiveReloader.startWatching("./config", themeReloader);
 
         primaryStage.show();
         applyTheme(currentTheme);
