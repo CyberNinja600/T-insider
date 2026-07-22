@@ -33,9 +33,9 @@ public class ConnectionManager {
                 shell = "/bin/bash";
             }
             if (shell.endsWith("bash") || shell.endsWith("zsh") || shell.endsWith("sh")) {
-                cmd = new String[]{shell, "-l"};
+                cmd = new String[]{shell, "-i", "-l"};
             } else {
-                cmd = new String[]{shell};
+                cmd = new String[]{shell, "-i"};
             }
         } else {
             if (type.equalsIgnoreCase("PowerShell")) {
