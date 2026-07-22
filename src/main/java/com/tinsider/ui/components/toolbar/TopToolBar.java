@@ -28,8 +28,14 @@ public class TopToolBar extends HBox {
 
         Label selectLabel = new Label("Local Shell Type:");
         shellOptions = new ComboBox<>();
-        shellOptions.getItems().addAll("CMD", "PowerShell", "Bash");
-        shellOptions.setValue(initialShell != null ? initialShell : "CMD");
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+        if (isWindows) {
+            shellOptions.getItems().addAll("CMD", "PowerShell", "Bash");
+            shellOptions.setValue(initialShell != null ? initialShell : "CMD");
+        } else {
+            shellOptions.getItems().addAll("Bash");
+            shellOptions.setValue("Bash");
+        }
 
         shellOptions.setOnAction(e -> {
             if (onShellChanged != null) {
