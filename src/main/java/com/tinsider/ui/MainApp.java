@@ -1030,6 +1030,7 @@ public class MainApp extends Application {
                             ".dialog-pane .label { -fx-text-fill: " + hexLabelFg + "; }\n" +
                             ".dialog-pane .button-bar { -fx-padding: 10px 15px; }\n" +
                             ".dialog-pane .text-field, .dialog-pane .text-area, .dialog-pane .password-field, .dialog-pane .combo-box { -fx-background-color: " + hexInputBorder + "; -fx-text-fill: " + hexInputFg + "; -fx-border-color: " + hexInputBorder + "; }\n" +
+                            ".dialog-pane .text-area .content, .dialog-pane .text-area:focused .content { -fx-background-color: transparent; -fx-text-fill: " + hexInputFg + "; }\n" +
                             ".dialog-pane .text-field:disabled, .dialog-pane .text-area:disabled, .dialog-pane .password-field:disabled, .dialog-pane .combo-box:disabled { -fx-opacity: 0.5; }\n" +
                             ".dialog-pane .radio-button { -fx-text-fill: " + hexLabelFg + "; }\n" +
                             ".dialog-pane .radio-button .radio { -fx-mark-color: " + hexTermCursor + "; -fx-border-color: transparent; }\n";
