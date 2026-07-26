@@ -669,31 +669,36 @@ public class MainApp extends Application {
         // Repaint all active terminal panels using the specific resolved terminal colors!
         for (JediTermWidget widget : tabWidgetMap.values()) {
             SwingUtilities.invokeLater(() -> {
-                try {
-                    java.awt.Color awtBg = new java.awt.Color(termBg.getRed(), termBg.getGreen(), termBg.getBlue());
-                    java.awt.Color awtFg = new java.awt.Color(termFg.getRed(), termFg.getGreen(), termFg.getBlue());
+                // Add 1ms delay to fix scrollbar race condition when adding new tabs
+                javax.swing.Timer timer = new javax.swing.Timer(1, e -> {
+                    try {
+                        java.awt.Color awtBg = new java.awt.Color(termBg.getRed(), termBg.getGreen(), termBg.getBlue());
+                        java.awt.Color awtFg = new java.awt.Color(termFg.getRed(), termFg.getGreen(), termFg.getBlue());
 
-                    widget.setBackground(awtBg);
-                    widget.setForeground(awtFg);
-                    if (widget.getTerminalPanel() != null) {
-                        widget.getTerminalPanel().setBackground(awtBg);
-                        widget.getTerminalPanel().setForeground(awtFg);
-                    }
+                        widget.setBackground(awtBg);
+                        widget.setForeground(awtFg);
+                        if (widget.getTerminalPanel() != null) {
+                            widget.getTerminalPanel().setBackground(awtBg);
+                            widget.getTerminalPanel().setForeground(awtFg);
+                        }
 
-                    if (widget.getTerminal() != null && widget.getTerminal().getStyleState() != null) {
-                        widget.getTerminal().getStyleState().setDefaultStyle(com.jediterm.terminal.TextStyle.EMPTY);
-                        widget.getTerminal().getStyleState().reset();
-                    }
+                        if (widget.getTerminal() != null && widget.getTerminal().getStyleState() != null) {
+                            widget.getTerminal().getStyleState().setDefaultStyle(com.jediterm.terminal.TextStyle.EMPTY);
+                            widget.getTerminal().getStyleState().reset();
+                        }
 
-                    if (widget.getTerminalPanel() != null) {
-                        widget.getTerminalPanel().repaint();
+                        if (widget.getTerminalPanel() != null) {
+                            widget.getTerminalPanel().repaint();
+                        }
+                        widget.invalidate();
+                        widget.repaint();
+                        widget.revalidate();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
                     }
-                    widget.invalidate();
-                    widget.repaint();
-                    widget.revalidate();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+                });
+                timer.setRepeats(false);
+                timer.start();
             });
         }
     }

@@ -311,6 +311,41 @@ public class TerminalTabFactory {
                 if (tabPane.getSelectionModel().getSelectedItem() == tab) {
                     activateTab(tab, tabPane, tabWidgetMap);
                 }
+
+                // Add 1ms delay to repaint the new terminal widget to fix scrollbar race condition
+                SwingUtilities.invokeLater(() -> {
+                    javax.swing.Timer timer = new javax.swing.Timer(1, e -> {
+                        try {
+                            com.jediterm.core.Color bg = themeSupplier.get().getBackgroundColor();
+                            java.awt.Color delayedAwtBg = new java.awt.Color(bg.getRed(), bg.getGreen(), bg.getBlue());
+                            com.jediterm.core.Color fg = themeSupplier.get().getTextColor();
+                            java.awt.Color delayedAwtFg = new java.awt.Color(fg.getRed(), fg.getGreen(), fg.getBlue());
+
+                            setAllBackgrounds(widget, delayedAwtBg);
+                            widget.setForeground(delayedAwtFg);
+                            if (widget.getTerminalPanel() != null) {
+                                widget.getTerminalPanel().setBackground(delayedAwtBg);
+                                widget.getTerminalPanel().setForeground(delayedAwtFg);
+                            }
+
+                            if (widget.getTerminal() != null && widget.getTerminal().getStyleState() != null) {
+                                widget.getTerminal().getStyleState().setDefaultStyle(com.jediterm.terminal.TextStyle.EMPTY);
+                                widget.getTerminal().getStyleState().reset();
+                            }
+
+                            if (widget.getTerminalPanel() != null) {
+                                widget.getTerminalPanel().repaint();
+                            }
+                            widget.invalidate();
+                            widget.repaint();
+                            widget.revalidate();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    });
+                    timer.setRepeats(false);
+                    timer.start();
+                });
             });
         });
 
