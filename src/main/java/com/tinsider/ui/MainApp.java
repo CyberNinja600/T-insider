@@ -153,7 +153,16 @@ public class MainApp extends Application {
         }
 
         // 1. Instantiate Terminal Workspace (Center in Terminal Mode)
-        workspace = new TerminalWorkspace(() -> openLocalTerminal(topToolBar.getSelectedShell()));
+        workspace = new TerminalWorkspace(() -> {
+            TopToolBar.DropdownItem selected = topToolBar.getSelectedItem();
+            if (selected != null) {
+                if (selected.isHost()) {
+                    connectToHost(selected.getHostProfile());
+                } else {
+                    openLocalTerminal(selected.getLabel());
+                }
+            }
+        });
         workspace.getTabPane().getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab != null) {
                 Platform.runLater(() -> {
@@ -440,7 +449,7 @@ public class MainApp extends Application {
         snippetExecutionSidebar.getChildren().addAll(backToDashboardBtn, terminalSnippetsHeader, sidebarSearchField, sidebarScrollPane);
 
         // 5. Root Layout & Theme Control
-        topToolBar = new TopToolBar(availableThemes, savedThemeName, savedShell, 
+        topToolBar = new TopToolBar(availableThemes, savedThemeName, savedShell, hosts,
             theme -> {
                 applyTheme(theme);
                 Map<String, String> currentSettings = StorageManager.loadSettings();
@@ -453,6 +462,7 @@ public class MainApp extends Application {
                 StorageManager.saveSettings(currentSettings);
             }
         );
+        topToolBar.setShellSelectionVisible(false);
 
         root = new BorderPane();
         
@@ -521,9 +531,15 @@ public class MainApp extends Application {
             root.setLeft(slimNavRail);
             root.setCenter(dashboardCenterStack);
             updateActiveSessionsList();
+            if (topToolBar != null) {
+                topToolBar.setShellSelectionVisible(false);
+            }
         } else {
             root.setLeft(snippetExecutionSidebar);
             root.setCenter(workspace);
+            if (topToolBar != null) {
+                topToolBar.setShellSelectionVisible(true);
+            }
         }
     }
 
@@ -669,31 +685,36 @@ public class MainApp extends Application {
         // Repaint all active terminal panels using the specific resolved terminal colors!
         for (JediTermWidget widget : tabWidgetMap.values()) {
             SwingUtilities.invokeLater(() -> {
-                try {
-                    java.awt.Color awtBg = new java.awt.Color(termBg.getRed(), termBg.getGreen(), termBg.getBlue());
-                    java.awt.Color awtFg = new java.awt.Color(termFg.getRed(), termFg.getGreen(), termFg.getBlue());
+                // Add 1ms delay to fix scrollbar race condition when adding new tabs
+                javax.swing.Timer timer = new javax.swing.Timer(1, e -> {
+                    try {
+                        java.awt.Color awtBg = new java.awt.Color(termBg.getRed(), termBg.getGreen(), termBg.getBlue());
+                        java.awt.Color awtFg = new java.awt.Color(termFg.getRed(), termFg.getGreen(), termFg.getBlue());
 
-                    widget.setBackground(awtBg);
-                    widget.setForeground(awtFg);
-                    if (widget.getTerminalPanel() != null) {
-                        widget.getTerminalPanel().setBackground(awtBg);
-                        widget.getTerminalPanel().setForeground(awtFg);
-                    }
+                        widget.setBackground(awtBg);
+                        widget.setForeground(awtFg);
+                        if (widget.getTerminalPanel() != null) {
+                            widget.getTerminalPanel().setBackground(awtBg);
+                            widget.getTerminalPanel().setForeground(awtFg);
+                        }
 
-                    if (widget.getTerminal() != null && widget.getTerminal().getStyleState() != null) {
-                        widget.getTerminal().getStyleState().setDefaultStyle(com.jediterm.terminal.TextStyle.EMPTY);
-                        widget.getTerminal().getStyleState().reset();
-                    }
+                        if (widget.getTerminal() != null && widget.getTerminal().getStyleState() != null) {
+                            widget.getTerminal().getStyleState().setDefaultStyle(com.jediterm.terminal.TextStyle.EMPTY);
+                            widget.getTerminal().getStyleState().reset();
+                        }
 
-                    if (widget.getTerminalPanel() != null) {
-                        widget.getTerminalPanel().repaint();
+                        if (widget.getTerminalPanel() != null) {
+                            widget.getTerminalPanel().repaint();
+                        }
+                        widget.invalidate();
+                        widget.repaint();
+                        widget.revalidate();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
                     }
-                    widget.invalidate();
-                    widget.repaint();
-                    widget.revalidate();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
+                });
+                timer.setRepeats(false);
+                timer.start();
             });
         }
     }
@@ -789,6 +810,8 @@ public class MainApp extends Application {
         com.jediterm.core.Color pkgBorder = theme.getColor("dashboard.package.border", theme.getSelectionColor());
         com.jediterm.core.Color scrollThumb = theme.getColor("scrollbar.thumb", theme.getCursorColor());
         com.jediterm.core.Color scrollThumbHover = theme.getColor("scrollbar.thumb.hover", theme.getCursorColor());
+        com.jediterm.core.Color dropScrollThumb = theme.getColor("dropdown.scrollbar.thumb", theme.getSelectionColor());
+        com.jediterm.core.Color dropScrollThumbHover = theme.getColor("dropdown.scrollbar.thumb.hover", theme.getCursorColor());
         com.jediterm.core.Color dialogBg = theme.getColor("dialog.background", theme.getSelectionColor());
         com.jediterm.core.Color dialogBorder = theme.getColor("dialog.border", theme.getSelectionColor());
         com.jediterm.core.Color dialogHeaderBg = theme.getColor("dialog.header.background", theme.getBackgroundColor());
@@ -843,6 +866,8 @@ public class MainApp extends Application {
         double pkgBorderOpacity = 1.0;
         double scrollThumbOpacity = 0.3;
         double scrollThumbHoverOpacity = 0.6;
+        double dropScrollThumbOpacity = 0.4;
+        double dropScrollThumbHoverOpacity = 0.7;
         double dialogBgOpacity = 1.0;
         double dialogBorderOpacity = 1.0;
         double dialogHeaderBgOpacity = 0.5;
@@ -864,6 +889,8 @@ public class MainApp extends Application {
             pkgBorderOpacity = Double.parseDouble(ThemeManager.getProperty("dashboard.package.border.opacity", "1.0"));
             scrollThumbOpacity = Double.parseDouble(ThemeManager.getProperty("scrollbar.thumb.opacity", "0.3"));
             scrollThumbHoverOpacity = Double.parseDouble(ThemeManager.getProperty("scrollbar.thumb.hover.opacity", "0.6"));
+            dropScrollThumbOpacity = Double.parseDouble(ThemeManager.getProperty("dropdown.scrollbar.thumb.opacity", "0.4"));
+            dropScrollThumbHoverOpacity = Double.parseDouble(ThemeManager.getProperty("dropdown.scrollbar.thumb.hover.opacity", "0.7"));
             dialogBgOpacity = Double.parseDouble(ThemeManager.getProperty("dialog.background.opacity", "1.0"));
             dialogBorderOpacity = Double.parseDouble(ThemeManager.getProperty("dialog.border.opacity", "1.0"));
             dialogHeaderBgOpacity = Double.parseDouble(ThemeManager.getProperty("dialog.header.background.opacity", "0.5"));
@@ -885,6 +912,8 @@ public class MainApp extends Application {
         String rgbaPkgBorder = toRgba(pkgBorder, pkgBorderOpacity);
         String rgbaScrollThumb = toRgba(scrollThumb, scrollThumbOpacity);
         String rgbaScrollThumbHover = toRgba(scrollThumbHover, scrollThumbHoverOpacity);
+        String rgbaDropScrollThumb = toRgba(dropScrollThumb, dropScrollThumbOpacity);
+        String rgbaDropScrollThumbHover = toRgba(dropScrollThumbHover, dropScrollThumbHoverOpacity);
         String rgbaDialogBg = toRgba(dialogBg, dialogBgOpacity);
         String rgbaDialogBorder = toRgba(dialogBorder, dialogBorderOpacity);
         String rgbaDialogHeaderBg = toRgba(dialogHeaderBg, dialogHeaderBgOpacity);
@@ -943,6 +972,7 @@ public class MainApp extends Application {
                             ".button:hover { -fx-background-color: " + hexBtnHoverBg + "; -fx-text-fill: #ffffff; }\n" +
                             ".button:disabled { -fx-opacity: 0.4; -fx-cursor: default; }\n" +
                             ".combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; }\n" +
+                            ".combo-box.shell-dropdown { -fx-pref-width: 140px; -fx-max-width: 140px; }\n" +
                             ".combo-box .list-cell { -fx-text-fill: " + hexComboFg + "; }\n" +
                             ".combo-box:hover { -fx-background-color: " + hexBtnHoverBg + "; }\n" +
                             ".combo-box:focused { -fx-border-color: " + hexComboBorder + "; }\n" +
@@ -959,9 +989,17 @@ public class MainApp extends Application {
                             ".session-cell:hover { -fx-background-color: " + rgbaCardsHoverBg + "; -fx-border-color: " + rgbaCardsHoverBorder + "; -fx-border-radius: 6px; -fx-background-radius: 6px; }\n" +
                             ".session-cell:selected, .session-cell.selected { -fx-background-color: " + rgbaCardsSelectedBg + "; -fx-border-color: " + rgbaCardsSelectedBorder + "; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-effect: dropshadow(three-pass-box, " + rgbaCardsSelectedGlow + ", 8, 0, 0, 0); }\n" +
                             ".combo-box-popup .list-view { -fx-background-color: " + hexDropListBg + "; -fx-control-inner-background: " + hexDropListBg + "; -fx-border-color: " + hexDropListBorder + "; }\n" +
-                            ".combo-box-popup .list-view .list-cell { -fx-text-fill: " + hexDropItemFg + "; -fx-background-color: " + hexDropItemBg + "; -fx-padding: 6px 12px; }\n" +
-                            ".combo-box-popup .list-view .list-cell:hover { -fx-background-color: " + hexDropHoverBg + "; -fx-text-fill: " + hexDropHoverFg + "; }\n" +
-                            ".combo-box-popup .list-view .list-cell:selected { -fx-background-color: " + hexDropHoverBg + "; -fx-text-fill: " + hexDropHoverFg + "; }\n" +
+                            ".combo-box-popup .list-view .list-cell { -fx-text-fill: " + hexDropItemFg + "; -fx-background-color: " + hexDropHoverBg + "; -fx-padding: 6px 12px; }\n" + /* Swapped */
+                            ".combo-box-popup .list-view .list-cell:hover { -fx-background-color: " + hexDropItemBg + "; -fx-text-fill: " + hexDropHoverFg + "; }\n" + /* Swapped */
+                            ".combo-box-popup .list-view .list-cell:selected { -fx-background-color: " + hexDropItemBg + "; -fx-text-fill: " + hexDropHoverFg + "; }\n" + /* Swapped */
+                            ".combo-box-popup .list-view .scroll-bar { -fx-background-color: transparent; }\n" +
+                            ".combo-box-popup .list-view .scroll-bar:horizontal { -fx-pref-height: 8px; -fx-max-height: 8px; }\n" +
+                            ".combo-box-popup .list-view .scroll-bar:vertical { -fx-pref-width: 13px; -fx-max-width: 13px; -fx-padding: 0 0 0 5px; }\n" +
+                            ".combo-box-popup .list-view .scroll-bar .track { -fx-background-color: transparent; -fx-border-color: transparent; -fx-background-insets: 0; }\n" +
+                            ".combo-box-popup .list-view .scroll-bar .thumb { -fx-background-color: " + rgbaDropScrollThumb + "; -fx-background-radius: 4px; -fx-border-radius: 4px; -fx-background-insets: 1px; }\n" +
+                            ".combo-box-popup .list-view .scroll-bar .thumb:hover { -fx-background-color: " + rgbaDropScrollThumbHover + "; }\n" +
+                            ".combo-box-popup .list-view .scroll-bar .increment-button, .combo-box-popup .list-view .scroll-bar .decrement-button { -fx-background-color: transparent; -fx-background-radius: 0; -fx-border-color: transparent; -fx-padding: 0px; }\n" +
+                            ".combo-box-popup .list-view .scroll-bar .increment-arrow, .combo-box-popup .list-view .scroll-bar .decrement-arrow { -fx-shape: \"\"; -fx-padding: 0px; -fx-max-width: 0px; -fx-max-height: 0px; }\n" +
                             ".host-card { -fx-background-color: " + rgbaCardsItemBg + "; -fx-border-color: " + rgbaCardsItemBorder + "; }\n" +
                             ".host-badge { -fx-background-color: " + rgbaCardsBadgeBg + "; -fx-text-fill: " + hexCardsBadgeFg + "; }\n" +
                             ".host-card:hover .host-badge { -fx-background-color: " + rgbaCardsBadgeHoverBg + "; -fx-text-fill: " + hexCardsBadgeHoverFg + "; }\n" +

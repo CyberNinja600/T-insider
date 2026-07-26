@@ -1,6 +1,8 @@
 package com.tinsider.ui.components.toolbar;
 
 import com.tinsider.config.TerminalTheme;
+import com.tinsider.model.HostProfile;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.ComboBox;
@@ -11,13 +13,75 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class TopToolBar extends HBox {
-    private final ComboBox<String> shellOptions;
+    
+    public static class DropdownItem {
+        private final boolean isHost;
+        private final String label;
+        private final HostProfile hostProfile;
+
+        public DropdownItem(String label) {
+            this.isHost = false;
+            this.label = label;
+            this.hostProfile = null;
+        }
+
+        public DropdownItem(HostProfile hostProfile) {
+            this.isHost = true;
+            this.label = hostProfile.getName();
+            this.hostProfile = hostProfile;
+        }
+
+        public boolean isHost() {
+            return isHost;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public HostProfile getHostProfile() {
+            return hostProfile;
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            DropdownItem that = (DropdownItem) o;
+            if (isHost != that.isHost) return false;
+            if (isHost) {
+                return hostProfile != null && that.hostProfile != null &&
+                        hostProfile.getId() != null && hostProfile.getId().equals(that.hostProfile.getId());
+            } else {
+                return label.equals(that.label);
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (isHost ? 1 : 0);
+            result = 31 * result + (label != null ? label.hashCode() : 0);
+            if (isHost && hostProfile != null && hostProfile.getId() != null) {
+                result = 31 * result + hostProfile.getId().hashCode();
+            }
+            return result;
+        }
+    }
+
+    private final ComboBox<DropdownItem> shellOptions;
     private final ComboBox<String> themeOptions;
+    private final Label selectLabel;
 
     public TopToolBar(
             List<TerminalTheme> availableThemes, 
             String initialThemeName, 
             String initialShell,
+            ObservableList<HostProfile> hosts,
             Consumer<TerminalTheme> onThemeChanged,
             Consumer<String> onShellChanged) {
         
@@ -26,21 +90,24 @@ public class TopToolBar extends HBox {
         setAlignment(Pos.CENTER_LEFT);
         getStyleClass().add("top-bar");
 
-        Label selectLabel = new Label("Local Shell Type:");
+        selectLabel = new Label("Shell / Host:");
+        selectLabel.managedProperty().bind(selectLabel.visibleProperty());
+
         shellOptions = new ComboBox<>();
-        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
-        if (isWindows) {
-            shellOptions.getItems().addAll("CMD", "PowerShell", "Bash");
-            shellOptions.setValue(initialShell != null ? initialShell : "CMD");
-        } else {
-            shellOptions.getItems().addAll("Bash");
-            shellOptions.setValue("Bash");
-        }
+        shellOptions.getStyleClass().add("shell-dropdown");
+        shellOptions.managedProperty().bind(shellOptions.visibleProperty());
+
+        rebuildItems(hosts, initialShell);
 
         shellOptions.setOnAction(e -> {
-            if (onShellChanged != null) {
-                onShellChanged.accept(shellOptions.getValue());
+            DropdownItem selected = shellOptions.getValue();
+            if (selected != null && !selected.isHost() && onShellChanged != null) {
+                onShellChanged.accept(selected.getLabel());
             }
+        });
+
+        hosts.addListener((javafx.collections.ListChangeListener<HostProfile>) change -> {
+            rebuildItems(hosts, initialShell);
         });
 
         Label themeLabel = new Label("Theme:");
@@ -63,8 +130,68 @@ public class TopToolBar extends HBox {
         getChildren().addAll(selectLabel, shellOptions, themeLabel, themeOptions);
     }
 
-    public String getSelectedShell() {
+    private void rebuildItems(ObservableList<HostProfile> hosts, String initialShell) {
+        DropdownItem previousSelection = shellOptions.getValue();
+
+        shellOptions.getItems().clear();
+
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+        if (isWindows) {
+            shellOptions.getItems().add(new DropdownItem("CMD"));
+            shellOptions.getItems().add(new DropdownItem("PowerShell"));
+            shellOptions.getItems().add(new DropdownItem("Bash"));
+        } else {
+            shellOptions.getItems().add(new DropdownItem("Bash"));
+        }
+
+        for (HostProfile host : hosts) {
+            shellOptions.getItems().add(new DropdownItem(host));
+        }
+
+        if (previousSelection != null) {
+            boolean restored = false;
+            for (DropdownItem item : shellOptions.getItems()) {
+                if (item.equals(previousSelection)) {
+                    shellOptions.setValue(item);
+                    restored = true;
+                    break;
+                }
+            }
+            if (!restored) {
+                selectDefault(initialShell);
+            }
+        } else {
+            selectDefault(initialShell);
+        }
+    }
+
+    private void selectDefault(String initialShell) {
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+        String shellToSelect = initialShell != null ? initialShell : (isWindows ? "CMD" : "Bash");
+        for (DropdownItem item : shellOptions.getItems()) {
+            if (!item.isHost() && item.getLabel().equalsIgnoreCase(shellToSelect)) {
+                shellOptions.setValue(item);
+                return;
+            }
+        }
+        if (!shellOptions.getItems().isEmpty()) {
+            shellOptions.setValue(shellOptions.getItems().get(0));
+        }
+    }
+
+    public void setShellSelectionVisible(boolean visible) {
+        System.out.println("[TopToolBar] setShellSelectionVisible called with: " + visible);
+        selectLabel.setVisible(visible);
+        shellOptions.setVisible(visible);
+    }
+
+    public DropdownItem getSelectedItem() {
         return shellOptions.getValue();
+    }
+
+    public String getSelectedShell() {
+        DropdownItem selected = shellOptions.getValue();
+        return (selected != null) ? selected.getLabel() : null;
     }
 
     public String getSelectedTheme() {

@@ -47,6 +47,10 @@
     -fx-text-fill: white;
     -fx-padding: 4px 8px;
 }
+.combo-box.shell-dropdown {
+    -fx-pref-width: 140px;
+    -fx-max-width: 140px;
+}
 .combo-box-popup .list-view {
     -fx-background-color: #090F22;
     -fx-control-inner-background: #090F22;
@@ -55,15 +59,55 @@
 }
 .combo-box-popup .list-view .list-cell {
     -fx-text-fill: white;
+    -fx-background-color: #161B30; /* Swapped: background is #161B30 */
     -fx-padding: 6px 12px; /* Beautifully spaced out dropdown items */
 }
 .combo-box-popup .list-view .list-cell:hover {
-    -fx-background-color: #161B30;
+    -fx-background-color: #090F22; /* Swapped: focused is #090F22 */
     -fx-text-fill: #00adb5;
 }
 .combo-box-popup .list-view .list-cell:selected {
-    -fx-background-color: #161B30;
+    -fx-background-color: #090F22; /* Swapped: focused is #090F22 */
     -fx-text-fill: #00adb5;
+}
+
+/* Dropdown popup specific scrollbar */
+.combo-box-popup .list-view .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-width: 8px;
+}
+.combo-box-popup .list-view .scroll-bar:horizontal {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-height: 8px;
+}
+.combo-box-popup .list-view .scroll-bar .track {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+}
+.combo-box-popup .list-view .scroll-bar .thumb {
+    -fx-background-color: #00adb5; /* Assigned different color */
+    -fx-background-radius: 4px;
+    -fx-background-insets: 1px;
+}
+.combo-box-popup .list-view .scroll-bar .thumb:hover {
+    -fx-background-color: #cbd5e1;
+}
+.combo-box-popup .list-view .scroll-bar .thumb:pressed {
+    -fx-background-color: #ffffff;
+}
+.combo-box-popup .list-view .scroll-bar .increment-button,
+.combo-box-popup .list-view .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+}
+.combo-box-popup .list-view .scroll-bar .increment-arrow,
+.combo-box-popup .list-view .scroll-bar .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0;
 }
 
 /* TextField flat styling */
