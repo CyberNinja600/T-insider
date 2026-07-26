@@ -8,6 +8,7 @@ import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.layout.Pane;
 
 import javax.swing.*;
 import java.util.Map;
@@ -15,6 +16,80 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class TerminalTabFactory {
+
+    // SINGLE SHARED SWINGNODE across the entire application to prevent Linux multi-SwingNode focus deadlocks!
+    public static final SwingNode SHARED_SWING_NODE = new SwingNode();
+
+    static {
+        SHARED_SWING_NODE.setFocusTraversable(true);
+
+        // Focus listener to forward JavaFX focus to inner Swing TerminalPanel
+        SHARED_SWING_NODE.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                SwingUtilities.invokeLater(() -> {
+                    java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+                    java.awt.Component comp = SHARED_SWING_NODE.getContent();
+                    if (comp instanceof JediTermWidget) {
+                        JediTermWidget widget = (JediTermWidget) comp;
+                        if (widget.getTerminalPanel() != null) {
+                            widget.getTerminalPanel().requestFocus();
+                        }
+                        widget.requestFocus();
+                    }
+                });
+            }
+        });
+
+        // Mouse click on SwingNode requests focus
+        SHARED_SWING_NODE.setOnMousePressed(event -> {
+            if (!SHARED_SWING_NODE.isFocused()) {
+                SHARED_SWING_NODE.requestFocus();
+            }
+            SwingUtilities.invokeLater(() -> {
+                java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+                java.awt.Component comp = SHARED_SWING_NODE.getContent();
+                if (comp instanceof JediTermWidget) {
+                    JediTermWidget widget = (JediTermWidget) comp;
+                    if (widget.getTerminalPanel() != null) {
+                        widget.getTerminalPanel().requestFocus();
+                    }
+                    widget.requestFocus();
+                }
+            });
+        });
+    }
+
+    public static void activateTab(Tab tab, TabPane tabPane, Map<Tab, JediTermWidget> tabWidgetMap) {
+        if (tab == null || tabPane == null || tabWidgetMap == null) return;
+        
+        JediTermWidget widget = tabWidgetMap.get(tab);
+        if (widget == null) return;
+
+        // 1. Detach SHARED_SWING_NODE from any previous tabs
+        for (Tab t : tabPane.getTabs()) {
+            if (t != tab && t.getContent() == SHARED_SWING_NODE) {
+                t.setContent(new Pane());
+            }
+        }
+
+        // 2. Attach SHARED_SWING_NODE to the active tab
+        tab.setContent(SHARED_SWING_NODE);
+
+        // 3. Swap the active Swing widget inside the single SwingNode
+        SHARED_SWING_NODE.setContent(widget);
+        SHARED_SWING_NODE.requestFocus();
+
+        // 4. Request focus on the Swing side
+        SwingUtilities.invokeLater(() -> {
+            java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+            if (widget.getTerminalPanel() != null) {
+                widget.getTerminalPanel().requestFocus();
+            }
+            widget.requestFocus();
+            widget.revalidate();
+            widget.repaint();
+        });
+    }
 
     public static void createTerminalTab(
             String title, 
@@ -25,35 +100,9 @@ public class TerminalTabFactory {
             Consumer<Tab> closeTabHandler) {
         
         Tab tab = new Tab(title);
-        SwingNode swingNode = new SwingNode();
+        tab.setContent(new Pane()); // Placeholder Pane until selected
 
-        // 1. Intercept and Consume ALL JavaFX key events for Ctrl+C to send 0x03 and prevent '^@' leak!
-        swingNode.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
-            if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.C) {
-                try {
-                    if (connector != null && connector.isConnected()) {
-                        connector.write(new byte[]{3}); // Send Ctrl+C (ETX) byte
-                        event.consume();
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
-
-        swingNode.addEventFilter(javafx.scene.input.KeyEvent.KEY_TYPED, event -> {
-            if (event.isControlDown() && (event.getCharacter().equals("\u0003") || event.getCharacter().equalsIgnoreCase("c"))) {
-                event.consume();
-            }
-        });
-
-        swingNode.addEventFilter(javafx.scene.input.KeyEvent.KEY_RELEASED, event -> {
-            if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.C) {
-                event.consume();
-            }
-        });
-
-        // 2. Instantiate and Configure JediTermWidget inside Swing EDT for thread-safety and rendering stability
+        // Instantiate and Configure JediTermWidget inside Swing EDT for thread-safety and rendering stability
         SwingUtilities.invokeLater(() -> {
             JediTermWidget widget = new JediTermWidget(new DefaultSettingsProvider() {
                 @Override
@@ -175,9 +224,7 @@ public class TerminalTabFactory {
                             }
                             setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
                                 @Override
-                                protected void configureScrollBarColors() {
-                                    // Colors dynamically resolved during paint
-                                }
+                                protected void configureScrollBarColors() {}
                                 
                                 @Override
                                 public void paint(java.awt.Graphics g, JComponent c) {
@@ -193,9 +240,7 @@ public class TerminalTabFactory {
                                 }
                                 
                                 @Override
-                                protected void paintTrack(java.awt.Graphics g, JComponent c, java.awt.Rectangle trackBounds) {
-                                    // Background is fully painted in paint(), preventing artifacts when disabled
-                                }
+                                protected void paintTrack(java.awt.Graphics g, JComponent c, java.awt.Rectangle trackBounds) {}
 
                                 @Override
                                 protected void paintThumb(java.awt.Graphics g, JComponent c, java.awt.Rectangle thumbBounds) {
@@ -237,7 +282,6 @@ public class TerminalTabFactory {
                     scrollBar.setOpaque(true);
                     scrollBar.setBorder(BorderFactory.createEmptyBorder());
                     
-                    // Force the background color immediately on creation before the first paint cycle
                     com.jediterm.core.Color initialBg = themeSupplier.get().getBackgroundColor();
                     scrollBar.setBackground(new java.awt.Color(initialBg.getRed(), initialBg.getGreen(), initialBg.getBlue()));
                     
@@ -257,43 +301,18 @@ public class TerminalTabFactory {
                 widget.getTerminalPanel().setForeground(awtFg);
             }
 
-            widget.addComponentListener(new java.awt.event.ComponentAdapter() {
-                @Override
-                public void componentResized(java.awt.event.ComponentEvent e) {
-                    SwingUtilities.invokeLater(() -> {
-                        setAllBackgrounds(widget, awtBg);
-                        widget.revalidate();
-                        widget.repaint();
-                    });
-                }
-
-                @Override
-                public void componentShown(java.awt.event.ComponentEvent e) {
-                    SwingUtilities.invokeLater(() -> {
-                        setAllBackgrounds(widget, awtBg);
-                        widget.revalidate();
-                        widget.repaint();
-                    });
-                }
-            });
-
             widget.setTtyConnector(connector);
             widget.start();
 
             Platform.runLater(() -> {
-                swingNode.setContent(widget);
                 tabWidgetMap.put(tab, widget);
-                
-                // Force a layout pass and repaint on the Swing thread to ensure perfect sync
-                SwingUtilities.invokeLater(() -> {
-                    setAllBackgrounds(widget, awtBg);
-                    widget.revalidate();
-                    widget.repaint();
-                });
+
+                // If this tab is the active one in TabPane, activate it on SHARED_SWING_NODE
+                if (tabPane.getSelectionModel().getSelectedItem() == tab) {
+                    activateTab(tab, tabPane, tabWidgetMap);
+                }
             });
         });
-
-        tab.setContent(swingNode);
 
         tab.setOnCloseRequest(event -> {
             event.consume();
@@ -325,4 +344,3 @@ public class TerminalTabFactory {
         }
     }
 }
-

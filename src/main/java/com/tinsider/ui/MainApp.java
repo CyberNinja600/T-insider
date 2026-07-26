@@ -22,6 +22,7 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -155,16 +156,10 @@ public class MainApp extends Application {
         workspace = new TerminalWorkspace(() -> openLocalTerminal(topToolBar.getSelectedShell()));
         workspace.getTabPane().getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab != null) {
-                JediTermWidget widget = tabWidgetMap.get(newTab);
-                if (widget != null) {
-                    SwingUtilities.invokeLater(() -> {
-                        widget.getTerminalPanel().requestFocusInWindow();
-                        widget.getTerminalPanel().repaint();
-                        widget.repaint();
-                        widget.revalidate();
-                    });
-                }
-                repaintAllTerminals();
+                Platform.runLater(() -> {
+                    TerminalTabFactory.activateTab(newTab, workspace.getTabPane(), tabWidgetMap);
+                    repaintAllTerminals();
+                });
             }
         });
 
@@ -630,6 +625,10 @@ public class MainApp extends Application {
             });
         }
         Platform.runLater(() -> {
+            if (tab.getContent() == TerminalTabFactory.SHARED_SWING_NODE) {
+                TerminalTabFactory.SHARED_SWING_NODE.setContent(null);
+                tab.setContent(new javafx.scene.layout.Pane());
+            }
             if (workspace.getTabPane().getTabs().contains(tab)) {
                 workspace.getTabPane().getTabs().remove(tab);
             }
