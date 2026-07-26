@@ -17,13 +17,13 @@ import java.util.function.Supplier;
 public class TerminalTabFactory {
 
     public static void createTerminalTab(
-            String title,
-            TtyConnector connector,
-            TabPane tabPane,
-            Map<Tab, JediTermWidget> tabWidgetMap,
+            String title, 
+            TtyConnector connector, 
+            TabPane tabPane, 
+            Map<Tab, JediTermWidget> tabWidgetMap, 
             Supplier<TerminalTheme> themeSupplier,
             Consumer<Tab> closeTabHandler) {
-
+        
         Tab tab = new Tab(title);
         SwingNode swingNode = new SwingNode();
 
@@ -53,50 +53,22 @@ public class TerminalTabFactory {
             }
         });
 
-        // 1.4. Forward focus to Swing component when SwingNode gains focus
-        swingNode.focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) {
-                JediTermWidget widget = tabWidgetMap.get(tab);
-                if (widget != null) {
-                    SwingUtilities.invokeLater(() -> {
-                        if (widget.getTerminalPanel() != null) {
-                            widget.getTerminalPanel().requestFocusInWindow();
-                        }
-                    });
-                }
-            }
-        });
-
-        // 1.5. Intercept MOUSE_PRESSED to explicitly request focus on SwingNode (JavaFX) and TerminalPanel (Swing) on Linux
-        swingNode.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, event -> {
-            swingNode.requestFocus();
-            JediTermWidget widget = tabWidgetMap.get(tab);
-            if (widget != null) {
-                SwingUtilities.invokeLater(() -> {
-                    if (widget.getTerminalPanel() != null) {
-                        widget.getTerminalPanel().requestFocusInWindow();
-                    }
-                });
-            }
-        });
-
-
         // 2. Instantiate and Configure JediTermWidget inside Swing EDT for thread-safety and rendering stability
         SwingUtilities.invokeLater(() -> {
             JediTermWidget widget = new JediTermWidget(new DefaultSettingsProvider() {
                 @Override
                 public com.jediterm.terminal.ui.TerminalActionPresentation getCopyActionPresentation() {
                     return new com.jediterm.terminal.ui.TerminalActionPresentation(
-                            "Copy",
-                            KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_C, java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.SHIFT_DOWN_MASK)
+                        "Copy", 
+                        KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_C, java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.SHIFT_DOWN_MASK)
                     );
                 }
 
                 @Override
                 public com.jediterm.terminal.ui.TerminalActionPresentation getPasteActionPresentation() {
                     return new com.jediterm.terminal.ui.TerminalActionPresentation(
-                            "Paste",
-                            KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.SHIFT_DOWN_MASK)
+                        "Paste", 
+                        KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.SHIFT_DOWN_MASK)
                     );
                 }
 
@@ -166,8 +138,8 @@ public class TerminalTabFactory {
                 @Override
                 public com.jediterm.terminal.TextStyle getSelectionColor() {
                     return new com.jediterm.terminal.TextStyle(
-                            com.jediterm.terminal.TerminalColor.fromColor(themeSupplier.get().getTextColor()),
-                            com.jediterm.terminal.TerminalColor.fromColor(themeSupplier.get().getSelectionColor())
+                        com.jediterm.terminal.TerminalColor.fromColor(themeSupplier.get().getTextColor()),
+                        com.jediterm.terminal.TerminalColor.fromColor(themeSupplier.get().getSelectionColor())
                     );
                 }
 
@@ -190,7 +162,7 @@ public class TerminalTabFactory {
                 protected JScrollBar createScrollBar() {
                     JScrollBar scrollBar = new JScrollBar() {
                         private boolean initialized = false;
-
+                        
                         {
                             initialized = true;
                         }
@@ -206,7 +178,7 @@ public class TerminalTabFactory {
                                 protected void configureScrollBarColors() {
                                     // Colors dynamically resolved during paint
                                 }
-
+                                
                                 @Override
                                 public void paint(java.awt.Graphics g, JComponent c) {
                                     com.jediterm.core.Color bg = themeSupplier.get().getBackgroundColor();
@@ -214,12 +186,12 @@ public class TerminalTabFactory {
                                     g.fillRect(0, 0, c.getWidth(), c.getHeight());
                                     super.paint(g, c);
                                 }
-
+                                
                                 @Override
                                 public void update(java.awt.Graphics g, JComponent c) {
                                     paint(g, c);
                                 }
-
+                                
                                 @Override
                                 protected void paintTrack(java.awt.Graphics g, JComponent c, java.awt.Rectangle trackBounds) {
                                     // Background is fully painted in paint(), preventing artifacts when disabled
@@ -229,12 +201,12 @@ public class TerminalTabFactory {
                                 protected void paintThumb(java.awt.Graphics g, JComponent c, java.awt.Rectangle thumbBounds) {
                                     if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) return;
                                     com.jediterm.core.Color thumbColor = themeSupplier.get().getColor("scrollbar.thumb", themeSupplier.get().getCursorColor());
-
+                                    
                                     float opacity = 0.3f;
                                     try {
                                         opacity = Float.parseFloat(com.tinsider.config.ThemeManager.getProperty("scrollbar.thumb.opacity", "0.3"));
                                     } catch (Exception ignored) {}
-
+                                    
                                     java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
                                     g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
                                     g2.setColor(new java.awt.Color(thumbColor.getRed() / 255f, thumbColor.getGreen() / 255f, thumbColor.getBlue() / 255f, opacity));
@@ -264,11 +236,11 @@ public class TerminalTabFactory {
                     };
                     scrollBar.setOpaque(true);
                     scrollBar.setBorder(BorderFactory.createEmptyBorder());
-
+                    
                     // Force the background color immediately on creation before the first paint cycle
                     com.jediterm.core.Color initialBg = themeSupplier.get().getBackgroundColor();
                     scrollBar.setBackground(new java.awt.Color(initialBg.getRed(), initialBg.getGreen(), initialBg.getBlue()));
-
+                    
                     scrollBar.updateUI();
                     return scrollBar;
                 }
@@ -311,18 +283,7 @@ public class TerminalTabFactory {
             Platform.runLater(() -> {
                 swingNode.setContent(widget);
                 tabWidgetMap.put(tab, widget);
-
-                // If this tab is currently selected in the tabPane, request focus immediately!
-                if (tabPane.getSelectionModel().getSelectedItem() == tab) {
-                    swingNode.requestFocus();
-                    SwingUtilities.invokeLater(() -> {
-                        if (widget.getTerminalPanel() != null) {
-                            widget.getTerminalPanel().requestFocusInWindow();
-                            widget.getTerminalPanel().repaint();
-                        }
-                    });
-                }
-
+                
                 // Force a layout pass and repaint on the Swing thread to ensure perfect sync
                 SwingUtilities.invokeLater(() -> {
                     setAllBackgrounds(widget, awtBg);
@@ -353,7 +314,7 @@ public class TerminalTabFactory {
         if (container instanceof JScrollPane) {
             ((JScrollPane) container).getViewport().setBackground(color);
             if (((JScrollPane) container).getCorner(JScrollPane.LOWER_RIGHT_CORNER) != null) {
-                ((JScrollPane) container).getCorner(JScrollPane.LOWER_RIGHT_CORNER).setBackground(color);
+                 ((JScrollPane) container).getCorner(JScrollPane.LOWER_RIGHT_CORNER).setBackground(color);
             }
         }
         for (java.awt.Component c : container.getComponents()) {

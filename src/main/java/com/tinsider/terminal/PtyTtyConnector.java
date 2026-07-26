@@ -1,11 +1,8 @@
 package com.tinsider.terminal;
 
-import com.jediterm.core.util.TermSize;
-import com.jediterm.terminal.Questioner;
 import com.jediterm.terminal.TtyConnector;
 import com.pty4j.PtyProcess;
 import com.pty4j.WinSize;
-
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -25,16 +22,18 @@ public class PtyTtyConnector implements TtyConnector {
     }
 
     @Override
-    public boolean init(Questioner questioner) {
+    public boolean init(com.jediterm.terminal.Questioner questioner) {
         return true;
     }
 
     @Override
     public void close() {
+        // 1. Destroy process first to force-close sockets/PTY streams and unblock read threads
         try {
             process.destroy();
         } catch (Exception ignored) {}
 
+        // 2. Safely close streams inside a separate background thread to prevent blocking the Swing EDT
         new Thread(() -> {
             try {
                 if (reader != null) reader.close();
@@ -44,10 +43,8 @@ public class PtyTtyConnector implements TtyConnector {
     }
 
     @Override
-    public void resize(TermSize termSize) {
-        if (process.isAlive()) {
-            process.setWinSize(new WinSize(termSize.getColumns(), termSize.getRows()));
-        }
+    public void resize(com.jediterm.core.util.TermSize termSize) {
+        process.setWinSize(new WinSize(termSize.getColumns(), termSize.getRows()));
     }
 
     @Override
@@ -85,7 +82,10 @@ public class PtyTtyConnector implements TtyConnector {
 
     @Override
     public boolean ready() throws IOException {
-        // Fix: Do not call reader.ready() as native Linux PTY streams return false/0 available bytes.
-        return process.isAlive();
+        try {
+            return reader != null && reader.ready();
+        } catch (IOException e) {
+            return false;
+        }
     }
 }
