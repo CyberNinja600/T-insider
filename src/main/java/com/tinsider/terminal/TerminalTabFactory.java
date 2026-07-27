@@ -63,6 +63,27 @@ public class TerminalTabFactory {
                 }
             });
         });
+
+        // Intercept Ctrl+C from JavaFX (which treats it as a clipboard action on SwingNode) and dispatch to Swing TerminalPanel
+        SHARED_SWING_NODE.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == javafx.scene.input.KeyCode.C && event.isControlDown() && !event.isShiftDown()) {
+                event.consume();
+                SwingUtilities.invokeLater(() -> {
+                    java.awt.Component comp = SHARED_SWING_NODE.getContent();
+                    if (comp instanceof JediTermWidget) {
+                        JediTermWidget widget = (JediTermWidget) comp;
+                        if (widget.getTerminalPanel() != null) {
+                            java.awt.Component target = widget.getTerminalPanel();
+                            long when = System.currentTimeMillis();
+                            int modifiers = java.awt.event.InputEvent.CTRL_DOWN_MASK;
+                            target.dispatchEvent(new java.awt.event.KeyEvent(target, java.awt.event.KeyEvent.KEY_PRESSED, when, modifiers, java.awt.event.KeyEvent.VK_C, 'c'));
+                            target.dispatchEvent(new java.awt.event.KeyEvent(target, java.awt.event.KeyEvent.KEY_TYPED, when, modifiers, java.awt.event.KeyEvent.VK_UNDEFINED, (char) 3));
+                            target.dispatchEvent(new java.awt.event.KeyEvent(target, java.awt.event.KeyEvent.KEY_RELEASED, when, modifiers, java.awt.event.KeyEvent.VK_C, 'c'));
+                        }
+                    }
+                });
+            }
+        });
     }
 
     public static void activateTab(Tab tab, TabPane tabPane, Map<Tab, JediTermWidget> tabWidgetMap) {
