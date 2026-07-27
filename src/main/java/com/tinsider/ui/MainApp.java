@@ -460,6 +460,18 @@ public class MainApp extends Application {
                 Map<String, String> currentSettings = StorageManager.loadSettings();
                 currentSettings.put("shell", shell);
                 StorageManager.saveSettings(currentSettings);
+            },
+            () -> {
+                com.tinsider.terminal.TerminalTabFactory.increaseZoom(tabWidgetMap);
+                topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
+            },
+            () -> {
+                com.tinsider.terminal.TerminalTabFactory.decreaseZoom(tabWidgetMap);
+                topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
+            },
+            () -> {
+                com.tinsider.terminal.TerminalTabFactory.resetZoom(tabWidgetMap);
+                topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
             }
         );
         topToolBar.setShellSelectionVisible(false);
@@ -483,6 +495,33 @@ public class MainApp extends Application {
 
         Scene scene = new Scene(root, 1000, 700);
         scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+
+        // Add zoom accelerators (shortcuts)
+        scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.EQUALS, javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
+            com.tinsider.terminal.TerminalTabFactory.increaseZoom(tabWidgetMap);
+            topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
+        });
+        scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.MINUS, javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
+            com.tinsider.terminal.TerminalTabFactory.decreaseZoom(tabWidgetMap);
+            topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
+        });
+        scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.DIGIT0, javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
+            com.tinsider.terminal.TerminalTabFactory.resetZoom(tabWidgetMap);
+            topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
+        });
+        scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.ADD, javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
+            com.tinsider.terminal.TerminalTabFactory.increaseZoom(tabWidgetMap);
+            topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
+        });
+        scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.SUBTRACT, javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
+            com.tinsider.terminal.TerminalTabFactory.decreaseZoom(tabWidgetMap);
+            topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
+        });
+        scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.NUMPAD0, javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
+            com.tinsider.terminal.TerminalTabFactory.resetZoom(tabWidgetMap);
+            topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
+        });
+
         primaryStage.setScene(scene);
 
         // Start Live Reloader for themes and properties files
@@ -971,6 +1010,7 @@ public class MainApp extends Application {
                             ".button { -fx-background-color: " + hexBtnBg + "; -fx-border-color: " + hexBtnBorder + "; -fx-text-fill: " + hexBtnFg + "; }\n" +
                             ".button:hover { -fx-background-color: " + hexBtnHoverBg + "; -fx-text-fill: #ffffff; }\n" +
                             ".button:disabled { -fx-opacity: 0.4; -fx-cursor: default; }\n" +
+                            ".button.zoom-btn { -fx-padding: 3px 8px; -fx-font-size: 11px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; }\n" +
                             ".combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; }\n" +
                             ".combo-box.shell-dropdown { -fx-pref-width: 140px; -fx-max-width: 140px; }\n" +
                             ".combo-box .list-cell { -fx-text-fill: " + hexComboFg + "; }\n" +

@@ -17,6 +17,12 @@ import java.util.function.Supplier;
 
 public class TerminalTabFactory {
 
+    private static float globalFontSize = 13.0f;
+
+    public static float getGlobalFontSize() {
+        return globalFontSize;
+    }
+
     // SINGLE SHARED SWINGNODE across the entire application to prevent Linux multi-SwingNode focus deadlocks!
     public static final SwingNode SHARED_SWING_NODE = new SwingNode();
 
@@ -145,12 +151,12 @@ public class TerminalTabFactory {
                 public java.awt.Font getTerminalFont() {
                     String os = System.getProperty("os.name").toLowerCase();
                     String fontName = os.contains("win") ? "Consolas" : "Monospaced";
-                    return new java.awt.Font(fontName, java.awt.Font.PLAIN, 13);
+                    return new java.awt.Font(fontName, java.awt.Font.PLAIN, (int) globalFontSize);
                 }
 
                 @Override
                 public float getTerminalFontSize() {
-                    return 13.0f;
+                    return globalFontSize;
                 }
 
                 @Override
@@ -377,5 +383,41 @@ public class TerminalTabFactory {
                 setAllBackgrounds((java.awt.Container) c, color);
             }
         }
+    }
+
+    public static void setGlobalFontSize(float newSize, Map<Tab, JediTermWidget> tabWidgetMap) {
+        if (newSize < 6.0f) newSize = 6.0f;
+        if (newSize > 72.0f) newSize = 72.0f;
+        if (globalFontSize == newSize) return;
+        globalFontSize = newSize;
+
+        for (JediTermWidget widget : tabWidgetMap.values()) {
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    com.jediterm.terminal.ui.TerminalPanel panel = widget.getTerminalPanel();
+                    if (panel != null) {
+                        java.lang.reflect.Method m = com.jediterm.terminal.ui.TerminalPanel.class.getDeclaredMethod("reinitFontAndResize");
+                        m.setAccessible(true);
+                        m.invoke(panel);
+                        panel.revalidate();
+                        panel.repaint();
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
+        }
+    }
+
+    public static void increaseZoom(Map<Tab, JediTermWidget> tabWidgetMap) {
+        setGlobalFontSize(globalFontSize + 1.0f, tabWidgetMap);
+    }
+
+    public static void decreaseZoom(Map<Tab, JediTermWidget> tabWidgetMap) {
+        setGlobalFontSize(globalFontSize - 1.0f, tabWidgetMap);
+    }
+
+    public static void resetZoom(Map<Tab, JediTermWidget> tabWidgetMap) {
+        setGlobalFontSize(13.0f, tabWidgetMap);
     }
 }
