@@ -28,3 +28,7 @@ setup.properties
 # Theme files
 themes/
 
+# Windows shortcut files
+*.lnk
+*.ink
+
