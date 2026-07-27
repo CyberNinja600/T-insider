@@ -33,8 +33,8 @@ if !HAS_JAVA! equ 1 (
 :START_APP
 title T-Insider App Runner
 
-:: Self-heal the Windows shortcut (.lnk) to ensure the custom program icon and paths are always valid on this machine
-powershell -NoProfile -Command "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('%~dp0T-Insider.lnk');$s.TargetPath='%~dp0tinsider.cmd';$s.WorkingDirectory='%~dp0';$s.IconLocation='%~dp0src\main\resources\t-insider.ico';$s.Save()" >nul 2>&1
+:: Self-heal the Windows shortcuts (.lnk) to ensure the custom program icon and paths are always valid in both the project root and on the Desktop
+powershell -NoProfile -Command "$w=New-Object -ComObject WScript.Shell; foreach($p in @('%~dp0T-Insider.lnk', [System.IO.Path]::Combine($w.SpecialFolders.Item('Desktop'), 'T-Insider.lnk'))) { $s=$w.CreateShortcut($p); $s.TargetPath='%~dp0tinsider.cmd'; $s.WorkingDirectory='%~dp0'; $s.IconLocation='%~dp0src\main\resources\t-insider.ico'; $s.Save() }" >nul 2>&1
 
 echo =======================================================
 echo     Starting T-Insider Build ^& Execution

@@ -21,8 +21,9 @@
 This application is completely self-contained and cross-platform. It requires zero manual configuration or pre-setup!
 
 ### Windows
-1. Double-click **`T-Insider.lnk`** (the shortcut with the custom program icon) or **`tinsider.cmd`**.
-2. The script will automatically detect if you have a compatible Java 21+ environment. If not, it will securely download a portable, isolated JDK 21 (Eclipse Temurin) to a local directory (`.jdks/jdk-21`) and execute the application using the Maven Wrapper.
+1. On a fresh clone/pull, double-click **`tinsider.cmd`** first.
+   - This will launch the application and **automatically recreate/self-heal the `T-Insider.lnk` shortcuts** in both the project root directory and directly on your **Windows Desktop**, instantly mapping them to the correct local paths and restoring the custom program icon on your machine!
+2. For all subsequent launches, you can double-click either **`T-Insider.lnk`** (located on your Desktop or in the project folder) or **`tinsider.cmd`**.
 
 ### macOS & Linux
 1. Open a terminal in the project directory.
