@@ -5,6 +5,7 @@ import com.tinsider.model.HostProfile;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
@@ -76,6 +77,7 @@ public class TopToolBar extends HBox {
     private final ComboBox<DropdownItem> shellOptions;
     private final ComboBox<String> themeOptions;
     private final Label selectLabel;
+    private Button zoomResetBtn;
 
     public TopToolBar(
             List<TerminalTheme> availableThemes, 
@@ -83,7 +85,10 @@ public class TopToolBar extends HBox {
             String initialShell,
             ObservableList<HostProfile> hosts,
             Consumer<TerminalTheme> onThemeChanged,
-            Consumer<String> onShellChanged) {
+            Consumer<String> onShellChanged,
+            Runnable onZoomIn,
+            Runnable onZoomOut,
+            Runnable onZoomReset) {
         
         super(10);
         setPadding(new Insets(10));
@@ -127,7 +132,32 @@ public class TopToolBar extends HBox {
             }
         });
 
-        getChildren().addAll(selectLabel, shellOptions, themeLabel, themeOptions);
+        Label zoomLabel = new Label("Zoom:");
+        Button zoomOutBtn = new Button("-");
+        zoomResetBtn = new Button("100%");
+        Button zoomInBtn = new Button("+");
+
+        zoomOutBtn.getStyleClass().add("zoom-btn");
+        zoomResetBtn.getStyleClass().add("zoom-btn");
+        zoomInBtn.getStyleClass().add("zoom-btn");
+
+        zoomOutBtn.setOnAction(e -> {
+            if (onZoomOut != null) onZoomOut.run();
+        });
+        zoomResetBtn.setOnAction(e -> {
+            if (onZoomReset != null) onZoomReset.run();
+        });
+        zoomInBtn.setOnAction(e -> {
+            if (onZoomIn != null) onZoomIn.run();
+        });
+
+        HBox zoomControls = new HBox(5, zoomOutBtn, zoomResetBtn, zoomInBtn);
+        zoomControls.setAlignment(Pos.CENTER_LEFT);
+
+        javafx.scene.layout.Pane spacer = new javafx.scene.layout.Pane();
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+
+        getChildren().addAll(selectLabel, shellOptions, themeLabel, themeOptions, spacer, zoomLabel, zoomControls);
     }
 
     private void rebuildItems(ObservableList<HostProfile> hosts, String initialShell) {
@@ -196,5 +226,12 @@ public class TopToolBar extends HBox {
 
     public String getSelectedTheme() {
         return themeOptions.getValue();
+    }
+
+    public void updateZoomLabel(float fontSize) {
+        int percent = Math.round((fontSize / 13.0f) * 100);
+        if (zoomResetBtn != null) {
+            zoomResetBtn.setText(percent + "%");
+        }
     }
 }

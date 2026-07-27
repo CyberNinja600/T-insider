@@ -31,3 +31,14 @@ This application is completely self-contained and cross-platform. It requires ze
    chmod +x tinsider.sh && ./tinsider.sh
    ```
 3. The script will automatically detect or download a portable JDK 21 for your OS and architecture, then start the application seamlessly.
+
+## Terminal Zoom Feature
+
+You can scale the terminal font size dynamically across all active terminal tabs simultaneously.
+
+### Zoom Controls
+- **Toolbar Buttons**: Use the `-`, `[Percentage]`, and `+` buttons located on the top toolbar to decrease, reset, or increase the font size.
+- **Keyboard Shortcuts**:
+  - **Zoom In**: `Ctrl + =` or `Ctrl + +` (or Numpad `+`)
+  - **Zoom Out**: `Ctrl + -` (or Numpad `-`)
+  - **Reset to 100%**: `Ctrl + 0` (or Numpad `0`)
