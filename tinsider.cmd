@@ -1,13 +1,36 @@
 @echo off
+setlocal enabledelayedexpansion
+
 if "%1"=="-show" goto :START_APP
 if "%1"=="-hidden" goto :START_APP
 
-:: Relaunch itself hidden using PowerShell
-powershell -NoProfile -WindowStyle Hidden -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\" -hidden' -WindowStyle Hidden"
-exit /b
+set "PORTABLE_JDK_DIR=%~dp0.jdks"
+set "LOCAL_JDK_HOME=%PORTABLE_JDK_DIR%\jdk-21"
+
+set "HAS_JAVA=0"
+
+:: Check if local portable JDK is valid
+if exist "%LOCAL_JDK_HOME%\bin\java.exe" (
+    "%LOCAL_JDK_HOME%\bin\java.exe" -version >nul 2>&1
+    if !ERRORLEVEL! equ 0 set "HAS_JAVA=1"
+)
+
+:: Check if system java is valid (JDK 21+)
+if !HAS_JAVA! equ 0 (
+    where java >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        java -version 2>&1 | findstr /R "version..2[1-9] version..[3-9][0-9]" >nul
+        if !ERRORLEVEL! equ 0 set "HAS_JAVA=1"
+    )
+)
+
+if !HAS_JAVA! equ 1 (
+    :: Relaunch itself hidden using PowerShell because we already have Java
+    powershell -NoProfile -WindowStyle Hidden -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\" -hidden' -WindowStyle Hidden"
+    exit /b
+)
 
 :START_APP
-setlocal enabledelayedexpansion
 title T-Insider App Runner
 echo =======================================================
 echo     Starting T-Insider Build ^& Execution
@@ -76,6 +99,12 @@ if %ERRORLEVEL% neq 0 (
 echo [INFO] Portable JDK 21 installed successfully!
 set "JAVA_HOME=%LOCAL_JDK_HOME%"
 set "PATH=%LOCAL_JDK_HOME%\bin;%PATH%"
+
+if not "%1"=="-show" (
+    echo [INFO] Hiding console and launching application...
+    powershell -NoProfile -WindowStyle Hidden -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\" -hidden' -WindowStyle Hidden"
+    exit /b
+)
 
 :RUN_APP
 echo [INFO] Executing application via Maven Wrapper...
