@@ -29,6 +29,37 @@ public class TerminalTabFactory {
     static {
         SHARED_SWING_NODE.setFocusTraversable(true);
 
+        // Intercept and Consume ALL JavaFX key events for Ctrl+C to send 0x03 and prevent '^@' leak!
+        SHARED_SWING_NODE.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
+            if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.C) {
+                try {
+                    java.awt.Component comp = SHARED_SWING_NODE.getContent();
+                    if (comp instanceof JediTermWidget) {
+                        JediTermWidget widget = (JediTermWidget) comp;
+                        TtyConnector connector = widget.getTtyConnector();
+                        if (connector != null && connector.isConnected()) {
+                            connector.write(new byte[]{3}); // Send Ctrl+C (ETX) byte
+                            event.consume();
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        SHARED_SWING_NODE.addEventFilter(javafx.scene.input.KeyEvent.KEY_TYPED, event -> {
+            if (event.isControlDown() && (event.getCharacter().equals("\u0003") || event.getCharacter().equalsIgnoreCase("c"))) {
+                event.consume();
+            }
+        });
+
+        SHARED_SWING_NODE.addEventFilter(javafx.scene.input.KeyEvent.KEY_RELEASED, event -> {
+            if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.C) {
+                event.consume();
+            }
+        });
+
         // Focus listener to forward JavaFX focus to inner Swing TerminalPanel
         SHARED_SWING_NODE.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {

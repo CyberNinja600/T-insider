@@ -43,3 +43,12 @@ You can scale the terminal font size dynamically across all active terminal tabs
   - **Zoom In**: `Ctrl + =` or `Ctrl + +` (or Numpad `+`)
   - **Zoom Out**: `Ctrl + -` (or Numpad `-`)
   - **Reset to 100%**: `Ctrl + 0` (or Numpad `0`)
+
+## Local Shell Requirements (Windows)
+
+For **Bash** to be detected and available as a local shell option on Windows, it must be installed in one of the following locations (otherwise, the application dynamically hides the option to prevent PTY creation failures):
+
+1. **System-wide Git Bash**: Installed at `C:\Program Files\Git\bin\bash.exe` or `C:\Program Files (x86)\Git\bin\bash.exe`.
+2. **User-local Git Bash**: Installed at `%USERPROFILE%\AppData\Local\Programs\Git\bin\bash.exe`.
+3. **System Environment PATH**: If `bash.exe` is directly in your system/user `PATH`, or if `git.exe` is in your `PATH` (the application will automatically locate the corresponding `bin\bash.exe` or `usr\bin\bash.exe`).
+4. **WSL (Windows Subsystem for Linux)**: WSL's Bash available at `C:\Windows\System32\bash.exe`.
