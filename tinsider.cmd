@@ -113,7 +113,11 @@ if not "%1"=="-show" (
 :RUN_APP
 echo [INFO] Executing application via Maven Wrapper...
 if not exist "%~dp0logs" mkdir "%~dp0logs"
-call "%~dp0mvnw.cmd" clean compile javafx:run 2>&1 | powershell -NoProfile -Command "Tee-Object -FilePath '%~dp0logs\start.log'"
+if "%1"=="-hidden" (
+    call "%~dp0mvnw.cmd" clean compile javafx:run > "%~dp0logs\start.log" 2>&1
+) else (
+    call "%~dp0mvnw.cmd" clean compile javafx:run 2>&1 | powershell -NoProfile -Command "$writer = [System.IO.StreamWriter]::new('%~dp0logs\start.log', $false); $writer.AutoFlush = $true; $input | ForEach-Object { $_; $writer.WriteLine($_) }; $writer.Close()"
+)
 if %ERRORLEVEL% neq 0 (
     echo.
     echo [ERROR] Application execution failed!
