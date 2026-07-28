@@ -29,6 +29,37 @@ public class TerminalTabFactory {
     static {
         SHARED_SWING_NODE.setFocusTraversable(true);
 
+        // Intercept and Consume ALL JavaFX key events for Ctrl+C to send 0x03 and prevent '^@' leak!
+        SHARED_SWING_NODE.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
+            if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.C) {
+                try {
+                    java.awt.Component comp = SHARED_SWING_NODE.getContent();
+                    if (comp instanceof JediTermWidget) {
+                        JediTermWidget widget = (JediTermWidget) comp;
+                        TtyConnector connector = widget.getTtyConnector();
+                        if (connector != null && connector.isConnected()) {
+                            connector.write(new byte[]{3}); // Send Ctrl+C (ETX) byte
+                            event.consume();
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        SHARED_SWING_NODE.addEventFilter(javafx.scene.input.KeyEvent.KEY_TYPED, event -> {
+            if (event.isControlDown() && (event.getCharacter().equals("\u0003") || event.getCharacter().equalsIgnoreCase("c"))) {
+                event.consume();
+            }
+        });
+
+        SHARED_SWING_NODE.addEventFilter(javafx.scene.input.KeyEvent.KEY_RELEASED, event -> {
+            if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.C) {
+                event.consume();
+            }
+        });
+
         // Focus listener to forward JavaFX focus to inner Swing TerminalPanel
         SHARED_SWING_NODE.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
@@ -62,27 +93,6 @@ public class TerminalTabFactory {
                     widget.requestFocus();
                 }
             });
-        });
-
-        // Intercept Ctrl+C from JavaFX (which treats it as a clipboard action on SwingNode) and dispatch to Swing TerminalPanel
-        SHARED_SWING_NODE.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
-            if (event.getCode() == javafx.scene.input.KeyCode.C && event.isControlDown() && !event.isShiftDown()) {
-                event.consume();
-                SwingUtilities.invokeLater(() -> {
-                    java.awt.Component comp = SHARED_SWING_NODE.getContent();
-                    if (comp instanceof JediTermWidget) {
-                        JediTermWidget widget = (JediTermWidget) comp;
-                        if (widget.getTerminalPanel() != null) {
-                            java.awt.Component target = widget.getTerminalPanel();
-                            long when = System.currentTimeMillis();
-                            int modifiers = java.awt.event.InputEvent.CTRL_DOWN_MASK;
-                            target.dispatchEvent(new java.awt.event.KeyEvent(target, java.awt.event.KeyEvent.KEY_PRESSED, when, modifiers, java.awt.event.KeyEvent.VK_C, 'c'));
-                            target.dispatchEvent(new java.awt.event.KeyEvent(target, java.awt.event.KeyEvent.KEY_TYPED, when, modifiers, java.awt.event.KeyEvent.VK_UNDEFINED, (char) 3));
-                            target.dispatchEvent(new java.awt.event.KeyEvent(target, java.awt.event.KeyEvent.KEY_RELEASED, when, modifiers, java.awt.event.KeyEvent.VK_C, 'c'));
-                        }
-                    }
-                });
-            }
         });
     }
 
