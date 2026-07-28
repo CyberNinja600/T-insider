@@ -169,7 +169,9 @@ public class TopToolBar extends HBox {
         if (isWindows) {
             shellOptions.getItems().add(new DropdownItem("CMD"));
             shellOptions.getItems().add(new DropdownItem("PowerShell"));
-            shellOptions.getItems().add(new DropdownItem("Bash"));
+            if (isBashAvailableOnWindows()) {
+                shellOptions.getItems().add(new DropdownItem("Bash"));
+            }
         } else {
             shellOptions.getItems().add(new DropdownItem("Bash"));
         }
@@ -193,6 +195,44 @@ public class TopToolBar extends HBox {
         } else {
             selectDefault(initialShell);
         }
+    }
+
+    private boolean isBashAvailableOnWindows() {
+        // 1. Check C:\Program Files\Git\bin\bash.exe
+        if (new java.io.File("C:\\Program Files\\Git\\bin\\bash.exe").exists()) return true;
+
+        // 2. Check C:\Program Files (x86)\Git\bin\bash.exe
+        if (new java.io.File("C:\\Program Files (x86)\\Git\\bin\\bash.exe").exists()) return true;
+
+        // 3. Check user-local AppData Git Bash
+        String userHome = System.getProperty("user.home");
+        if (userHome != null) {
+            if (new java.io.File(userHome + "\\AppData\\Local\\Programs\\Git\\bin\\bash.exe").exists()) return true;
+        }
+
+        // 4. Try to resolve via environment PATH of git.exe or bash.exe
+        String pathEnv = System.getenv("PATH");
+        if (pathEnv != null) {
+            for (String part : pathEnv.split(java.io.File.pathSeparator)) {
+                if (new java.io.File(part, "git.exe").exists()) {
+                    java.io.File parent = new java.io.File(part).getParentFile();
+                    if (parent != null) {
+                        if (new java.io.File(parent, "bin\\bash.exe").exists() || 
+                            new java.io.File(parent, "usr\\bin\\bash.exe").exists()) {
+                            return true;
+                        }
+                    }
+                }
+                if (new java.io.File(part, "bash.exe").exists()) {
+                    return true;
+                }
+            }
+        }
+
+        // 5. Check if WSL is available
+        if (new java.io.File("C:\\Windows\\System32\\bash.exe").exists()) return true;
+
+        return false;
     }
 
     private void selectDefault(String initialShell) {

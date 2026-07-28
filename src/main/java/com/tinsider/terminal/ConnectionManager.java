@@ -41,12 +41,8 @@ public class ConnectionManager {
             if (type.equalsIgnoreCase("PowerShell")) {
                 cmd = new String[]{"powershell.exe"};
             } else if (type.equalsIgnoreCase("Bash")) {
-                File gitBash = new File("C:\\Program Files\\Git\\bin\\bash.exe");
-                if (gitBash.exists()) {
-                    cmd = new String[]{gitBash.getAbsolutePath(), "--login"};
-                } else {
-                    cmd = new String[]{"bash.exe", "--login"};
-                }
+                String bashPath = findWindowsBash();
+                cmd = new String[]{bashPath, "--login"};
             } else {
                 cmd = new String[]{"cmd.exe"};
             }
@@ -62,6 +58,54 @@ public class ConnectionManager {
 
         String tabTitle = truncate(type, 16);
         return new PtyTtyConnector(process, tabTitle);
+    }
+
+    private static String findWindowsBash() {
+        // 1. Check C:\Program Files\Git\bin\bash.exe
+        File path1 = new File("C:\\Program Files\\Git\\bin\\bash.exe");
+        if (path1.exists()) return path1.getAbsolutePath();
+
+        // 2. Check C:\Program Files (x86)\Git\bin\bash.exe
+        File path2 = new File("C:\\Program Files (x86)\\Git\\bin\\bash.exe");
+        if (path2.exists()) return path2.getAbsolutePath();
+
+        // 3. Check user-local AppData Git Bash
+        String userHome = System.getProperty("user.home");
+        if (userHome != null) {
+            File path3 = new File(userHome + "\\AppData\\Local\\Programs\\Git\\bin\\bash.exe");
+            if (path3.exists()) return path3.getAbsolutePath();
+        }
+
+        // 4. Try to resolve via environment PATH of git.exe or bash.exe
+        String pathEnv = System.getenv("PATH");
+        if (pathEnv != null) {
+            for (String part : pathEnv.split(File.pathSeparator)) {
+                File candidate = new File(part, "git.exe");
+                if (candidate.exists()) {
+                    File parent = candidate.getParentFile();
+                    if (parent != null) {
+                        File gitRoot = parent.getParentFile();
+                        if (gitRoot != null) {
+                            File bash1 = new File(gitRoot, "bin\\bash.exe");
+                            if (bash1.exists()) return bash1.getAbsolutePath();
+                            File bash2 = new File(gitRoot, "usr\\bin\\bash.exe");
+                            if (bash2.exists()) return bash2.getAbsolutePath();
+                        }
+                    }
+                }
+                
+                File bashCandidate = new File(part, "bash.exe");
+                if (bashCandidate.exists()) {
+                    return bashCandidate.getAbsolutePath();
+                }
+            }
+        }
+
+        // 5. Check if WSL is available
+        File wslBash = new File("C:\\Windows\\System32\\bash.exe");
+        if (wslBash.exists()) return wslBash.getAbsolutePath();
+
+        return "bash.exe"; // Fallback to PATH resolution at runtime
     }
 
     public static void connectToHost(HostProfile host, TabPane tabPane, BiConsumer<String, SshTtyConnector> onSuccess) {
