@@ -54,13 +54,7 @@ public class MainApp extends Application {
     private final ObservableList<Snippet> snippets = FXCollections.observableArrayList();
     private final ObservableList<SnippetPackage> packages = FXCollections.observableArrayList();
 
-    private final Map<Tab, com.tinsider.ui.components.terminal.split.TerminalSplitPane> tabSplitPaneMap = new HashMap<>();
-    
-    private static Map<Tab, com.tinsider.ui.components.terminal.split.TerminalSplitPane> tabSplitPaneMapStaticInstance;
-    
-    public static Map<Tab, com.tinsider.ui.components.terminal.split.TerminalSplitPane> getTabSplitPaneMap() {
-        return tabSplitPaneMapStaticInstance;
-    }
+    private final Map<Tab, JediTermWidget> tabWidgetMap = new HashMap<>();
     private final List<TerminalTheme> availableThemes = new ArrayList<>();
     private TerminalTheme currentTheme;
 
@@ -110,7 +104,6 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        tabSplitPaneMapStaticInstance = tabSplitPaneMap;
         primaryStage.setTitle("T-Insider");
 
         // Set the program icon
@@ -173,10 +166,7 @@ public class MainApp extends Application {
         workspace.getTabPane().getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab != null) {
                 Platform.runLater(() -> {
-                    com.tinsider.ui.components.terminal.split.TerminalSplitPane splitPane = tabSplitPaneMap.get(newTab);
-                    if (splitPane != null) {
-                        splitPane.requestFocusOnActive();
-                    }
+                    TerminalTabFactory.activateTab(newTab, workspace.getTabPane(), tabWidgetMap);
                     repaintAllTerminals();
                 });
             }
@@ -472,15 +462,15 @@ public class MainApp extends Application {
                 StorageManager.saveSettings(currentSettings);
             },
             () -> {
-                com.tinsider.terminal.TerminalTabFactory.increaseZoom(tabSplitPaneMap.values());
+                com.tinsider.terminal.TerminalTabFactory.increaseZoom(tabWidgetMap);
                 topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
             },
             () -> {
-                com.tinsider.terminal.TerminalTabFactory.decreaseZoom(tabSplitPaneMap.values());
+                com.tinsider.terminal.TerminalTabFactory.decreaseZoom(tabWidgetMap);
                 topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
             },
             () -> {
-                com.tinsider.terminal.TerminalTabFactory.resetZoom(tabSplitPaneMap.values());
+                com.tinsider.terminal.TerminalTabFactory.resetZoom(tabWidgetMap);
                 topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
             }
         );
@@ -508,27 +498,27 @@ public class MainApp extends Application {
 
         // Add zoom accelerators (shortcuts)
         scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.EQUALS, javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
-            com.tinsider.terminal.TerminalTabFactory.increaseZoom(tabSplitPaneMap.values());
+            com.tinsider.terminal.TerminalTabFactory.increaseZoom(tabWidgetMap);
             topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
         });
         scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.MINUS, javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
-            com.tinsider.terminal.TerminalTabFactory.decreaseZoom(tabSplitPaneMap.values());
+            com.tinsider.terminal.TerminalTabFactory.decreaseZoom(tabWidgetMap);
             topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
         });
         scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.DIGIT0, javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
-            com.tinsider.terminal.TerminalTabFactory.resetZoom(tabSplitPaneMap.values());
+            com.tinsider.terminal.TerminalTabFactory.resetZoom(tabWidgetMap);
             topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
         });
         scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.ADD, javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
-            com.tinsider.terminal.TerminalTabFactory.increaseZoom(tabSplitPaneMap.values());
+            com.tinsider.terminal.TerminalTabFactory.increaseZoom(tabWidgetMap);
             topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
         });
         scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.SUBTRACT, javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
-            com.tinsider.terminal.TerminalTabFactory.decreaseZoom(tabSplitPaneMap.values());
+            com.tinsider.terminal.TerminalTabFactory.decreaseZoom(tabWidgetMap);
             topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
         });
         scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.NUMPAD0, javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
-            com.tinsider.terminal.TerminalTabFactory.resetZoom(tabSplitPaneMap.values());
+            com.tinsider.terminal.TerminalTabFactory.resetZoom(tabWidgetMap);
             topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
         });
 
@@ -649,12 +639,9 @@ public class MainApp extends Application {
                     tabTitle, 
                     connector, 
                     workspace.getTabPane(), 
-                    tabSplitPaneMap, 
+                    tabWidgetMap, 
                     () -> currentTheme, 
-                    this::closeTab,
-                    "LOCAL",
-                    type,
-                    null
+                    this::closeTab
             );
         } catch (Exception e) {
             e.printStackTrace();
@@ -668,22 +655,35 @@ public class MainApp extends Application {
                     title, 
                     connector, 
                     workspace.getTabPane(), 
-                    tabSplitPaneMap, 
+                    tabWidgetMap, 
                     () -> currentTheme, 
-                    this::closeTab,
-                    "SSH",
-                    null,
-                    host
+                    this::closeTab
             );
         });
     }
 
     private void closeTab(Tab tab) {
-        com.tinsider.ui.components.terminal.split.TerminalSplitPane splitPane = tabSplitPaneMap.remove(tab);
-        if (splitPane != null) {
-            splitPane.close();
+        JediTermWidget widget = tabWidgetMap.remove(tab);
+        if (widget != null) {
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    TtyConnector connector = widget.getTtyConnector();
+                    if (connector != null) {
+                        connector.close();
+                    }
+                    try {
+                        widget.stop();
+                    } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
         }
         Platform.runLater(() -> {
+            if (tab.getContent() == TerminalTabFactory.SHARED_SWING_NODE) {
+                TerminalTabFactory.SHARED_SWING_NODE.setContent(null);
+                tab.setContent(new javafx.scene.layout.Pane());
+            }
             if (workspace.getTabPane().getTabs().contains(tab)) {
                 workspace.getTabPane().getTabs().remove(tab);
             }
@@ -697,8 +697,7 @@ public class MainApp extends Application {
             return;
         }
 
-        com.tinsider.ui.components.terminal.split.TerminalSplitPane splitPane = tabSplitPaneMap.get(activeTab);
-        JediTermWidget widget = (splitPane != null) ? splitPane.getActiveWidget() : null;
+        JediTermWidget widget = tabWidgetMap.get(activeTab);
         if (widget == null) {
             AlertHelper.showErrorAlert("No active terminal", "The current tab is not a terminal session.");
             return;
@@ -723,42 +722,39 @@ public class MainApp extends Application {
         com.jediterm.core.Color termFg = currentTheme.getTextColor();
         
         // Repaint all active terminal panels using the specific resolved terminal colors!
-        for (com.tinsider.ui.components.terminal.split.TerminalSplitPane splitPane : tabSplitPaneMap.values()) {
-            Platform.runLater(() -> splitPane.updateActiveTheme(currentTheme));
-            for (JediTermWidget widget : splitPane.getAllWidgets()) {
-                SwingUtilities.invokeLater(() -> {
-                    // Add 1ms delay to fix scrollbar race condition when adding new tabs
-                    javax.swing.Timer timer = new javax.swing.Timer(1, e -> {
-                        try {
-                            java.awt.Color awtBg = new java.awt.Color(termBg.getRed(), termBg.getGreen(), termBg.getBlue());
-                            java.awt.Color awtFg = new java.awt.Color(termFg.getRed(), termFg.getGreen(), termFg.getBlue());
+        for (JediTermWidget widget : tabWidgetMap.values()) {
+            SwingUtilities.invokeLater(() -> {
+                // Add 1ms delay to fix scrollbar race condition when adding new tabs
+                javax.swing.Timer timer = new javax.swing.Timer(1, e -> {
+                    try {
+                        java.awt.Color awtBg = new java.awt.Color(termBg.getRed(), termBg.getGreen(), termBg.getBlue());
+                        java.awt.Color awtFg = new java.awt.Color(termFg.getRed(), termFg.getGreen(), termFg.getBlue());
 
-                            widget.setBackground(awtBg);
-                            widget.setForeground(awtFg);
-                            if (widget.getTerminalPanel() != null) {
-                                widget.getTerminalPanel().setBackground(awtBg);
-                                widget.getTerminalPanel().setForeground(awtFg);
-                            }
-
-                            if (widget.getTerminal() != null && widget.getTerminal().getStyleState() != null) {
-                                widget.getTerminal().getStyleState().setDefaultStyle(com.jediterm.terminal.TextStyle.EMPTY);
-                                widget.getTerminal().getStyleState().reset();
-                            }
-
-                            if (widget.getTerminalPanel() != null) {
-                                widget.getTerminalPanel().repaint();
-                            }
-                            widget.invalidate();
-                            widget.repaint();
-                            widget.revalidate();
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
+                        widget.setBackground(awtBg);
+                        widget.setForeground(awtFg);
+                        if (widget.getTerminalPanel() != null) {
+                            widget.getTerminalPanel().setBackground(awtBg);
+                            widget.getTerminalPanel().setForeground(awtFg);
                         }
-                    });
-                    timer.setRepeats(false);
-                    timer.start();
+
+                        if (widget.getTerminal() != null && widget.getTerminal().getStyleState() != null) {
+                            widget.getTerminal().getStyleState().setDefaultStyle(com.jediterm.terminal.TextStyle.EMPTY);
+                            widget.getTerminal().getStyleState().reset();
+                        }
+
+                        if (widget.getTerminalPanel() != null) {
+                            widget.getTerminalPanel().repaint();
+                        }
+                        widget.invalidate();
+                        widget.repaint();
+                        widget.revalidate();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 });
-            }
+                timer.setRepeats(false);
+                timer.start();
+            });
         }
     }
 
@@ -1011,10 +1007,10 @@ public class MainApp extends Application {
                             ".button.title-btn-close:hover { -fx-background-color: " + hexTitleCloseHoverBg + "; -fx-text-fill: " + hexTitleCloseHoverFg + "; }\n" +
                             ".sidebar { -fx-background-color: " + hexSideBg + "; -fx-border-color: " + hexSideBorder + "; }\n" +
                             ".top-bar { -fx-background-color: " + hexToolBg + "; -fx-border-color: " + hexToolBorder + "; }\n" +
-                            ".button { -fx-background-color: " + hexBtnBg + "; -fx-border-color: " + hexBtnBorder + "; -fx-text-fill: " + hexBtnFg + "; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
+                            ".button { -fx-background-color: " + hexBtnBg + "; -fx-border-color: " + hexBtnBorder + "; -fx-text-fill: " + hexBtnFg + "; }\n" +
                             ".button:hover { -fx-background-color: " + hexBtnHoverBg + "; -fx-text-fill: #ffffff; }\n" +
                             ".button:disabled { -fx-opacity: 0.4; -fx-cursor: default; }\n" +
-                            ".button.zoom-btn { -fx-padding: 3px 8px; -fx-font-size: 11px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
+                            ".button.zoom-btn { -fx-padding: 3px 8px; -fx-font-size: 11px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; }\n" +
                             ".combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; }\n" +
                             ".combo-box.shell-dropdown { -fx-pref-width: 140px; -fx-max-width: 140px; }\n" +
                             ".combo-box .list-cell { -fx-text-fill: " + hexComboFg + "; }\n" +

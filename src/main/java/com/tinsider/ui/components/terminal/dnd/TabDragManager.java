@@ -1,13 +1,10 @@
 package com.tinsider.ui.components.terminal.dnd;
 
-import com.jediterm.terminal.ui.JediTermWidget;
-import com.tinsider.ui.components.terminal.split.TerminalPane;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
-import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -56,10 +53,6 @@ public class TabDragManager {
     // Helpers
     private TabGhost ghost;
     private TabPlaceholder placeholder;
-    
-    // Split preview hover trackers
-    private TerminalPane lastHoveredPane;
-    private com.tinsider.ui.components.terminal.split.DropPosition lastDropPos;
 
     // Auto scroll timer
     private final AnimationTimer scrollTimer = new AnimationTimer() {
@@ -107,13 +100,7 @@ public class TabDragManager {
         tabPane.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
             if (event.getButton() != MouseButton.PRIMARY) return;
 
-            Node targetNode = event.getTarget() instanceof Node ? (Node) event.getTarget() : null;
-            if (targetNode != null && isCloseButton(targetNode)) {
-                // Let the default JavaFX close action handle the close button, do NOT consume!
-                return;
-            }
-
-            Node tabNode = findTabNode(targetNode);
+            Node tabNode = findTabNode(event.getTarget() instanceof Node ? (Node) event.getTarget() : null);
             if (tabNode != null && !isAddTabNode(tabNode)) {
                 // Determine matching Tab index
                 int tabIndex = findTabIndexForNode(tabNode);
@@ -123,9 +110,6 @@ public class TabDragManager {
                     this.mousePressSceneX = event.getSceneX();
                     this.mousePressSceneY = event.getSceneY();
                     this.state = DragState.PRESSED;
-                    
-                    // Consume to prevent immediate selection on mouse press
-                    event.consume();
                 }
             }
         });
@@ -154,15 +138,10 @@ public class TabDragManager {
             if (event.getButton() != MouseButton.PRIMARY) return;
 
             if (state == DragState.DRAGGING) {
-                endDrag(event);
+                endDrag();
                 event.consume();
             } else if (state == DragState.PRESSED) {
-                // Perform select only on release if no drag was initiated!
-                if (draggedTab != null) {
-                    tabPane.getSelectionModel().select(draggedTab);
-                }
                 resetToIdle();
-                event.consume();
             }
         });
     }
@@ -231,127 +210,13 @@ public class TabDragManager {
             placeholder.setCurrentIndex(newIndex);
             animationManager.animateTabShift(staticTabs, startIndex, newIndex);
         }
-
-        // --- SPLIT PREVIEW HIGHLIGHTING ---
-        Point2D scenePt = tabPane.localToScene(mouseLocalX, mouseLocalY);
-        Tab activeTab = tabPane.getSelectionModel().getSelectedItem();
-        TerminalPane hoveredPane = null;
-        if (activeTab != null && activeTab.getContent() != null) {
-            hoveredPane = findTerminalPaneAtSceneCoords(activeTab.getContent(), scenePt.getX(), scenePt.getY());
-        }
-
-        if (hoveredPane != lastHoveredPane) {
-            if (lastHoveredPane != null) {
-                lastHoveredPane.hideDragOverlay();
-            }
-            lastHoveredPane = hoveredPane;
-            lastDropPos = null;
-        }
-
-        if (hoveredPane != null) {
-            Point2D paneLocal = hoveredPane.sceneToLocal(scenePt.getX(), scenePt.getY());
-            com.tinsider.ui.components.terminal.split.DropPosition currentPos = hoveredPane.calculateDropPosition(paneLocal.getX(), paneLocal.getY(), hoveredPane.getWidth(), hoveredPane.getHeight());
-            
-            // If the pane is an empty placeholder, always force CENTER (no need to show edge splitting overlays)
-            if ("EMPTY".equals(hoveredPane.getSessionType())) {
-                currentPos = com.tinsider.ui.components.terminal.split.DropPosition.CENTER;
-            }
-
-            if (currentPos != lastDropPos) {
-                lastDropPos = currentPos;
-                hoveredPane.showDragOverlay(currentPos);
-            }
-        }
     }
 
-    private TerminalPane findTerminalPaneAtSceneCoords(Node splitPane, double sceneX, double sceneY) {
-        if (splitPane == null) return null;
-
-        Set<Node> panes = splitPane.lookupAll(".terminal-pane");
-        for (Node node : panes) {
-            if (node instanceof TerminalPane pane && pane.isVisible()) {
-                Point2D local = pane.sceneToLocal(sceneX, sceneY);
-                if (local != null && pane.getBoundsInLocal().contains(local)) {
-                    return pane;
-                }
-            }
-        }
-        return null;
-    }
-
-    private void endDrag(MouseEvent event) {
+    private void endDrag() {
         this.state = DragState.IDLE;
         scrollTimer.stop();
         animationManager.stopAll();
 
-        if (lastHoveredPane != null) {
-            lastHoveredPane.hideDragOverlay();
-        }
-
-        // 1. Detect if released over a TerminalPane using Scene coordinates (DPI-immune and bulletproof!)
-        Tab activeTab = tabPane.getSelectionModel().getSelectedItem();
-        TerminalPane targetPane = null;
-        if (activeTab != null && activeTab.getContent() != null) {
-            targetPane = findTerminalPaneAtSceneCoords(activeTab.getContent(), event.getSceneX(), event.getSceneY());
-        }
-
-        if (targetPane != null && draggedTab != null) {
-            if (draggedTab.getContent() instanceof com.tinsider.ui.components.terminal.split.TerminalSplitPane draggedSplit) {
-                com.tinsider.ui.components.terminal.split.TerminalPane sourcePane = draggedSplit.getActiveTerminalPane();
-                if (sourcePane != null && sourcePane.getWidget() != null) {
-                    
-                    if (ghost != null) {
-                        ghost.destroy();
-                        ghost = null;
-                    }
-
-                    // Restore original dragged tab node opacity and reset translation offsets to close the gap!
-                    if (draggedTabNode != null) {
-                        draggedTabNode.setOpacity(1.0);
-                    }
-
-                    if (staticTabs != null) {
-                        for (DropCalculator.TabInfo info : staticTabs) {
-                            info.node.setTranslateX(0);
-                        }
-                    }
-
-                    // Calculate final drop position and perform either in-place adoption or edge splitting!
-                    Point2D paneLocal = targetPane.sceneToLocal(event.getSceneX(), event.getSceneY());
-                    com.tinsider.ui.components.terminal.split.DropPosition dropPos = targetPane.calculateDropPosition(paneLocal.getX(), paneLocal.getY(), targetPane.getWidth(), targetPane.getHeight());
-
-                    if ("EMPTY".equals(targetPane.getSessionType()) || dropPos == com.tinsider.ui.components.terminal.split.DropPosition.CENTER) {
-                        // In-place adoption
-                        targetPane.adoptWidgetAndSettings(sourcePane);
-                    } else {
-                        // Edge split and adopt
-                        if (activeTab.getContent() instanceof com.tinsider.ui.components.terminal.split.TerminalSplitPane activeSplit) {
-                            activeSplit.splitAndAdoptLeaf(targetPane, sourcePane, dropPos);
-                        }
-                    }
-
-                    final Tab tabToClose = draggedTab; // Capture reference before resetToIdle() nullifies it!
-                    // Safely close and remove the dragged tab from tab bar
-                    Platform.runLater(() -> {
-                        if (tabToClose.getOnCloseRequest() != null) {
-                            tabToClose.getOnCloseRequest().handle(new javafx.event.Event(Tab.TAB_CLOSE_REQUEST_EVENT));
-                        } else {
-                            java.util.Map<Tab, com.tinsider.ui.components.terminal.split.TerminalSplitPane> splitMap = com.tinsider.ui.MainApp.getTabSplitPaneMap();
-                            if (splitMap != null) {
-                                splitMap.remove(tabToClose);
-                            }
-                            tabPane.getTabs().remove(tabToClose);
-                        }
-                    });
-
-                    tabPane.setCursor(Cursor.DEFAULT);
-                    resetToIdle();
-                    return;
-                }
-            }
-        }
-
-        // Default tab-reordering drop behavior
         double finalX = placeholder.calculateTargetX(staticTabs);
 
         Bounds overlayBounds = overlayPane.localToScene(overlayPane.getBoundsInLocal());
@@ -405,10 +270,6 @@ public class TabDragManager {
         scrollTimer.stop();
         animationManager.stopAll();
 
-        if (lastHoveredPane != null) {
-            lastHoveredPane.hideDragOverlay();
-        }
-
         if (ghost != null) {
             ghost.destroy();
             ghost = null;
@@ -434,8 +295,6 @@ public class TabDragManager {
         this.draggedTab = null;
         this.staticTabs = null;
         this.placeholder = null;
-        this.lastHoveredPane = null;
-        this.lastDropPos = null;
     }
 
     private void scrollLeft() {
@@ -463,17 +322,6 @@ public class TabDragManager {
             node = node.getParent();
         }
         return null;
-    }
-
-    private boolean isCloseButton(Node target) {
-        Node node = target;
-        while (node != null) {
-            if (node.getStyleClass().contains("tab-close-button")) {
-                return true;
-            }
-            node = node.getParent();
-        }
-        return false;
     }
 
     private boolean isAddTabNode(Node node) {

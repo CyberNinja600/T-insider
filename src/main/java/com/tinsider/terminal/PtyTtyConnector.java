@@ -82,10 +82,6 @@ public class PtyTtyConnector implements TtyConnector {
 
     @Override
     public boolean ready() throws IOException {
-        try {
-            return reader != null && reader.ready();
-        } catch (IOException e) {
-            return false;
-        }
+        return process.isAlive();
     }
 }

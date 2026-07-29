@@ -110,7 +110,7 @@ public class TerminalPane extends StackPane {
         getChildren().add(dragOverlay);
 
         // 3. Setup mouse click on TerminalPane to request focus and set active
-        setOnMousePressed(event -> {
+        addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
                 splitPane.setActiveTerminalPane(this);
             }
@@ -358,18 +358,9 @@ public class TerminalPane extends StackPane {
         });
 
         // Click focus handler on SwingNode side
-        this.swingNode.setOnMousePressed(event -> {
+        this.swingNode.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED, event -> {
             splitPane.setActiveTerminalPane(this);
-            if (!this.swingNode.isFocused()) {
-                this.swingNode.requestFocus();
-            }
-            SwingUtilities.invokeLater(() -> {
-                java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
-                if (widget.getTerminalPanel() != null) {
-                    widget.getTerminalPanel().requestFocus();
-                }
-                widget.requestFocus();
-            });
+            TerminalTabFactory.requestFocusOnWidget(widget, this.swingNode);
         });
 
         mainLayout.setCenter(new SwingNodeWrapper(swingNode));
@@ -377,6 +368,9 @@ public class TerminalPane extends StackPane {
         Platform.runLater(() -> {
             updateThemeStyles(splitPane.getCurrentTheme());
             requestFocus();
+            if (widget != null) {
+                TerminalTabFactory.requestFocusOnWidget(widget, this.swingNode);
+            }
             triggerTerminalResize();
         });
     }
@@ -515,16 +509,8 @@ public class TerminalPane extends StackPane {
     }
 
     public void requestFocusOnTerminal() {
-        if (swingNode != null) {
-            swingNode.requestFocus();
-            SwingUtilities.invokeLater(() -> {
-                if (widget != null) {
-                    if (widget.getTerminalPanel() != null) {
-                        widget.getTerminalPanel().requestFocus();
-                    }
-                    widget.requestFocus();
-                }
-            });
+        if (swingNode != null && widget != null) {
+            TerminalTabFactory.requestFocusOnWidget(widget, swingNode);
         }
     }
 

@@ -88,24 +88,6 @@ public class TerminalTheme {
         colors.put("titlebar.button.hover.foreground", cursor);
         colors.put("titlebar.close.hover.background", cursor);
         colors.put("titlebar.close.hover.foreground", text);
-
-        colors.put("terminal.pane.background", bg);
-        colors.put("terminal.pane.border", selection);
-        colors.put("terminal.pane.header.background", selection);
-        colors.put("terminal.pane.header.border", selection);
-        colors.put("terminal.pane.header.foreground", text);
-        colors.put("terminal.pane.header.button.foreground", text);
-        colors.put("terminal.pane.header.button.hover.background", selection);
-        colors.put("terminal.pane.header.button.hover.foreground", cursor);
-
-        colors.put("terminal.pane.empty.background", selection);
-        colors.put("terminal.pane.empty.border", cursor);
-        colors.put("terminal.pane.empty.title", cursor);
-        colors.put("terminal.pane.empty.description", text);
-        colors.put("terminal.pane.empty.button.background", selection);
-        colors.put("terminal.pane.empty.button.foreground", text);
-        colors.put("terminal.pane.empty.button.hover.background", cursor);
-        colors.put("terminal.pane.empty.button.hover.foreground", bg);
         
         // Set standard ANSI-16 color palette initialization (modern vibrant Terminal theme colors)
         ansiColors[0] = new Color(22, 27, 48);       // 0: Black (matching dark themes)

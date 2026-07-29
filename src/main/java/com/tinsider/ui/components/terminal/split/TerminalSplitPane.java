@@ -56,7 +56,7 @@ public class TerminalSplitPane extends BorderPane {
     public void setActiveTerminalPane(TerminalPane pane) {
         if (this.activeTerminalPane == pane) {
             if (pane != null) {
-                pane.requestFocusOnTerminal();
+                Platform.runLater(() -> pane.requestFocusOnTerminal());
             }
             return;
         }
@@ -65,7 +65,7 @@ public class TerminalSplitPane extends BorderPane {
         updatePaneThemeStyles(rootNode);
 
         if (pane != null) {
-            pane.requestFocusOnTerminal();
+            Platform.runLater(() -> pane.requestFocusOnTerminal());
         }
     }
 

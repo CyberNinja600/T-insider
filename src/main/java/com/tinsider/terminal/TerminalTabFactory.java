@@ -4,15 +4,13 @@ import com.jediterm.terminal.TtyConnector;
 import com.jediterm.terminal.ui.JediTermWidget;
 import com.jediterm.terminal.ui.settings.DefaultSettingsProvider;
 import com.tinsider.config.TerminalTheme;
-import com.tinsider.model.HostProfile;
-import com.tinsider.ui.components.terminal.split.*;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.layout.Pane;
 
 import javax.swing.*;
-import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -25,18 +23,79 @@ public class TerminalTabFactory {
         return globalFontSize;
     }
 
+<<<<<<< HEAD
+    public static void requestFocusOnWidget(JediTermWidget widget, javafx.scene.Node focusTarget) {
+        if (widget == null) {
+            return;
+        }
+
+        Runnable focusAction = () -> {
+            if (focusTarget != null) {
+                focusTarget.requestFocus();
+            }
+            SwingUtilities.invokeLater(() -> {
+                java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+                if (widget.getTerminalPanel() != null) {
+                    widget.getTerminalPanel().setFocusable(true);
+                    widget.getTerminalPanel().requestFocus();
+                    try {
+                        widget.getTerminalPanel().requestFocusInWindow();
+                    } catch (Exception ignored) {
+                    }
+                }
+                widget.setFocusable(true);
+                widget.requestFocus();
+                try {
+                    widget.requestFocusInWindow();
+                } catch (Exception ignored) {
+                }
+
+                java.awt.Window window = SwingUtilities.getWindowAncestor(widget);
+                if (window != null) {
+                    window.requestFocus();
+                    try {
+                        window.toFront();
+                    } catch (Exception ignored) {
+                    }
+                }
+
+                widget.revalidate();
+                widget.repaint();
+            });
+        };
+
+        Platform.runLater(focusAction);
+
+        javax.swing.Timer retryTimer = new javax.swing.Timer(80, e -> {
+            SwingUtilities.invokeLater(focusAction);
+        });
+        retryTimer.setRepeats(false);
+        retryTimer.start();
+    }
+
     public static SwingNode createSwingNode(JediTermWidget widget) {
         SwingNode swingNode = new SwingNode();
         swingNode.setFocusTraversable(true);
+=======
+    // SINGLE SHARED SWINGNODE across the entire application to prevent Linux multi-SwingNode focus deadlocks!
+    public static final SwingNode SHARED_SWING_NODE = new SwingNode();
+
+    static {
+        SHARED_SWING_NODE.setFocusTraversable(true);
+>>>>>>> parent of 3c2f8c8 (intial commit)
 
         // Intercept and Consume ALL JavaFX key events for Ctrl+C to send 0x03 and prevent '^@' leak!
-        swingNode.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
+        SHARED_SWING_NODE.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
             if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.C) {
                 try {
-                    TtyConnector connector = widget.getTtyConnector();
-                    if (connector != null && connector.isConnected()) {
-                        connector.write(new byte[]{3}); // Send Ctrl+C (ETX) byte
-                        event.consume();
+                    java.awt.Component comp = SHARED_SWING_NODE.getContent();
+                    if (comp instanceof JediTermWidget) {
+                        JediTermWidget widget = (JediTermWidget) comp;
+                        TtyConnector connector = widget.getTtyConnector();
+                        if (connector != null && connector.isConnected()) {
+                            connector.write(new byte[]{3}); // Send Ctrl+C (ETX) byte
+                            event.consume();
+                        }
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -44,329 +103,351 @@ public class TerminalTabFactory {
             }
         });
 
-        swingNode.addEventFilter(javafx.scene.input.KeyEvent.KEY_TYPED, event -> {
+        SHARED_SWING_NODE.addEventFilter(javafx.scene.input.KeyEvent.KEY_TYPED, event -> {
             if (event.isControlDown() && (event.getCharacter().equals("\u0003") || event.getCharacter().equalsIgnoreCase("c"))) {
                 event.consume();
             }
         });
 
-        swingNode.addEventFilter(javafx.scene.input.KeyEvent.KEY_RELEASED, event -> {
+        SHARED_SWING_NODE.addEventFilter(javafx.scene.input.KeyEvent.KEY_RELEASED, event -> {
             if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.C) {
                 event.consume();
             }
         });
 
         // Focus listener to forward JavaFX focus to inner Swing TerminalPanel
-        swingNode.focusedProperty().addListener((obs, oldVal, newVal) -> {
+        SHARED_SWING_NODE.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
+<<<<<<< HEAD
+                requestFocusOnWidget(widget, swingNode);
+=======
                 SwingUtilities.invokeLater(() -> {
                     java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
-                    if (widget.getTerminalPanel() != null) {
-                        widget.getTerminalPanel().requestFocus();
+                    java.awt.Component comp = SHARED_SWING_NODE.getContent();
+                    if (comp instanceof JediTermWidget) {
+                        JediTermWidget widget = (JediTermWidget) comp;
+                        if (widget.getTerminalPanel() != null) {
+                            widget.getTerminalPanel().requestFocus();
+                        }
+                        widget.requestFocus();
                     }
-                    widget.requestFocus();
                 });
+>>>>>>> parent of 3c2f8c8 (intial commit)
             }
         });
 
         // Mouse click on SwingNode requests focus
-        swingNode.setOnMousePressed(event -> {
-            if (!swingNode.isFocused()) {
-                swingNode.requestFocus();
+        SHARED_SWING_NODE.setOnMousePressed(event -> {
+            if (!SHARED_SWING_NODE.isFocused()) {
+                SHARED_SWING_NODE.requestFocus();
             }
+<<<<<<< HEAD
+            requestFocusOnWidget(widget, swingNode);
+=======
             SwingUtilities.invokeLater(() -> {
                 java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
-                if (widget.getTerminalPanel() != null) {
-                    widget.getTerminalPanel().requestFocus();
+                java.awt.Component comp = SHARED_SWING_NODE.getContent();
+                if (comp instanceof JediTermWidget) {
+                    JediTermWidget widget = (JediTermWidget) comp;
+                    if (widget.getTerminalPanel() != null) {
+                        widget.getTerminalPanel().requestFocus();
+                    }
+                    widget.requestFocus();
                 }
-                widget.requestFocus();
             });
+>>>>>>> parent of 3c2f8c8 (intial commit)
         });
-
-        swingNode.setContent(widget);
-        return swingNode;
     }
 
-    public static JediTermWidget createJediTermWidget(
-            TtyConnector connector, 
-            Supplier<TerminalTheme> themeSupplier) {
+    public static void activateTab(Tab tab, TabPane tabPane, Map<Tab, JediTermWidget> tabWidgetMap) {
+        if (tab == null || tabPane == null || tabWidgetMap == null) return;
         
-        JediTermWidget widget = new JediTermWidget(new DefaultSettingsProvider() {
-            @Override
-            public com.jediterm.terminal.ui.TerminalActionPresentation getCopyActionPresentation() {
-                return new com.jediterm.terminal.ui.TerminalActionPresentation(
-                    "Copy", 
-                    KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_C, java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.SHIFT_DOWN_MASK)
-                );
+        JediTermWidget widget = tabWidgetMap.get(tab);
+        if (widget == null) return;
+
+        // 1. Detach SHARED_SWING_NODE from any previous tabs
+        for (Tab t : tabPane.getTabs()) {
+            if (t != tab && t.getContent() == SHARED_SWING_NODE) {
+                t.setContent(new Pane());
             }
-
-            @Override
-            public com.jediterm.terminal.ui.TerminalActionPresentation getPasteActionPresentation() {
-                return new com.jediterm.terminal.ui.TerminalActionPresentation(
-                    "Paste", 
-                    KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.SHIFT_DOWN_MASK)
-                );
-            }
-
-            @Override
-            public boolean altSendsEscape() {
-                return true;
-            }
-
-            @Override
-            public boolean scrollToBottomOnTyping() {
-                return true;
-            }
-
-            @Override
-            public int getBufferMaxLinesCount() {
-                return 5000;
-            }
-
-            @Override
-            public boolean audibleBell() {
-                return false;
-            }
-
-            @Override
-            public java.awt.Font getTerminalFont() {
-                String os = System.getProperty("os.name").toLowerCase();
-                String fontName = os.contains("win") ? "Consolas" : "Monospaced";
-                return new java.awt.Font(fontName, java.awt.Font.PLAIN, (int) globalFontSize);
-            }
-
-            @Override
-            public float getTerminalFontSize() {
-                return globalFontSize;
-            }
-
-            @Override
-            public com.jediterm.terminal.emulator.ColorPalette getTerminalColorPalette() {
-                return new com.jediterm.terminal.emulator.ColorPalette() {
-                    @Override
-                    public com.jediterm.core.Color getForeground(com.jediterm.terminal.TerminalColor color) {
-                        if (color.isIndexed()) {
-                            return getForegroundByColorIndex(color.getColorIndex());
-                        }
-                        return themeSupplier.get().getTextColor();
-                    }
-
-                    @Override
-                    public com.jediterm.core.Color getBackground(com.jediterm.terminal.TerminalColor color) {
-                        if (color.isIndexed()) {
-                            return getBackgroundByColorIndex(color.getColorIndex());
-                        }
-                        return themeSupplier.get().getBackgroundColor();
-                    }
-
-                    @Override
-                    protected com.jediterm.core.Color getForegroundByColorIndex(int index) {
-                        return themeSupplier.get().getAnsiColor(index);
-                    }
-
-                    @Override
-                    protected com.jediterm.core.Color getBackgroundByColorIndex(int index) {
-                        return themeSupplier.get().getAnsiColor(index);
-                    }
-                };
-            }
-
-            @Override
-            public com.jediterm.terminal.TextStyle getSelectionColor() {
-                return new com.jediterm.terminal.TextStyle(
-                    com.jediterm.terminal.TerminalColor.fromColor(themeSupplier.get().getTextColor()),
-                    com.jediterm.terminal.TerminalColor.fromColor(themeSupplier.get().getSelectionColor())
-                );
-            }
-
-            @Override
-            public com.jediterm.terminal.TerminalColor getDefaultForeground() {
-                return com.jediterm.terminal.TerminalColor.fromColor(themeSupplier.get().getTextColor());
-            }
-
-            @Override
-            public com.jediterm.terminal.TerminalColor getDefaultBackground() {
-                return com.jediterm.terminal.TerminalColor.fromColor(themeSupplier.get().getBackgroundColor());
-            }
-
-            @Override
-            public com.jediterm.terminal.TextStyle getDefaultStyle() {
-                return com.jediterm.terminal.TextStyle.EMPTY;
-            }
-        }) {
-            @Override
-            protected JScrollBar createScrollBar() {
-                JScrollBar scrollBar = new JScrollBar() {
-                    private boolean initialized = false;
-                    
-                    {
-                        initialized = true;
-                    }
-
-                    @Override
-                    public void updateUI() {
-                        if (!initialized) {
-                            super.updateUI();
-                            return;
-                        }
-                        setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
-                            @Override
-                            protected void configureScrollBarColors() {}
-                            
-                            @Override
-                            public void paint(java.awt.Graphics g, JComponent c) {
-                                com.jediterm.core.Color bg = themeSupplier.get().getBackgroundColor();
-                                g.setColor(new java.awt.Color(bg.getRed(), bg.getGreen(), bg.getBlue()));
-                                g.fillRect(0, 0, c.getWidth(), c.getHeight());
-                                super.paint(g, c);
-                            }
-                            
-                            @Override
-                            public void update(java.awt.Graphics g, JComponent c) {
-                                paint(g, c);
-                            }
-                            
-                            @Override
-                            protected void paintTrack(java.awt.Graphics g, JComponent c, java.awt.Rectangle trackBounds) {}
-
-                            @Override
-                            protected void paintThumb(java.awt.Graphics g, JComponent c, java.awt.Rectangle thumbBounds) {
-                                if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) return;
-                                com.jediterm.core.Color thumbColor = themeSupplier.get().getColor("scrollbar.thumb", themeSupplier.get().getCursorColor());
-                                
-                                float opacity = 0.3f;
-                                try {
-                                    opacity = Float.parseFloat(com.tinsider.config.ThemeManager.getProperty("scrollbar.thumb.opacity", "0.3"));
-                                } catch (Exception ignored) {}
-                                
-                                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
-                                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
-                                g2.setColor(new java.awt.Color(thumbColor.getRed() / 255f, thumbColor.getGreen() / 255f, thumbColor.getBlue() / 255f, opacity));
-                                g2.fillRoundRect(thumbBounds.x + 2, thumbBounds.y + 2, thumbBounds.width - 4, thumbBounds.height - 4, 8, 8);
-                                g2.dispose();
-                            }
-
-                            private JButton createZeroSizeButton() {
-                                JButton button = new JButton();
-                                button.setPreferredSize(new java.awt.Dimension(0, 0));
-                                button.setMinimumSize(new java.awt.Dimension(0, 0));
-                                button.setMaximumSize(new java.awt.Dimension(0, 0));
-                                return button;
-                            }
-
-                            @Override
-                            protected JButton createDecreaseButton(int orientation) {
-                                return createZeroSizeButton();
-                            }
-
-                            @Override
-                            protected JButton createIncreaseButton(int orientation) {
-                                return createZeroSizeButton();
-                            }
-                        });
-                    }
-                };
-                scrollBar.setOpaque(true);
-                scrollBar.setBorder(BorderFactory.createEmptyBorder());
-                
-                com.jediterm.core.Color initialBg = themeSupplier.get().getBackgroundColor();
-                scrollBar.setBackground(new java.awt.Color(initialBg.getRed(), initialBg.getGreen(), initialBg.getBlue()));
-                
-                scrollBar.updateUI();
-                return scrollBar;
-            }
-        };
-
-        com.jediterm.core.Color bgColor = themeSupplier.get().getBackgroundColor();
-        java.awt.Color awtBg = new java.awt.Color(bgColor.getRed(), bgColor.getGreen(), bgColor.getBlue());
-        com.jediterm.core.Color fgColor = themeSupplier.get().getTextColor();
-        java.awt.Color awtFg = new java.awt.Color(fgColor.getRed(), fgColor.getGreen(), fgColor.getBlue());
-
-        setAllBackgrounds(widget, awtBg);
-        widget.setForeground(awtFg);
-        if (widget.getTerminalPanel() != null) {
-            widget.getTerminalPanel().setForeground(awtFg);
         }
 
-        widget.setTtyConnector(connector);
-        widget.start();
+        // 2. Attach SHARED_SWING_NODE to the active tab
+        tab.setContent(SHARED_SWING_NODE);
 
-        // Repaint the terminal widget to fix scrollbar race condition
+        // 3. Swap the active Swing widget inside the single SwingNode
+        SHARED_SWING_NODE.setContent(widget);
+        SHARED_SWING_NODE.requestFocus();
+
+        // 4. Request focus on the Swing side
         SwingUtilities.invokeLater(() -> {
-            javax.swing.Timer timer = new javax.swing.Timer(1, e -> {
-                try {
-                    com.jediterm.core.Color bg = themeSupplier.get().getBackgroundColor();
-                    java.awt.Color delayedAwtBg = new java.awt.Color(bg.getRed(), bg.getGreen(), bg.getBlue());
-                    com.jediterm.core.Color fg = themeSupplier.get().getTextColor();
-                    java.awt.Color delayedAwtFg = new java.awt.Color(fg.getRed(), fg.getGreen(), fg.getBlue());
-
-                    setAllBackgrounds(widget, delayedAwtBg);
-                    widget.setForeground(delayedAwtFg);
-                    if (widget.getTerminalPanel() != null) {
-                        widget.getTerminalPanel().setBackground(delayedAwtBg);
-                        widget.getTerminalPanel().setForeground(delayedAwtFg);
-                    }
-
-                    if (widget.getTerminal() != null && widget.getTerminal().getStyleState() != null) {
-                        widget.getTerminal().getStyleState().setDefaultStyle(com.jediterm.terminal.TextStyle.EMPTY);
-                        widget.getTerminal().getStyleState().reset();
-                    }
-
-                    if (widget.getTerminalPanel() != null) {
-                        widget.getTerminalPanel().repaint();
-                    }
-                    widget.invalidate();
-                    widget.repaint();
-                    widget.revalidate();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            });
-            timer.setRepeats(false);
-            timer.start();
+            java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+            if (widget.getTerminalPanel() != null) {
+                widget.getTerminalPanel().requestFocus();
+            }
+            widget.requestFocus();
+            widget.revalidate();
+            widget.repaint();
         });
-
-        // Set both widget and its internal TerminalPanel to have resizable small minimum/preferred sizes
-        // so JavaFX SwingNode is allowed to shrink it and perfectly fit the layout without centering offsets!
-        widget.setMinimumSize(new java.awt.Dimension(10, 10));
-        widget.setPreferredSize(new java.awt.Dimension(10, 10));
-        if (widget.getTerminalPanel() != null) {
-            widget.getTerminalPanel().setMinimumSize(new java.awt.Dimension(10, 10));
-            widget.getTerminalPanel().setPreferredSize(new java.awt.Dimension(10, 10));
-        }
-
-        return widget;
     }
 
     public static void createTerminalTab(
             String title, 
             TtyConnector connector, 
             TabPane tabPane, 
-            Map<Tab, TerminalSplitPane> tabSplitPaneMap, 
+            Map<Tab, JediTermWidget> tabWidgetMap, 
             Supplier<TerminalTheme> themeSupplier,
-            Consumer<Tab> closeTabHandler,
-            String sessionType,
-            String localShellType,
-            HostProfile hostProfile) {
+            Consumer<Tab> closeTabHandler) {
         
         Tab tab = new Tab(title);
-        TerminalSplitPane splitPane = new TerminalSplitPane(themeSupplier, () -> closeTabHandler.accept(tab));
-        
-        TerminalPane terminalPane = new TerminalPane(splitPane, sessionType, localShellType, hostProfile, title);
-        SplitLeafNode leaf = new SplitLeafNode(terminalPane);
-        splitPane.setRootNode(leaf);
+        tab.setContent(new Pane()); // Placeholder Pane until selected
 
-        // Instantiate and Configure JediTermWidget inside Swing EDT
+        // Instantiate and Configure JediTermWidget inside Swing EDT for thread-safety and rendering stability
         SwingUtilities.invokeLater(() -> {
-            JediTermWidget widget = createJediTermWidget(connector, themeSupplier);
+            JediTermWidget widget = new JediTermWidget(new DefaultSettingsProvider() {
+                @Override
+                public com.jediterm.terminal.ui.TerminalActionPresentation getCopyActionPresentation() {
+                    return new com.jediterm.terminal.ui.TerminalActionPresentation(
+                        "Copy", 
+                        KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_C, java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.SHIFT_DOWN_MASK)
+                    );
+                }
+
+                @Override
+                public com.jediterm.terminal.ui.TerminalActionPresentation getPasteActionPresentation() {
+                    return new com.jediterm.terminal.ui.TerminalActionPresentation(
+                        "Paste", 
+                        KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.SHIFT_DOWN_MASK)
+                    );
+                }
+
+                @Override
+                public boolean altSendsEscape() {
+                    return true;
+                }
+
+                @Override
+                public boolean scrollToBottomOnTyping() {
+                    return true;
+                }
+
+                @Override
+                public int getBufferMaxLinesCount() {
+                    return 5000;
+                }
+
+                @Override
+                public boolean audibleBell() {
+                    return false;
+                }
+
+                @Override
+                public java.awt.Font getTerminalFont() {
+                    String os = System.getProperty("os.name").toLowerCase();
+                    String fontName = os.contains("win") ? "Consolas" : "Monospaced";
+                    return new java.awt.Font(fontName, java.awt.Font.PLAIN, (int) globalFontSize);
+                }
+
+                @Override
+                public float getTerminalFontSize() {
+                    return globalFontSize;
+                }
+
+                @Override
+                public com.jediterm.terminal.emulator.ColorPalette getTerminalColorPalette() {
+                    return new com.jediterm.terminal.emulator.ColorPalette() {
+                        @Override
+                        public com.jediterm.core.Color getForeground(com.jediterm.terminal.TerminalColor color) {
+                            if (color.isIndexed()) {
+                                return getForegroundByColorIndex(color.getColorIndex());
+                            }
+                            return themeSupplier.get().getTextColor();
+                        }
+
+                        @Override
+                        public com.jediterm.core.Color getBackground(com.jediterm.terminal.TerminalColor color) {
+                            if (color.isIndexed()) {
+                                return getBackgroundByColorIndex(color.getColorIndex());
+                            }
+                            return themeSupplier.get().getBackgroundColor();
+                        }
+
+                        @Override
+                        protected com.jediterm.core.Color getForegroundByColorIndex(int index) {
+                            return themeSupplier.get().getAnsiColor(index);
+                        }
+
+                        @Override
+                        protected com.jediterm.core.Color getBackgroundByColorIndex(int index) {
+                            return themeSupplier.get().getAnsiColor(index);
+                        }
+                    };
+                }
+
+                @Override
+                public com.jediterm.terminal.TextStyle getSelectionColor() {
+                    return new com.jediterm.terminal.TextStyle(
+                        com.jediterm.terminal.TerminalColor.fromColor(themeSupplier.get().getTextColor()),
+                        com.jediterm.terminal.TerminalColor.fromColor(themeSupplier.get().getSelectionColor())
+                    );
+                }
+
+                @Override
+                public com.jediterm.terminal.TerminalColor getDefaultForeground() {
+                    return com.jediterm.terminal.TerminalColor.fromColor(themeSupplier.get().getTextColor());
+                }
+
+                @Override
+                public com.jediterm.terminal.TerminalColor getDefaultBackground() {
+                    return com.jediterm.terminal.TerminalColor.fromColor(themeSupplier.get().getBackgroundColor());
+                }
+
+                @Override
+                public com.jediterm.terminal.TextStyle getDefaultStyle() {
+                    return com.jediterm.terminal.TextStyle.EMPTY;
+                }
+            }) {
+                @Override
+                protected JScrollBar createScrollBar() {
+                    JScrollBar scrollBar = new JScrollBar() {
+                        private boolean initialized = false;
+                        
+                        {
+                            initialized = true;
+                        }
+
+                        @Override
+                        public void updateUI() {
+                            if (!initialized) {
+                                super.updateUI();
+                                return;
+                            }
+                            setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
+                                @Override
+                                protected void configureScrollBarColors() {}
+                                
+                                @Override
+                                public void paint(java.awt.Graphics g, JComponent c) {
+                                    com.jediterm.core.Color bg = themeSupplier.get().getBackgroundColor();
+                                    g.setColor(new java.awt.Color(bg.getRed(), bg.getGreen(), bg.getBlue()));
+                                    g.fillRect(0, 0, c.getWidth(), c.getHeight());
+                                    super.paint(g, c);
+                                }
+                                
+                                @Override
+                                public void update(java.awt.Graphics g, JComponent c) {
+                                    paint(g, c);
+                                }
+                                
+                                @Override
+                                protected void paintTrack(java.awt.Graphics g, JComponent c, java.awt.Rectangle trackBounds) {}
+
+                                @Override
+                                protected void paintThumb(java.awt.Graphics g, JComponent c, java.awt.Rectangle thumbBounds) {
+                                    if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) return;
+                                    com.jediterm.core.Color thumbColor = themeSupplier.get().getColor("scrollbar.thumb", themeSupplier.get().getCursorColor());
+                                    
+                                    float opacity = 0.3f;
+                                    try {
+                                        opacity = Float.parseFloat(com.tinsider.config.ThemeManager.getProperty("scrollbar.thumb.opacity", "0.3"));
+                                    } catch (Exception ignored) {}
+                                    
+                                    java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                                    g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                                    g2.setColor(new java.awt.Color(thumbColor.getRed() / 255f, thumbColor.getGreen() / 255f, thumbColor.getBlue() / 255f, opacity));
+                                    g2.fillRoundRect(thumbBounds.x + 2, thumbBounds.y + 2, thumbBounds.width - 4, thumbBounds.height - 4, 8, 8);
+                                    g2.dispose();
+                                }
+
+                                private JButton createZeroSizeButton() {
+                                    JButton button = new JButton();
+                                    button.setPreferredSize(new java.awt.Dimension(0, 0));
+                                    button.setMinimumSize(new java.awt.Dimension(0, 0));
+                                    button.setMaximumSize(new java.awt.Dimension(0, 0));
+                                    return button;
+                                }
+
+                                @Override
+                                protected JButton createDecreaseButton(int orientation) {
+                                    return createZeroSizeButton();
+                                }
+
+                                @Override
+                                protected JButton createIncreaseButton(int orientation) {
+                                    return createZeroSizeButton();
+                                }
+                            });
+                        }
+                    };
+                    scrollBar.setOpaque(true);
+                    scrollBar.setBorder(BorderFactory.createEmptyBorder());
+                    
+                    com.jediterm.core.Color initialBg = themeSupplier.get().getBackgroundColor();
+                    scrollBar.setBackground(new java.awt.Color(initialBg.getRed(), initialBg.getGreen(), initialBg.getBlue()));
+                    
+                    scrollBar.updateUI();
+                    return scrollBar;
+                }
+            };
+
+            com.jediterm.core.Color bgColor = themeSupplier.get().getBackgroundColor();
+            java.awt.Color awtBg = new java.awt.Color(bgColor.getRed(), bgColor.getGreen(), bgColor.getBlue());
+            com.jediterm.core.Color fgColor = themeSupplier.get().getTextColor();
+            java.awt.Color awtFg = new java.awt.Color(fgColor.getRed(), fgColor.getGreen(), fgColor.getBlue());
+
+            setAllBackgrounds(widget, awtBg);
+            widget.setForeground(awtFg);
+            if (widget.getTerminalPanel() != null) {
+                widget.getTerminalPanel().setForeground(awtFg);
+            }
+
+            widget.setTtyConnector(connector);
+            widget.start();
+
             Platform.runLater(() -> {
-                terminalPane.setWidget(widget);
-                tabSplitPaneMap.put(tab, splitPane);
-                splitPane.setActiveTerminalPane(terminalPane);
+                tabWidgetMap.put(tab, widget);
+
+                // If this tab is the active one in TabPane, activate it on SHARED_SWING_NODE
+                if (tabPane.getSelectionModel().getSelectedItem() == tab) {
+                    activateTab(tab, tabPane, tabWidgetMap);
+                }
+
+                // Add 1ms delay to repaint the new terminal widget to fix scrollbar race condition
+                SwingUtilities.invokeLater(() -> {
+                    javax.swing.Timer timer = new javax.swing.Timer(1, e -> {
+                        try {
+                            com.jediterm.core.Color bg = themeSupplier.get().getBackgroundColor();
+                            java.awt.Color delayedAwtBg = new java.awt.Color(bg.getRed(), bg.getGreen(), bg.getBlue());
+                            com.jediterm.core.Color fg = themeSupplier.get().getTextColor();
+                            java.awt.Color delayedAwtFg = new java.awt.Color(fg.getRed(), fg.getGreen(), fg.getBlue());
+
+                            setAllBackgrounds(widget, delayedAwtBg);
+                            widget.setForeground(delayedAwtFg);
+                            if (widget.getTerminalPanel() != null) {
+                                widget.getTerminalPanel().setBackground(delayedAwtBg);
+                                widget.getTerminalPanel().setForeground(delayedAwtFg);
+                            }
+
+                            if (widget.getTerminal() != null && widget.getTerminal().getStyleState() != null) {
+                                widget.getTerminal().getStyleState().setDefaultStyle(com.jediterm.terminal.TextStyle.EMPTY);
+                                widget.getTerminal().getStyleState().reset();
+                            }
+
+                            if (widget.getTerminalPanel() != null) {
+                                widget.getTerminalPanel().repaint();
+                            }
+                            widget.invalidate();
+                            widget.repaint();
+                            widget.revalidate();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    });
+                    timer.setRepeats(false);
+                    timer.start();
+                });
             });
         });
-
-        tab.setContent(splitPane);
 
         tab.setOnCloseRequest(event -> {
             event.consume();
@@ -398,42 +479,39 @@ public class TerminalTabFactory {
         }
     }
 
-    public static void setGlobalFontSize(float newSize, Collection<TerminalSplitPane> splitPanes) {
+    public static void setGlobalFontSize(float newSize, Map<Tab, JediTermWidget> tabWidgetMap) {
         if (newSize < 6.0f) newSize = 6.0f;
         if (newSize > 72.0f) newSize = 72.0f;
         if (globalFontSize == newSize) return;
         globalFontSize = newSize;
 
-        for (TerminalSplitPane splitPane : splitPanes) {
-            for (JediTermWidget widget : splitPane.getAllWidgets()) {
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        com.jediterm.terminal.ui.TerminalPanel panel = widget.getTerminalPanel();
-                        if (panel != null) {
-                            java.lang.reflect.Method m = com.jediterm.terminal.ui.TerminalPanel.class.getDeclaredMethod("reinitFontAndResize");
-                            m.setAccessible(true);
-                            m.invoke(panel);
-                            panel.revalidate();
-                            panel.repaint();
-                        }
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
+        for (JediTermWidget widget : tabWidgetMap.values()) {
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    com.jediterm.terminal.ui.TerminalPanel panel = widget.getTerminalPanel();
+                    if (panel != null) {
+                        java.lang.reflect.Method m = com.jediterm.terminal.ui.TerminalPanel.class.getDeclaredMethod("reinitFontAndResize");
+                        m.setAccessible(true);
+                        m.invoke(panel);
+                        panel.revalidate();
+                        panel.repaint();
                     }
-                });
-            }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
         }
     }
 
-    public static void increaseZoom(Collection<TerminalSplitPane> splitPanes) {
-        setGlobalFontSize(globalFontSize + 1.0f, splitPanes);
+    public static void increaseZoom(Map<Tab, JediTermWidget> tabWidgetMap) {
+        setGlobalFontSize(globalFontSize + 1.0f, tabWidgetMap);
     }
 
-    public static void decreaseZoom(Collection<TerminalSplitPane> splitPanes) {
-        setGlobalFontSize(globalFontSize - 1.0f, splitPanes);
+    public static void decreaseZoom(Map<Tab, JediTermWidget> tabWidgetMap) {
+        setGlobalFontSize(globalFontSize - 1.0f, tabWidgetMap);
     }
 
-    public static void resetZoom(Collection<TerminalSplitPane> splitPanes) {
-        setGlobalFontSize(13.0f, splitPanes);
+    public static void resetZoom(Map<Tab, JediTermWidget> tabWidgetMap) {
+        setGlobalFontSize(13.0f, tabWidgetMap);
     }
 }
-
