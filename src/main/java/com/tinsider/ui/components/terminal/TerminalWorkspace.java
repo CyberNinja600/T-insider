@@ -1,5 +1,6 @@
 package com.tinsider.ui.components.terminal;
 
+import com.tinsider.ui.components.terminal.dnd.TabDragManager;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.scene.control.Tab;
@@ -21,7 +22,13 @@ public class TerminalWorkspace extends StackPane {
         addTab.getStyleClass().add("add-tab");
         tabPane.getTabs().add(addTab);
 
+        Pane overlayPane = new Pane();
+        overlayPane.setMouseTransparent(true);
+
         getChildren().add(tabPane);
+        getChildren().add(overlayPane);
+
+        new TabDragManager(tabPane, overlayPane, addTab);
 
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab == addTab) {
