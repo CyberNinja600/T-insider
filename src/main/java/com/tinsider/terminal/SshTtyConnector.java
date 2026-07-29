@@ -126,6 +126,10 @@ public class SshTtyConnector implements TtyConnector {
 
     @Override
     public boolean ready() throws IOException {
-        return isConnected();
+        try {
+            return reader != null && reader.ready();
+        } catch (IOException e) {
+            return false;
+        }
     }
 }
