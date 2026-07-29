@@ -119,3 +119,54 @@
 .menu-item:hover .label {
     -fx-text-fill: #00adb5;
 }
+
+/* Split Pane Divider Modern Slim Styling */
+.split-pane {
+    -fx-background-color: #090F22;
+    -fx-padding: 0;
+}
+.split-pane *.split-pane-divider {
+    -fx-background-color: #1e293b;
+    -fx-padding: 1px; /* Slimmer divider, very clean */
+}
+.split-pane *.split-pane-divider:hover {
+    -fx-background-color: #00adb5; /* Glows accent color on hover! */
+}
+
+/* Terminal Pane Split Box styles */
+.terminal-pane {
+    -fx-background-color: #090F22;
+}
+.terminal-pane-header {
+    -fx-background-color: #11172a;
+    -fx-padding: 4px 8px;
+    -fx-border-color: transparent transparent #2a3356 transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+.terminal-pane-title {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+.terminal-pane-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #94a3b8;
+    -fx-cursor: hand;
+    -fx-font-size: 10px;
+    -fx-padding: 2px 6px;
+    -fx-background-radius: 3px;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+}
+.terminal-pane-btn:hover,
+.terminal-pane-close-btn:hover {
+    -fx-background-color: transparent;
+    -fx-text-fill: #00adb5;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 173, 181, 0.4), 8, 0, 0, 0);
+}
+
+/* Drag overlay shadow for Drop Indicator */
+.drag-overlay {
+    -fx-background-color: rgba(0, 173, 181, 0.2);
+    -fx-mouse-transparent: true;
+}
