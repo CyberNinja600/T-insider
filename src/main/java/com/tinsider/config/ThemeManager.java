@@ -124,6 +124,25 @@ public class ThemeManager {
         setDefaultIfMissing("titlebar.button.hover.foreground", "CursorColor");
         setDefaultIfMissing("titlebar.close.hover.background", "CursorColor");
         setDefaultIfMissing("titlebar.close.hover.foreground", "TextColor");
+
+        // 11. Partitioned Terminal Pane
+        setDefaultIfMissing("terminal.pane.background", "BackgroundColor");
+        setDefaultIfMissing("terminal.pane.border", "SelectionColor");
+        setDefaultIfMissing("terminal.pane.header.background", "SelectionColor");
+        setDefaultIfMissing("terminal.pane.header.border", "SelectionColor");
+        setDefaultIfMissing("terminal.pane.header.foreground", "TextColor");
+        setDefaultIfMissing("terminal.pane.header.button.foreground", "TextColor");
+        setDefaultIfMissing("terminal.pane.header.button.hover.background", "SelectionColor");
+        setDefaultIfMissing("terminal.pane.header.button.hover.foreground", "CursorColor");
+
+        setDefaultIfMissing("terminal.pane.empty.background", "SelectionColor");
+        setDefaultIfMissing("terminal.pane.empty.border", "CursorColor");
+        setDefaultIfMissing("terminal.pane.empty.title", "CursorColor");
+        setDefaultIfMissing("terminal.pane.empty.description", "TextColor");
+        setDefaultIfMissing("terminal.pane.empty.button.background", "SelectionColor");
+        setDefaultIfMissing("terminal.pane.empty.button.foreground", "TextColor");
+        setDefaultIfMissing("terminal.pane.empty.button.hover.background", "CursorColor");
+        setDefaultIfMissing("terminal.pane.empty.button.hover.foreground", "BackgroundColor");
     }
 
     private static void setDefaultIfMissing(String key, String plistValue) {
