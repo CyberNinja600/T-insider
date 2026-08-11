@@ -16,6 +16,7 @@ public class SshTtyConnector implements TtyConnector {
     private final InputStreamReader reader;
     private final OutputStream outputStream;
     private final String name;
+    private boolean userClosed = false;
 
     public SshTtyConnector(SshClient client, ClientSession session, ChannelShell channel, String name) {
         this.client = client;
@@ -36,6 +37,8 @@ public class SshTtyConnector implements TtyConnector {
 
     @Override
     public void close() {
+        userClosed = true;
+        com.tinsider.util.ActivityLogger.logTerminalChange(name, "CLOSE", "SshTtyConnector manually closed by user.");
         // 1. Close channel and session first to instantly tear down TCP sockets and
         // break blocked reads
         try {
@@ -120,6 +123,9 @@ public class SshTtyConnector implements TtyConnector {
     public int waitFor() throws InterruptedException {
         while (isConnected()) {
             Thread.sleep(100);
+        }
+        if (!userClosed) {
+            com.tinsider.util.ActivityLogger.logTerminalDeath(name, "SSH terminal connection terminated automatically (server closed or connection lost).");
         }
         return 0;
     }

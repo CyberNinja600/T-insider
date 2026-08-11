@@ -10,12 +10,9 @@ import com.tinsider.model.SnippetPackage;
 import com.tinsider.storage.StorageManager;
 import com.tinsider.terminal.ConnectionManager;
 import com.tinsider.terminal.TerminalTabFactory;
-import com.tinsider.ui.components.sidebar.SidebarPane;
 import com.tinsider.ui.components.terminal.TerminalWorkspace;
-import com.tinsider.ui.components.toolbar.CustomTitleBar;
 import com.tinsider.ui.components.toolbar.TopToolBar;
 import com.tinsider.ui.dialogs.AlertHelper;
-import com.tinsider.util.WindowResizer;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
@@ -33,8 +30,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
-import com.tinsider.ui.components.sidebar.HostListCell;
-import com.tinsider.ui.components.sidebar.SnippetListCell;
 import com.tinsider.ui.dialogs.HostDialog;
 import com.tinsider.ui.dialogs.SnippetDialog;
 import java.io.File;
@@ -110,6 +105,7 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+        com.tinsider.util.ActivityLogger.logSystemEvent("APP_STARTUP", "T-Insider application started successfully.");
         tabSplitPaneMapStaticInstance = tabSplitPaneMap;
         primaryStage.setTitle("T-Insider");
 
@@ -172,6 +168,11 @@ public class MainApp extends Application {
         });
         workspace.getTabPane().getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab != null) {
+                String oldTabTitle = (oldTab != null) ? oldTab.getText() : "None";
+                String newTabTitle = newTab.getText();
+                if (!newTabTitle.equals("+")) {
+                    com.tinsider.util.ActivityLogger.logUserAction("TAB_SWITCH", "User switched active tab from [" + oldTabTitle + "] to [" + newTabTitle + "]");
+                }
                 Platform.runLater(() -> {
                     com.tinsider.ui.components.terminal.split.TerminalSplitPane splitPane = tabSplitPaneMap.get(newTab);
                     if (splitPane != null) {
@@ -566,6 +567,7 @@ public class MainApp extends Application {
         applyTheme(currentTheme);
 
         primaryStage.setOnCloseRequest(e -> {
+            com.tinsider.util.ActivityLogger.logSystemEvent("APP_SHUTDOWN", "T-Insider application shutting down.");
             for (Tab tab : new ArrayList<>(workspace.getTabPane().getTabs())) {
                 closeTab(tab);
             }
@@ -575,6 +577,7 @@ public class MainApp extends Application {
     }
 
     private void switchMode(AppMode mode) {
+        com.tinsider.util.ActivityLogger.logUserAction("SWITCH_APP_MODE", "User switched application mode to: " + mode);
         this.currentMode = mode;
         if (mode == AppMode.DASHBOARD) {
             root.setLeft(slimNavRail);
@@ -593,6 +596,7 @@ public class MainApp extends Application {
     }
 
     private void switchDashboardTab(DashboardTab tab) {
+        com.tinsider.util.ActivityLogger.logUserAction("SWITCH_DASHBOARD_TAB", "User switched dashboard tab to: " + tab);
         this.currentDashboardTab = tab;
         hostsDashboard.setVisible(false);
         snippetsDashboard.setVisible(false);
@@ -622,7 +626,10 @@ public class MainApp extends Application {
         Optional<HostProfile> result = dialog.showAndWait();
         result.ifPresent(profile -> {
             if (existing != null) {
+                com.tinsider.util.ActivityLogger.logUserAction("EDIT_HOST", "User edited host profile: " + profile.getName() + " (" + profile.getIp() + ")");
                 hosts.remove(existing);
+            } else {
+                com.tinsider.util.ActivityLogger.logUserAction("ADD_HOST", "User added host profile: " + profile.getName() + " (" + profile.getIp() + ")");
             }
             hosts.add(profile);
             StorageManager.saveHosts(new ArrayList<>(hosts));
@@ -634,7 +641,10 @@ public class MainApp extends Application {
         Optional<Snippet> result = dialog.showAndWait();
         result.ifPresent(snippet -> {
             if (existing != null) {
+                com.tinsider.util.ActivityLogger.logUserAction("EDIT_SNIPPET", "User edited snippet: " + snippet.getTitle());
                 snippets.remove(existing);
+            } else {
+                com.tinsider.util.ActivityLogger.logUserAction("ADD_SNIPPET", "User added snippet: " + snippet.getTitle());
             }
             snippets.add(snippet);
             StorageManager.saveSnippets(new ArrayList<>(snippets));
@@ -643,6 +653,7 @@ public class MainApp extends Application {
 
     private void openLocalTerminal(String type) {
         try {
+            com.tinsider.util.ActivityLogger.logUserAction("OPEN_LOCAL_TERMINAL", "User requested open local terminal: " + type);
             TtyConnector connector = ConnectionManager.openLocalTerminal(type);
             String tabTitle = ConnectionManager.truncate(type, 16);
             TerminalTabFactory.createTerminalTab(
@@ -663,6 +674,7 @@ public class MainApp extends Application {
     }
 
     private void connectToHost(HostProfile host) {
+        com.tinsider.util.ActivityLogger.logUserAction("CONNECT_TO_HOST_ATTEMPT", "User requested connection to host: " + host.getName() + " (" + host.getIp() + ")");
         ConnectionManager.connectToHost(host, workspace.getTabPane(), (title, connector) -> {
             TerminalTabFactory.createTerminalTab(
                     title, 
@@ -679,6 +691,7 @@ public class MainApp extends Application {
     }
 
     private void closeTab(Tab tab) {
+        com.tinsider.util.ActivityLogger.logUserAction("CLOSE_TAB", "User manually closed terminal tab [" + tab.getText() + "]");
         com.tinsider.ui.components.terminal.split.TerminalSplitPane splitPane = tabSplitPaneMap.remove(tab);
         if (splitPane != null) {
             splitPane.close();
@@ -703,6 +716,8 @@ public class MainApp extends Application {
             AlertHelper.showErrorAlert("No active terminal", "The current tab is not a terminal session.");
             return;
         }
+
+        com.tinsider.util.ActivityLogger.logUserAction("EXECUTE_SNIPPET", "User executed snippet [" + snippet.getTitle() + "] on active terminal in tab [" + activeTab.getText() + "]");
 
         SwingUtilities.invokeLater(() -> {
             try {

@@ -56,33 +56,6 @@ public class TerminalTabFactory {
             }
         });
 
-        // Focus listener to forward JavaFX focus to inner Swing TerminalPanel
-        swingNode.focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) {
-                SwingUtilities.invokeLater(() -> {
-                    java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
-                    if (widget.getTerminalPanel() != null) {
-                        widget.getTerminalPanel().requestFocus();
-                    }
-                    widget.requestFocus();
-                });
-            }
-        });
-
-        // Mouse click on SwingNode requests focus
-        swingNode.setOnMousePressed(event -> {
-            if (!swingNode.isFocused()) {
-                swingNode.requestFocus();
-            }
-            SwingUtilities.invokeLater(() -> {
-                java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
-                if (widget.getTerminalPanel() != null) {
-                    widget.getTerminalPanel().requestFocus();
-                }
-                widget.requestFocus();
-            });
-        });
-
         swingNode.setContent(widget);
         return swingNode;
     }

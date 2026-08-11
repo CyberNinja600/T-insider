@@ -170,6 +170,7 @@ public class ConnectionManager {
                 final ChannelShell finalChannel = channel;
 
                 Platform.runLater(() -> {
+                    com.tinsider.util.ActivityLogger.logSystemEvent("SSH_CONNECTION_SUCCESS", "Successfully established SSH connection to host: " + host.getName());
                     // Create the new SSH tab first and select it
                     SshTtyConnector connector = new SshTtyConnector(finalClient, finalSession, finalChannel, host.getName());
                     onSuccess.accept(truncate(host.getName(), 16), connector);
@@ -190,6 +191,7 @@ public class ConnectionManager {
                 }
 
                 Platform.runLater(() -> {
+                    com.tinsider.util.ActivityLogger.logSystemEvent("SSH_CONNECTION_FAILURE", "Failed to connect to host: " + host.getName() + ". Error: " + e.getMessage());
                     // Re-select previous tab if valid before removing loadingTab on failure
                     if (previousTab != null && tabPane.getTabs().contains(previousTab)) {
                         tabPane.getSelectionModel().select(previousTab);

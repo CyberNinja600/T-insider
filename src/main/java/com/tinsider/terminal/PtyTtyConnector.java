@@ -13,6 +13,7 @@ public class PtyTtyConnector implements TtyConnector {
     private final InputStreamReader reader;
     private final OutputStream outputStream;
     private final String name;
+    private boolean userClosed = false;
 
     public PtyTtyConnector(PtyProcess process, String name) {
         this.process = process;
@@ -28,6 +29,8 @@ public class PtyTtyConnector implements TtyConnector {
 
     @Override
     public void close() {
+        userClosed = true;
+        com.tinsider.util.ActivityLogger.logTerminalChange(name, "CLOSE", "PtyTtyConnector manually closed by user.");
         // 1. Destroy process first to force-close sockets/PTY streams and unblock read threads
         try {
             process.destroy();
@@ -77,7 +80,11 @@ public class PtyTtyConnector implements TtyConnector {
 
     @Override
     public int waitFor() throws InterruptedException {
-        return process.waitFor();
+        int exitCode = process.waitFor();
+        if (!userClosed) {
+            com.tinsider.util.ActivityLogger.logTerminalDeath(name, "Local process exited automatically with code: " + exitCode);
+        }
+        return exitCode;
     }
 
     @Override

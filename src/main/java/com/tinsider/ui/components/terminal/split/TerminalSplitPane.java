@@ -61,6 +61,10 @@ public class TerminalSplitPane extends BorderPane {
             return;
         }
 
+        String oldPaneTitle = (this.activeTerminalPane != null) ? this.activeTerminalPane.getTitle() : "None";
+        String newPaneTitle = (pane != null) ? pane.getTitle() : "None";
+        com.tinsider.util.ActivityLogger.logTerminalFocusChange(newPaneTitle, "Active terminal sub-pane switched from [" + oldPaneTitle + "] to [" + newPaneTitle + "]");
+
         this.activeTerminalPane = pane;
         updatePaneThemeStyles(rootNode);
 
@@ -79,6 +83,7 @@ public class TerminalSplitPane extends BorderPane {
     }
 
     public void splitLeaf(SplitLeafNode leaf, SplitOrientation orientation) {
+        com.tinsider.util.ActivityLogger.logUserAction("SPLIT_PANE", "User split terminal pane [" + leaf.getTerminalPane().getTitle() + "] " + (orientation == SplitOrientation.SIDE_BY_SIDE ? "vertically" : "horizontally"));
         // Create new empty partition pane
         TerminalPane newPane = new TerminalPane(this, "EMPTY", null, null, "Drop Tab Here");
         SplitLeafNode newLeaf = new SplitLeafNode(newPane);
@@ -113,6 +118,7 @@ public class TerminalSplitPane extends BorderPane {
     }
 
     public void removeLeaf(SplitLeafNode leaf) {
+        com.tinsider.util.ActivityLogger.logUserAction("CLOSE_PANE", "User manually closed terminal sub-pane [" + leaf.getTerminalPane().getTitle() + "]");
         SplitParentNode p = leaf.getParent();
         if (p == null) {
             // Last node in the split tree -> close entire tab!
@@ -247,6 +253,7 @@ public class TerminalSplitPane extends BorderPane {
         if ("SSH".equals(pane.getSessionType()) && pane.getHostProfile() != null) {
             HostProfile host = pane.getHostProfile();
             pane.showConnectingState();
+            com.tinsider.util.ActivityLogger.logUserAction("CONNECT_TO_HOST_ATTEMPT", "Split pane requested connection to host: " + host.getName() + " (" + host.getIp() + ")");
 
             Thread sshThread = new Thread(() -> {
                 SshClient client = null;
@@ -287,6 +294,7 @@ public class TerminalSplitPane extends BorderPane {
                     final ChannelShell finalChannel = channel;
 
                     Platform.runLater(() -> {
+                        com.tinsider.util.ActivityLogger.logSystemEvent("SSH_CONNECTION_SUCCESS", "Successfully established split pane SSH connection to host: " + host.getName());
                         SshTtyConnector connector = new SshTtyConnector(finalClient, finalSession, finalChannel, host.getName());
                         JediTermWidget widget = TerminalTabFactory.createJediTermWidget(connector, themeSupplier);
                         pane.setWidget(widget);
@@ -299,6 +307,7 @@ public class TerminalSplitPane extends BorderPane {
                     if (client != null) { try { client.stop(); } catch (Exception ignored) {} }
 
                     Platform.runLater(() -> {
+                        com.tinsider.util.ActivityLogger.logSystemEvent("SSH_CONNECTION_FAILURE", "Split pane failed to connect to host: " + host.getName() + ". Error: " + e.getMessage());
                         pane.showErrorState("SSH Connection Failed: " + e.getMessage());
                     });
                 }
@@ -308,6 +317,7 @@ public class TerminalSplitPane extends BorderPane {
         } else {
             // Local Shell Connection
             try {
+                com.tinsider.util.ActivityLogger.logUserAction("OPEN_LOCAL_TERMINAL", "Split pane requested open local terminal: " + pane.getLocalShellType());
                 TtyConnector connector = ConnectionManager.openLocalTerminal(pane.getLocalShellType());
                 JediTermWidget widget = TerminalTabFactory.createJediTermWidget(connector, themeSupplier);
                 pane.setWidget(widget);
