@@ -323,10 +323,12 @@ public class TabDragManager {
                     if ("EMPTY".equals(targetPane.getSessionType()) || dropPos == com.tinsider.ui.components.terminal.split.DropPosition.CENTER) {
                         // In-place adoption
                         targetPane.adoptWidgetAndSettings(sourcePane);
+                        com.tinsider.util.ActivityLogger.logUserAction("DRAG_DROP_TAB_ADOPT", "User dragged and adopted tab [" + draggedTab.getText() + "] into empty/center of [" + targetPane.getTitle() + "]");
                     } else {
                         // Edge split and adopt
                         if (activeTab.getContent() instanceof com.tinsider.ui.components.terminal.split.TerminalSplitPane activeSplit) {
                             activeSplit.splitAndAdoptLeaf(targetPane, sourcePane, dropPos);
+                            com.tinsider.util.ActivityLogger.logUserAction("DRAG_DROP_TAB_SPLIT", "User split and adopted tab [" + draggedTab.getText() + "] into [" + targetPane.getTitle() + "] position [" + dropPos + "]");
                         }
                     }
 
@@ -379,6 +381,7 @@ public class TabDragManager {
             Tab tab = tabPane.getTabs().remove(fromIndex);
             tabPane.getTabs().add(toIndex, tab);
             tabPane.getSelectionModel().select(tab);
+            com.tinsider.util.ActivityLogger.logUserAction("REORDER_TAB", "User reordered tab [" + tab.getText() + "] from index " + fromIndex + " to " + toIndex);
         }
 
         // Clean up

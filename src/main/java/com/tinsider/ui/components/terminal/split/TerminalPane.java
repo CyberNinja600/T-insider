@@ -357,6 +357,22 @@ public class TerminalPane extends StackPane {
             }
         });
 
+        // Dynamic focused listener inside TerminalPane that ONLY forwards focus if this pane is active
+        this.swingNode.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                if (splitPane.getActiveWidget() == widget) {
+                    SwingUtilities.invokeLater(() -> {
+                        if (widget.getTerminalPanel() != null && !widget.getTerminalPanel().isFocusOwner()) {
+                            widget.getTerminalPanel().requestFocus();
+                        }
+                        if (!widget.isFocusOwner()) {
+                            widget.requestFocus();
+                        }
+                    });
+                }
+            }
+        });
+
         // Click focus handler on SwingNode side
         this.swingNode.setOnMousePressed(event -> {
             splitPane.setActiveTerminalPane(this);
@@ -364,11 +380,12 @@ public class TerminalPane extends StackPane {
                 this.swingNode.requestFocus();
             }
             SwingUtilities.invokeLater(() -> {
-                java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
-                if (widget.getTerminalPanel() != null) {
+                if (widget.getTerminalPanel() != null && !widget.getTerminalPanel().isFocusOwner()) {
                     widget.getTerminalPanel().requestFocus();
                 }
-                widget.requestFocus();
+                if (!widget.isFocusOwner()) {
+                    widget.requestFocus();
+                }
             });
         });
 
@@ -516,13 +533,17 @@ public class TerminalPane extends StackPane {
 
     public void requestFocusOnTerminal() {
         if (swingNode != null) {
-            swingNode.requestFocus();
+            if (!swingNode.isFocused()) {
+                swingNode.requestFocus();
+            }
             SwingUtilities.invokeLater(() -> {
                 if (widget != null) {
-                    if (widget.getTerminalPanel() != null) {
+                    if (widget.getTerminalPanel() != null && !widget.getTerminalPanel().isFocusOwner()) {
                         widget.getTerminalPanel().requestFocus();
                     }
-                    widget.requestFocus();
+                    if (!widget.isFocusOwner()) {
+                        widget.requestFocus();
+                    }
                 }
             });
         }
