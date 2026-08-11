@@ -152,6 +152,11 @@ public class ConnectionManager {
             ChannelShell channel = null;
             try {
                 client = SshClient.setUpDefaultClient();
+                
+                // Configure keep-alive / ServerAliveInterval so connections don't hang and freeze after being idle
+                org.apache.sshd.core.CoreModuleProperties.HEARTBEAT_INTERVAL.set(client, java.time.Duration.ofSeconds(15));
+                org.apache.sshd.core.CoreModuleProperties.HEARTBEAT_REQUEST.set(client, "keepalive@openssh.com");
+                
                 client.start();
 
                 session = client.connect(connectUser, connectIp, connectPort)
