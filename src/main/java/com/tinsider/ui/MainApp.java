@@ -620,6 +620,7 @@ public class MainApp extends Application {
             if (topToolBar != null) {
                 topToolBar.setShellSelectionVisible(false);
                 topToolBar.setSidebarToggleVisible(false);
+                topToolBar.setZoomVisible(false);
             }
         } else {
             if (sidebarVisible) {
@@ -637,6 +638,7 @@ public class MainApp extends Application {
             if (topToolBar != null) {
                 topToolBar.setShellSelectionVisible(true);
                 topToolBar.setSidebarToggleVisible(true);
+                topToolBar.setZoomVisible(true);
             }
         }
     }

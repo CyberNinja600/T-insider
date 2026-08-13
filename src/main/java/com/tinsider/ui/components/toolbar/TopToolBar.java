@@ -79,6 +79,8 @@ public class TopToolBar extends HBox {
     private final Label selectLabel;
     private final Button toggleSidebarBtn;
     private final Button homeBtn;
+    private final Label zoomLabel;
+    private final HBox zoomControls;
     private Button zoomResetBtn;
 
     public TopToolBar(
@@ -137,7 +139,10 @@ public class TopToolBar extends HBox {
             }
         });
 
-        Label zoomLabel = new Label("Zoom:");
+        zoomLabel = new Label("Zoom:");
+        zoomLabel.managedProperty().bind(zoomLabel.visibleProperty());
+        zoomLabel.setVisible(false); // Initially hidden since app starts in Dashboard Mode
+
         Button zoomOutBtn = new Button("-");
         zoomResetBtn = new Button("100%");
         Button zoomInBtn = new Button("+");
@@ -157,8 +162,10 @@ public class TopToolBar extends HBox {
             if (onZoomIn != null) onZoomIn.run();
         });
 
-        HBox zoomControls = new HBox(5, zoomOutBtn, zoomResetBtn, zoomInBtn);
+        zoomControls = new HBox(5, zoomOutBtn, zoomResetBtn, zoomInBtn);
         zoomControls.setAlignment(Pos.CENTER_LEFT);
+        zoomControls.managedProperty().bind(zoomControls.visibleProperty());
+        zoomControls.setVisible(false); // Initially hidden since app starts in Dashboard Mode
 
         // Home navigation button
         homeBtn = new Button("\uEB06");
@@ -282,6 +289,11 @@ public class TopToolBar extends HBox {
     public void setSidebarToggleVisible(boolean visible) {
         toggleSidebarBtn.setVisible(visible);
         homeBtn.setVisible(visible);
+    }
+
+    public void setZoomVisible(boolean visible) {
+        zoomLabel.setVisible(visible);
+        zoomControls.setVisible(visible);
     }
 
     public void setSidebarButtonText(String text) {
