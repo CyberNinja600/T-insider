@@ -236,7 +236,8 @@ public class TabDragManager {
         Point2D scenePt = tabPane.localToScene(mouseLocalX, mouseLocalY);
         Tab activeTab = tabPane.getSelectionModel().getSelectedItem();
         TerminalPane hoveredPane = null;
-        if (activeTab != null && activeTab.getContent() != null) {
+        // Do NOT allow split preview highlighting if the active tab is the tab being dragged (self-drop check)
+        if (activeTab != null && activeTab != draggedTab && activeTab.getContent() != null) {
             hoveredPane = findTerminalPaneAtSceneCoords(activeTab.getContent(), scenePt.getX(), scenePt.getY());
         }
 
@@ -291,7 +292,8 @@ public class TabDragManager {
         // 1. Detect if released over a TerminalPane using Scene coordinates (DPI-immune and bulletproof!)
         Tab activeTab = tabPane.getSelectionModel().getSelectedItem();
         TerminalPane targetPane = null;
-        if (activeTab != null && activeTab.getContent() != null) {
+        // Do NOT allow dropping/splitting if the active tab is the tab being dragged (self-drop check)
+        if (activeTab != null && activeTab != draggedTab && activeTab.getContent() != null) {
             targetPane = findTerminalPaneAtSceneCoords(activeTab.getContent(), event.getSceneX(), event.getSceneY());
         }
 

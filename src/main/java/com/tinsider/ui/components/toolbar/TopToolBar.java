@@ -77,6 +77,7 @@ public class TopToolBar extends HBox {
     private final ComboBox<DropdownItem> shellOptions;
     private final ComboBox<String> themeOptions;
     private final Label selectLabel;
+    private final Button toggleSidebarBtn;
     private Button zoomResetBtn;
 
     public TopToolBar(
@@ -88,7 +89,8 @@ public class TopToolBar extends HBox {
             Consumer<String> onShellChanged,
             Runnable onZoomIn,
             Runnable onZoomOut,
-            Runnable onZoomReset) {
+            Runnable onZoomReset,
+            Runnable onToggleSidebar) {
         
         super(10);
         setPadding(new Insets(10));
@@ -140,6 +142,7 @@ public class TopToolBar extends HBox {
 
         zoomOutBtn.getStyleClass().add("zoom-btn");
         zoomResetBtn.getStyleClass().add("zoom-btn");
+        zoomResetBtn.getStyleClass().add("zoom-reset-btn");
         zoomInBtn.getStyleClass().add("zoom-btn");
 
         zoomOutBtn.setOnAction(e -> {
@@ -155,10 +158,19 @@ public class TopToolBar extends HBox {
         HBox zoomControls = new HBox(5, zoomOutBtn, zoomResetBtn, zoomInBtn);
         zoomControls.setAlignment(Pos.CENTER_LEFT);
 
+        // Sidebar visibility toggle button
+        toggleSidebarBtn = new Button("\uEC02");
+        toggleSidebarBtn.getStyleClass().add("sidebar-toggle-btn");
+        toggleSidebarBtn.managedProperty().bind(toggleSidebarBtn.visibleProperty());
+        toggleSidebarBtn.setVisible(false); // Initially hidden since app starts in Dashboard Mode
+        toggleSidebarBtn.setOnAction(e -> {
+            if (onToggleSidebar != null) onToggleSidebar.run();
+        });
+
         javafx.scene.layout.Pane spacer = new javafx.scene.layout.Pane();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-        getChildren().addAll(selectLabel, shellOptions, themeLabel, themeOptions, spacer, zoomLabel, zoomControls);
+        getChildren().addAll(selectLabel, shellOptions, themeLabel, themeOptions, spacer, toggleSidebarBtn, zoomLabel, zoomControls);
     }
 
     private void rebuildItems(ObservableList<HostProfile> hosts, String initialShell) {
@@ -254,6 +266,18 @@ public class TopToolBar extends HBox {
         System.out.println("[TopToolBar] setShellSelectionVisible called with: " + visible);
         selectLabel.setVisible(visible);
         shellOptions.setVisible(visible);
+    }
+
+    public void setSidebarToggleVisible(boolean visible) {
+        toggleSidebarBtn.setVisible(visible);
+    }
+
+    public void setSidebarButtonText(String text) {
+        if ("Hide Sidebar".equalsIgnoreCase(text)) {
+            toggleSidebarBtn.setText("\uEBF3");
+        } else {
+            toggleSidebarBtn.setText("\uEC02");
+        }
     }
 
     public DropdownItem getSelectedItem() {

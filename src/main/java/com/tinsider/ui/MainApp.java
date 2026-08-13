@@ -44,6 +44,7 @@ public class MainApp extends Application {
 
     private AppMode currentMode = AppMode.DASHBOARD;
     private DashboardTab currentDashboardTab = DashboardTab.HOSTS;
+    private boolean sidebarVisible = true;
 
     private final ObservableList<HostProfile> hosts = FXCollections.observableArrayList();
     private final ObservableList<Snippet> snippets = FXCollections.observableArrayList();
@@ -107,6 +108,23 @@ public class MainApp extends Application {
     public void start(Stage primaryStage) {
         com.tinsider.util.ActivityLogger.logSystemEvent("APP_STARTUP", "T-Insider application started successfully.");
         tabSplitPaneMapStaticInstance = tabSplitPaneMap;
+
+        // Load custom Codicon font
+        try {
+            java.io.InputStream fontStream = getClass().getResourceAsStream("/icons/codicon.ttf");
+            if (fontStream != null) {
+                javafx.scene.text.Font loadedFont = javafx.scene.text.Font.loadFont(fontStream, 13);
+                if (loadedFont != null) {
+                    System.out.println("[MainApp] Successfully loaded Codicons font: " + loadedFont.getName());
+                } else {
+                    System.err.println("[MainApp] Failed to parse Codicons font.");
+                }
+            } else {
+                System.err.println("[MainApp] Codicons font file not found in resources/icons.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         primaryStage.setTitle("T-Insider");
 
         // Set the program icon
@@ -483,6 +501,9 @@ public class MainApp extends Application {
             () -> {
                 com.tinsider.terminal.TerminalTabFactory.resetZoom(tabSplitPaneMap.values());
                 topToolBar.updateZoomLabel(com.tinsider.terminal.TerminalTabFactory.getGlobalFontSize());
+            },
+            () -> {
+                toggleSidebar();
             }
         );
         topToolBar.setShellSelectionVisible(false);
@@ -576,6 +597,21 @@ public class MainApp extends Application {
         });
     }
 
+    private void toggleSidebar() {
+        sidebarVisible = !sidebarVisible;
+        if (sidebarVisible) {
+            root.setLeft(snippetExecutionSidebar);
+            if (topToolBar != null) {
+                topToolBar.setSidebarButtonText("Hide Sidebar");
+            }
+        } else {
+            root.setLeft(null);
+            if (topToolBar != null) {
+                topToolBar.setSidebarButtonText("Show Sidebar");
+            }
+        }
+    }
+
     private void switchMode(AppMode mode) {
         com.tinsider.util.ActivityLogger.logUserAction("SWITCH_APP_MODE", "User switched application mode to: " + mode);
         this.currentMode = mode;
@@ -585,12 +621,24 @@ public class MainApp extends Application {
             updateActiveSessionsList();
             if (topToolBar != null) {
                 topToolBar.setShellSelectionVisible(false);
+                topToolBar.setSidebarToggleVisible(false);
             }
         } else {
-            root.setLeft(snippetExecutionSidebar);
+            if (sidebarVisible) {
+                root.setLeft(snippetExecutionSidebar);
+                if (topToolBar != null) {
+                    topToolBar.setSidebarButtonText("Hide Sidebar");
+                }
+            } else {
+                root.setLeft(null);
+                if (topToolBar != null) {
+                    topToolBar.setSidebarButtonText("Show Sidebar");
+                }
+            }
             root.setCenter(workspace);
             if (topToolBar != null) {
                 topToolBar.setShellSelectionVisible(true);
+                topToolBar.setSidebarToggleVisible(true);
             }
         }
     }
@@ -846,6 +894,16 @@ public class MainApp extends Application {
         com.jediterm.core.Color zoomActiveBorder = theme.getColor("controls.zoom.active.border", theme.getCursorColor());
         com.jediterm.core.Color zoomActiveFg = theme.getColor("controls.zoom.active.foreground", theme.getBackgroundColor());
 
+        com.jediterm.core.Color toggleBg = theme.getColor("controls.sidebar.toggle.background", theme.getBackgroundColor());
+        com.jediterm.core.Color toggleBorder = theme.getColor("controls.sidebar.toggle.border", theme.getSelectionColor());
+        com.jediterm.core.Color toggleFg = theme.getColor("controls.sidebar.toggle.foreground", theme.getTextColor());
+        com.jediterm.core.Color toggleHoverBg = theme.getColor("controls.sidebar.toggle.hover.background", theme.getSelectionColor());
+        com.jediterm.core.Color toggleHoverBorder = theme.getColor("controls.sidebar.toggle.hover.border", theme.getCursorColor());
+        com.jediterm.core.Color toggleHoverFg = theme.getColor("controls.sidebar.toggle.hover.foreground", theme.getTextColor());
+        com.jediterm.core.Color toggleActiveBg = theme.getColor("controls.sidebar.toggle.active.background", theme.getCursorColor());
+        com.jediterm.core.Color toggleActiveBorder = theme.getColor("controls.sidebar.toggle.active.border", theme.getCursorColor());
+        com.jediterm.core.Color toggleActiveFg = theme.getColor("controls.sidebar.toggle.active.foreground", theme.getBackgroundColor());
+
         com.jediterm.core.Color connBg = theme.getColor("connecting.background", theme.getBackgroundColor());
         com.jediterm.core.Color connIcon = theme.getColor("connecting.icon", theme.getCursorColor());
         com.jediterm.core.Color connFg = theme.getColor("connecting.foreground", theme.getTextColor());
@@ -954,6 +1012,13 @@ public class MainApp extends Application {
         double zoomActiveBgOpacity = 1.0;
         double zoomActiveBorderOpacity = 1.0;
 
+        double toggleBgOpacity = 1.0;
+        double toggleBorderOpacity = 1.0;
+        double toggleHoverBgOpacity = 1.0;
+        double toggleHoverBorderOpacity = 1.0;
+        double toggleActiveBgOpacity = 1.0;
+        double toggleActiveBorderOpacity = 1.0;
+
 
         try {
             itemBgOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.background.opacity", "1.0"));
@@ -982,6 +1047,13 @@ public class MainApp extends Application {
             zoomHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.hover.border.opacity", "1.0"));
             zoomActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.active.background.opacity", "1.0"));
             zoomActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.active.border.opacity", "1.0"));
+
+            toggleBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.background.opacity", "1.0"));
+            toggleBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.border.opacity", "1.0"));
+            toggleHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.hover.background.opacity", "1.0"));
+            toggleHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.hover.border.opacity", "1.0"));
+            toggleActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.active.background.opacity", "1.0"));
+            toggleActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.active.border.opacity", "1.0"));
         } catch (Exception ignored) {}
 
         // Format raw colors to RGBA with parsed opacities
@@ -994,6 +1066,16 @@ public class MainApp extends Application {
         String rgbaZoomActiveBg = toRgba(zoomActiveBg, zoomActiveBgOpacity);
         String rgbaZoomActiveBorder = toRgba(zoomActiveBorder, zoomActiveBorderOpacity);
         String hexZoomActiveFg = toHex(zoomActiveFg);
+
+        String rgbaToggleBg = toRgba(toggleBg, toggleBgOpacity);
+        String rgbaToggleBorder = toRgba(toggleBorder, toggleBorderOpacity);
+        String hexToggleFg = toHex(toggleFg);
+        String rgbaToggleHoverBg = toRgba(toggleHoverBg, toggleHoverBgOpacity);
+        String rgbaToggleHoverBorder = toRgba(toggleHoverBorder, toggleHoverBorderOpacity);
+        String hexToggleHoverFg = toHex(toggleHoverFg);
+        String rgbaToggleActiveBg = toRgba(toggleActiveBg, toggleActiveBgOpacity);
+        String rgbaToggleActiveBorder = toRgba(toggleActiveBorder, toggleActiveBorderOpacity);
+        String hexToggleActiveFg = toHex(toggleActiveFg);
 
         String rgbaCardsItemBg = toRgba(cardsItemBg, itemBgOpacity);
         String rgbaCardsItemBorder = toRgba(cardsItemBorder, itemBorderOpacity);
@@ -1078,6 +1160,10 @@ public class MainApp extends Application {
                             ".button.zoom-btn { -fx-background-color: " + rgbaZoomBg + "; -fx-border-color: " + rgbaZoomBorder + "; -fx-text-fill: " + hexZoomFg + "; -fx-padding: 3px 8px; -fx-font-size: 11px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.zoom-btn:hover { -fx-background-color: " + rgbaZoomHoverBg + "; -fx-border-color: " + rgbaZoomHoverBorder + "; -fx-text-fill: " + hexZoomHoverFg + "; }\n" +
                             ".button.zoom-btn:pressed { -fx-background-color: " + rgbaZoomActiveBg + "; -fx-border-color: " + rgbaZoomActiveBorder + "; -fx-text-fill: " + hexZoomActiveFg + "; }\n" +
+                            ".button.zoom-reset-btn { -fx-min-width: 56px; -fx-pref-width: 56px; -fx-max-width: 56px; }\n" +
+                            ".button.sidebar-toggle-btn { -fx-background-color: " + rgbaToggleBg + "; -fx-border-color: " + rgbaToggleBorder + "; -fx-text-fill: " + hexToggleFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
+                            ".button.sidebar-toggle-btn:hover { -fx-background-color: " + rgbaToggleHoverBg + "; -fx-border-color: " + rgbaToggleHoverBorder + "; -fx-text-fill: " + hexToggleHoverFg + "; }\n" +
+                            ".button.sidebar-toggle-btn:pressed { -fx-background-color: " + rgbaToggleActiveBg + "; -fx-border-color: " + rgbaToggleActiveBorder + "; -fx-text-fill: " + hexToggleActiveFg + "; }\n" +
                             ".combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; }\n" +
                             ".combo-box.shell-dropdown { -fx-pref-width: 140px; -fx-max-width: 140px; }\n" +
                             ".combo-box.theme-dropdown { -fx-border-color: transparent; -fx-border-width: 0px; }\n" +

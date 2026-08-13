@@ -122,6 +122,24 @@ public class ThemeManager {
         setDefaultIfMissing("controls.zoom.active.background.opacity", "1.0");
         setDefaultIfMissing("controls.zoom.active.border.opacity", "1.0");
 
+        setDefaultIfMissing("controls.sidebar.toggle.background", "BackgroundColor");
+        setDefaultIfMissing("controls.sidebar.toggle.border", "SelectionColor");
+        setDefaultIfMissing("controls.sidebar.toggle.foreground", "TextColor");
+        setDefaultIfMissing("controls.sidebar.toggle.background.opacity", "1.0");
+        setDefaultIfMissing("controls.sidebar.toggle.border.opacity", "1.0");
+
+        setDefaultIfMissing("controls.sidebar.toggle.hover.background", "SelectionColor");
+        setDefaultIfMissing("controls.sidebar.toggle.hover.border", "CursorColor");
+        setDefaultIfMissing("controls.sidebar.toggle.hover.foreground", "TextColor");
+        setDefaultIfMissing("controls.sidebar.toggle.hover.background.opacity", "1.0");
+        setDefaultIfMissing("controls.sidebar.toggle.hover.border.opacity", "1.0");
+
+        setDefaultIfMissing("controls.sidebar.toggle.active.background", "CursorColor");
+        setDefaultIfMissing("controls.sidebar.toggle.active.border", "CursorColor");
+        setDefaultIfMissing("controls.sidebar.toggle.active.foreground", "BackgroundColor");
+        setDefaultIfMissing("controls.sidebar.toggle.active.background.opacity", "1.0");
+        setDefaultIfMissing("controls.sidebar.toggle.active.border.opacity", "1.0");
+
         setDefaultIfMissing("search.bar.background", "SelectionColor");
         setDefaultIfMissing("search.bar.border", "BackgroundColor");
         setDefaultIfMissing("search.bar.foreground", "TextColor");
