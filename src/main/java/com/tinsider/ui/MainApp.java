@@ -578,6 +578,9 @@ public class MainApp extends Application {
             },
             () -> {
                 switchMode(AppMode.DASHBOARD);
+            },
+            () -> {
+                switchMode(AppMode.TERMINAL);
             }
         );
         topToolBar.setShellSelectionVisible(false);
@@ -697,6 +700,7 @@ public class MainApp extends Application {
                 topToolBar.setShellSelectionVisible(false);
                 topToolBar.setSidebarToggleVisible(false);
                 topToolBar.setZoomVisible(false);
+                topToolBar.setTerminalButtonVisible(!tabSplitPaneMap.isEmpty());
             }
         } else {
             if (sidebarVisible) {
@@ -715,6 +719,7 @@ public class MainApp extends Application {
                 topToolBar.setShellSelectionVisible(true);
                 topToolBar.setSidebarToggleVisible(true);
                 topToolBar.setZoomVisible(true);
+                topToolBar.setTerminalButtonVisible(false);
             }
         }
     }
@@ -1290,6 +1295,9 @@ public class MainApp extends Application {
                             ".button.home-btn { -fx-background-color: " + rgbaHomeBg + "; -fx-border-color: " + rgbaHomeBorder + "; -fx-text-fill: " + hexHomeFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.home-btn:hover { -fx-background-color: " + rgbaHomeHoverBg + "; -fx-border-color: " + rgbaHomeHoverBorder + "; -fx-text-fill: " + hexHomeHoverFg + "; }\n" +
                             ".button.home-btn:pressed { -fx-background-color: " + rgbaHomeActiveBg + "; -fx-border-color: " + rgbaHomeActiveBorder + "; -fx-text-fill: " + hexHomeActiveFg + "; }\n" +
+                            ".button.terminal-btn { -fx-background-color: " + rgbaHomeBg + "; -fx-border-color: " + rgbaHomeBorder + "; -fx-text-fill: " + hexHomeFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
+                            ".button.terminal-btn:hover { -fx-background-color: " + rgbaHomeHoverBg + "; -fx-border-color: " + rgbaHomeHoverBorder + "; -fx-text-fill: " + hexHomeHoverFg + "; }\n" +
+                            ".button.terminal-btn:pressed { -fx-background-color: " + rgbaHomeActiveBg + "; -fx-border-color: " + rgbaHomeActiveBorder + "; -fx-text-fill: " + hexHomeActiveFg + "; }\n" +
                             ".combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; }\n" +
                             ".combo-box.shell-dropdown { -fx-pref-width: 140px; -fx-max-width: 140px; }\n" +
                             ".combo-box.theme-dropdown { -fx-border-color: transparent; -fx-border-width: 0px; }\n" +

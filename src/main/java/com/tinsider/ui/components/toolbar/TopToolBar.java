@@ -79,6 +79,7 @@ public class TopToolBar extends HBox {
     private final Label selectLabel;
     private final Button toggleSidebarBtn;
     private final Button homeBtn;
+    private final Button terminalBtn;
     private final Label zoomLabel;
     private final HBox zoomControls;
     private Button zoomResetBtn;
@@ -94,7 +95,8 @@ public class TopToolBar extends HBox {
             Runnable onZoomOut,
             Runnable onZoomReset,
             Runnable onToggleSidebar,
-            Runnable onHome) {
+            Runnable onHome,
+            Runnable onTerminal) {
         
         super(10);
         setPadding(new Insets(10));
@@ -167,6 +169,15 @@ public class TopToolBar extends HBox {
         zoomControls.managedProperty().bind(zoomControls.visibleProperty());
         zoomControls.setVisible(false); // Initially hidden since app starts in Dashboard Mode
 
+        // Terminal navigation button
+        terminalBtn = new Button("\uEA85");
+        terminalBtn.getStyleClass().add("terminal-btn");
+        terminalBtn.managedProperty().bind(terminalBtn.visibleProperty());
+        terminalBtn.setVisible(false); // Initially hidden
+        terminalBtn.setOnAction(e -> {
+            if (onTerminal != null) onTerminal.run();
+        });
+
         // Home navigation button
         homeBtn = new Button("\uEB06");
         homeBtn.getStyleClass().add("home-btn");
@@ -188,7 +199,7 @@ public class TopToolBar extends HBox {
         javafx.scene.layout.Pane spacer = new javafx.scene.layout.Pane();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-        getChildren().addAll(selectLabel, shellOptions, themeLabel, themeOptions, spacer, homeBtn, toggleSidebarBtn, zoomLabel, zoomControls);
+        getChildren().addAll(selectLabel, shellOptions, themeLabel, themeOptions, spacer, terminalBtn, homeBtn, toggleSidebarBtn, zoomLabel, zoomControls);
     }
 
     private void rebuildItems(ObservableList<HostProfile> hosts, String initialShell) {
@@ -294,6 +305,10 @@ public class TopToolBar extends HBox {
     public void setZoomVisible(boolean visible) {
         zoomLabel.setVisible(visible);
         zoomControls.setVisible(visible);
+    }
+
+    public void setTerminalButtonVisible(boolean visible) {
+        terminalBtn.setVisible(visible);
     }
 
     public void setSidebarButtonText(String text) {
