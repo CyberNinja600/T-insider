@@ -78,6 +78,7 @@ public class TopToolBar extends HBox {
     private final ComboBox<String> themeOptions;
     private final Label selectLabel;
     private final Button toggleSidebarBtn;
+    private final Button homeBtn;
     private Button zoomResetBtn;
 
     public TopToolBar(
@@ -90,7 +91,8 @@ public class TopToolBar extends HBox {
             Runnable onZoomIn,
             Runnable onZoomOut,
             Runnable onZoomReset,
-            Runnable onToggleSidebar) {
+            Runnable onToggleSidebar,
+            Runnable onHome) {
         
         super(10);
         setPadding(new Insets(10));
@@ -158,6 +160,15 @@ public class TopToolBar extends HBox {
         HBox zoomControls = new HBox(5, zoomOutBtn, zoomResetBtn, zoomInBtn);
         zoomControls.setAlignment(Pos.CENTER_LEFT);
 
+        // Home navigation button
+        homeBtn = new Button("\uEB06");
+        homeBtn.getStyleClass().add("home-btn");
+        homeBtn.managedProperty().bind(homeBtn.visibleProperty());
+        homeBtn.setVisible(false); // Initially hidden since app starts in Dashboard Mode
+        homeBtn.setOnAction(e -> {
+            if (onHome != null) onHome.run();
+        });
+
         // Sidebar visibility toggle button
         toggleSidebarBtn = new Button("\uEC02");
         toggleSidebarBtn.getStyleClass().add("sidebar-toggle-btn");
@@ -170,7 +181,7 @@ public class TopToolBar extends HBox {
         javafx.scene.layout.Pane spacer = new javafx.scene.layout.Pane();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-        getChildren().addAll(selectLabel, shellOptions, themeLabel, themeOptions, spacer, toggleSidebarBtn, zoomLabel, zoomControls);
+        getChildren().addAll(selectLabel, shellOptions, themeLabel, themeOptions, spacer, homeBtn, toggleSidebarBtn, zoomLabel, zoomControls);
     }
 
     private void rebuildItems(ObservableList<HostProfile> hosts, String initialShell) {
@@ -270,6 +281,7 @@ public class TopToolBar extends HBox {
 
     public void setSidebarToggleVisible(boolean visible) {
         toggleSidebarBtn.setVisible(visible);
+        homeBtn.setVisible(visible);
     }
 
     public void setSidebarButtonText(String text) {

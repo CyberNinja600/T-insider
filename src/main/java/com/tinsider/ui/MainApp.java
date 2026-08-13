@@ -441,11 +441,6 @@ public class MainApp extends Application {
         snippetExecutionSidebar.setPrefWidth(240);
         snippetExecutionSidebar.getStyleClass().add("sidebar");
 
-        Button backToDashboardBtn = new Button("< Dashboard");
-        backToDashboardBtn.getStyleClass().add("back-button");
-        backToDashboardBtn.setMaxWidth(Double.MAX_VALUE);
-        backToDashboardBtn.setOnAction(e -> switchMode(AppMode.DASHBOARD));
-
         Label terminalSnippetsHeader = new Label("Snippets Launcher");
         terminalSnippetsHeader.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
         terminalSnippetsHeader.getStyleClass().add("snippets-launcher-header");
@@ -475,7 +470,7 @@ public class MainApp extends Application {
 
         rebuildTerminalSnippetsSidebar();
 
-        snippetExecutionSidebar.getChildren().addAll(backToDashboardBtn, terminalSnippetsHeader, sidebarSearchField, sidebarScrollPane);
+        snippetExecutionSidebar.getChildren().addAll(terminalSnippetsHeader, sidebarSearchField, sidebarScrollPane);
 
         // 5. Root Layout & Theme Control
         topToolBar = new TopToolBar(availableThemes, savedThemeName, savedShell, hosts,
@@ -488,7 +483,7 @@ public class MainApp extends Application {
             shell -> {
                 Map<String, String> currentSettings = StorageManager.loadSettings();
                 currentSettings.put("shell", shell);
-                StorageManager.saveSettings(currentSettings);
+                StorageManager.saveSettings(settings);
             },
             () -> {
                 com.tinsider.terminal.TerminalTabFactory.increaseZoom(tabSplitPaneMap.values());
@@ -504,6 +499,9 @@ public class MainApp extends Application {
             },
             () -> {
                 toggleSidebar();
+            },
+            () -> {
+                switchMode(AppMode.DASHBOARD);
             }
         );
         topToolBar.setShellSelectionVisible(false);
@@ -904,6 +902,16 @@ public class MainApp extends Application {
         com.jediterm.core.Color toggleActiveBorder = theme.getColor("controls.sidebar.toggle.active.border", theme.getCursorColor());
         com.jediterm.core.Color toggleActiveFg = theme.getColor("controls.sidebar.toggle.active.foreground", theme.getBackgroundColor());
 
+        com.jediterm.core.Color homeBg = theme.getColor("controls.home.background", theme.getBackgroundColor());
+        com.jediterm.core.Color homeBorder = theme.getColor("controls.home.border", theme.getSelectionColor());
+        com.jediterm.core.Color homeFg = theme.getColor("controls.home.foreground", theme.getTextColor());
+        com.jediterm.core.Color homeHoverBg = theme.getColor("controls.home.hover.background", theme.getSelectionColor());
+        com.jediterm.core.Color homeHoverBorder = theme.getColor("controls.home.hover.border", theme.getCursorColor());
+        com.jediterm.core.Color homeHoverFg = theme.getColor("controls.home.hover.foreground", theme.getTextColor());
+        com.jediterm.core.Color homeActiveBg = theme.getColor("controls.home.active.background", theme.getCursorColor());
+        com.jediterm.core.Color homeActiveBorder = theme.getColor("controls.home.active.border", theme.getCursorColor());
+        com.jediterm.core.Color homeActiveFg = theme.getColor("controls.home.active.foreground", theme.getBackgroundColor());
+
         com.jediterm.core.Color connBg = theme.getColor("connecting.background", theme.getBackgroundColor());
         com.jediterm.core.Color connIcon = theme.getColor("connecting.icon", theme.getCursorColor());
         com.jediterm.core.Color connFg = theme.getColor("connecting.foreground", theme.getTextColor());
@@ -1019,6 +1027,13 @@ public class MainApp extends Application {
         double toggleActiveBgOpacity = 1.0;
         double toggleActiveBorderOpacity = 1.0;
 
+        double homeBgOpacity = 1.0;
+        double homeBorderOpacity = 1.0;
+        double homeHoverBgOpacity = 1.0;
+        double homeHoverBorderOpacity = 1.0;
+        double homeActiveBgOpacity = 1.0;
+        double homeActiveBorderOpacity = 1.0;
+
 
         try {
             itemBgOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.background.opacity", "1.0"));
@@ -1054,6 +1069,13 @@ public class MainApp extends Application {
             toggleHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.hover.border.opacity", "1.0"));
             toggleActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.active.background.opacity", "1.0"));
             toggleActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.active.border.opacity", "1.0"));
+
+            homeBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.background.opacity", "1.0"));
+            homeBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.border.opacity", "1.0"));
+            homeHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.hover.background.opacity", "1.0"));
+            homeHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.hover.border.opacity", "1.0"));
+            homeActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.active.background.opacity", "1.0"));
+            homeActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.active.border.opacity", "1.0"));
         } catch (Exception ignored) {}
 
         // Format raw colors to RGBA with parsed opacities
@@ -1076,6 +1098,16 @@ public class MainApp extends Application {
         String rgbaToggleActiveBg = toRgba(toggleActiveBg, toggleActiveBgOpacity);
         String rgbaToggleActiveBorder = toRgba(toggleActiveBorder, toggleActiveBorderOpacity);
         String hexToggleActiveFg = toHex(toggleActiveFg);
+
+        String rgbaHomeBg = toRgba(homeBg, homeBgOpacity);
+        String rgbaHomeBorder = toRgba(homeBorder, homeBorderOpacity);
+        String hexHomeFg = toHex(homeFg);
+        String rgbaHomeHoverBg = toRgba(homeHoverBg, homeHoverBgOpacity);
+        String rgbaHomeHoverBorder = toRgba(homeHoverBorder, homeHoverBorderOpacity);
+        String hexHomeHoverFg = toHex(homeHoverFg);
+        String rgbaHomeActiveBg = toRgba(homeActiveBg, homeActiveBgOpacity);
+        String rgbaHomeActiveBorder = toRgba(homeActiveBorder, homeActiveBorderOpacity);
+        String hexHomeActiveFg = toHex(homeActiveFg);
 
         String rgbaCardsItemBg = toRgba(cardsItemBg, itemBgOpacity);
         String rgbaCardsItemBorder = toRgba(cardsItemBorder, itemBorderOpacity);
@@ -1164,6 +1196,9 @@ public class MainApp extends Application {
                             ".button.sidebar-toggle-btn { -fx-background-color: " + rgbaToggleBg + "; -fx-border-color: " + rgbaToggleBorder + "; -fx-text-fill: " + hexToggleFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.sidebar-toggle-btn:hover { -fx-background-color: " + rgbaToggleHoverBg + "; -fx-border-color: " + rgbaToggleHoverBorder + "; -fx-text-fill: " + hexToggleHoverFg + "; }\n" +
                             ".button.sidebar-toggle-btn:pressed { -fx-background-color: " + rgbaToggleActiveBg + "; -fx-border-color: " + rgbaToggleActiveBorder + "; -fx-text-fill: " + hexToggleActiveFg + "; }\n" +
+                            ".button.home-btn { -fx-background-color: " + rgbaHomeBg + "; -fx-border-color: " + rgbaHomeBorder + "; -fx-text-fill: " + hexHomeFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
+                            ".button.home-btn:hover { -fx-background-color: " + rgbaHomeHoverBg + "; -fx-border-color: " + rgbaHomeHoverBorder + "; -fx-text-fill: " + hexHomeHoverFg + "; }\n" +
+                            ".button.home-btn:pressed { -fx-background-color: " + rgbaHomeActiveBg + "; -fx-border-color: " + rgbaHomeActiveBorder + "; -fx-text-fill: " + hexHomeActiveFg + "; }\n" +
                             ".combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; }\n" +
                             ".combo-box.shell-dropdown { -fx-pref-width: 140px; -fx-max-width: 140px; }\n" +
                             ".combo-box.theme-dropdown { -fx-border-color: transparent; -fx-border-width: 0px; }\n" +
