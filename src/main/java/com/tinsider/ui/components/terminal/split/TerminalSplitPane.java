@@ -70,6 +70,7 @@ public class TerminalSplitPane extends BorderPane {
 
         if (pane != null) {
             pane.requestFocusOnTerminal();
+            com.tinsider.ui.MainApp.onTerminalFocused(pane);
         }
     }
 
@@ -84,8 +85,9 @@ public class TerminalSplitPane extends BorderPane {
 
     public void splitLeaf(SplitLeafNode leaf, SplitOrientation orientation) {
         com.tinsider.util.ActivityLogger.logUserAction("SPLIT_PANE", "User split terminal pane [" + leaf.getTerminalPane().getTitle() + "] " + (orientation == SplitOrientation.SIDE_BY_SIDE ? "vertically" : "horizontally"));
-        // Create new empty partition pane
-        TerminalPane newPane = new TerminalPane(this, "EMPTY", null, null, "Drop Tab Here");
+        // Create new empty partition pane, passing the parent pane as a template!
+        TerminalPane parentPane = leaf.getTerminalPane();
+        TerminalPane newPane = new TerminalPane(this, "EMPTY", null, null, "Drop Tab Here", parentPane);
         SplitLeafNode newLeaf = new SplitLeafNode(newPane);
 
         SplitParentNode parent = leaf.getParent();
@@ -115,6 +117,28 @@ public class TerminalSplitPane extends BorderPane {
             e.printStackTrace();
             pane.showErrorState("Failed to open local CMD: " + e.getMessage());
         }
+    }
+
+    public void initiatePaneConnectionFromTemplate(TerminalPane pane, String parentSessionType, String parentLocalShellType, HostProfile parentHostProfile, String parentTitle) {
+        if ("SSH".equals(parentSessionType) && parentHostProfile != null) {
+            pane.setSessionType("SSH");
+            pane.setLocalShellType(null);
+            pane.setHostProfile(parentHostProfile);
+            pane.setTitle(parentTitle);
+        } else if ("LOCAL".equals(parentSessionType) && parentLocalShellType != null) {
+            pane.setSessionType("LOCAL");
+            pane.setLocalShellType(parentLocalShellType);
+            pane.setHostProfile(null);
+            pane.setTitle(parentLocalShellType);
+        } else {
+            // Fallback: If parent was EMPTY or invalid, open local CMD!
+            pane.setSessionType("LOCAL");
+            pane.setLocalShellType("CMD");
+            pane.setHostProfile(null);
+            pane.setTitle("Local CMD");
+        }
+
+        initiatePaneConnection(pane);
     }
 
     public void removeLeaf(SplitLeafNode leaf) {

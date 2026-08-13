@@ -256,11 +256,18 @@ public class TabDragManager {
             // If the pane is an empty placeholder, always force CENTER (no need to show edge splitting overlays)
             if ("EMPTY".equals(hoveredPane.getSessionType())) {
                 currentPos = com.tinsider.ui.components.terminal.split.DropPosition.CENTER;
+            } else if (currentPos == com.tinsider.ui.components.terminal.split.DropPosition.CENTER) {
+                // If it is NOT empty and we are hovering over CENTER, ignore this drop zone (no overlay, drop is not allowed)
+                currentPos = null;
             }
 
             if (currentPos != lastDropPos) {
                 lastDropPos = currentPos;
-                hoveredPane.showDragOverlay(currentPos);
+                if (currentPos != null) {
+                    hoveredPane.showDragOverlay(currentPos);
+                } else {
+                    hoveredPane.hideDragOverlay();
+                }
             }
         }
     }
@@ -322,16 +329,34 @@ public class TabDragManager {
                     Point2D paneLocal = targetPane.sceneToLocal(event.getSceneX(), event.getSceneY());
                     com.tinsider.ui.components.terminal.split.DropPosition dropPos = targetPane.calculateDropPosition(paneLocal.getX(), paneLocal.getY(), targetPane.getWidth(), targetPane.getHeight());
 
-                    if ("EMPTY".equals(targetPane.getSessionType()) || dropPos == com.tinsider.ui.components.terminal.split.DropPosition.CENTER) {
-                        // In-place adoption
+                    if ("EMPTY".equals(targetPane.getSessionType())) {
+                        // In-place adoption on EMPTY placeholder (always allowed)
                         targetPane.adoptWidgetAndSettings(sourcePane);
                         com.tinsider.util.ActivityLogger.logUserAction("DRAG_DROP_TAB_ADOPT", "User dragged and adopted tab [" + draggedTab.getText() + "] into empty/center of [" + targetPane.getTitle() + "]");
-                    } else {
-                        // Edge split and adopt
+                    } else if (dropPos != com.tinsider.ui.components.terminal.split.DropPosition.CENTER) {
+                        // Edge split and adopt (only allowed for non-CENTER positions)
                         if (activeTab.getContent() instanceof com.tinsider.ui.components.terminal.split.TerminalSplitPane activeSplit) {
                             activeSplit.splitAndAdoptLeaf(targetPane, sourcePane, dropPos);
                             com.tinsider.util.ActivityLogger.logUserAction("DRAG_DROP_TAB_SPLIT", "User split and adopted tab [" + draggedTab.getText() + "] into [" + targetPane.getTitle() + "] position [" + dropPos + "]");
                         }
+                    } else {
+                        // Drop onto CENTER of an active/non-empty pane is blocked to prevent killing the terminal.
+                        // We will revert/cancel the drag operation.
+                        if (ghost != null) {
+                            ghost.destroy();
+                            ghost = null;
+                        }
+                        if (draggedTabNode != null) {
+                            draggedTabNode.setOpacity(1.0);
+                        }
+                        if (staticTabs != null) {
+                            for (DropCalculator.TabInfo info : staticTabs) {
+                                info.node.setTranslateX(0);
+                            }
+                        }
+                        tabPane.setCursor(Cursor.DEFAULT);
+                        resetToIdle();
+                        return;
                     }
 
                     final Tab tabToClose = draggedTab; // Capture reference before resetToIdle() nullifies it!

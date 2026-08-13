@@ -40,10 +40,18 @@ import java.util.*;
 
 public class MainApp extends Application {
     public enum AppMode { DASHBOARD, TERMINAL }
-    public enum DashboardTab { HOSTS, SNIPPETS, TERMINALS }
+    public enum DashboardTab { CONNECTIONS, HOSTS, SNIPPETS, TERMINALS }
+
+    private static MainApp instance;
+
+    public static void onTerminalFocused(com.tinsider.ui.components.terminal.split.TerminalPane pane) {
+        if (instance != null && instance.topToolBar != null && pane != null) {
+            instance.topToolBar.selectShellOrHost(pane.getLocalShellType(), pane.getHostProfile());
+        }
+    }
 
     private AppMode currentMode = AppMode.DASHBOARD;
-    private DashboardTab currentDashboardTab = DashboardTab.HOSTS;
+    private DashboardTab currentDashboardTab = DashboardTab.CONNECTIONS;
     private boolean sidebarVisible = true;
 
     private final ObservableList<HostProfile> hosts = FXCollections.observableArrayList();
@@ -80,14 +88,18 @@ public class MainApp extends Application {
     private javafx.scene.Node currentlySelectedCardNode;
 
     // Dashboard Tabs
+    private VBox connectionsDashboard;
     private VBox hostsDashboard;
     private VBox snippetsDashboard;
     private VBox terminalsDashboard;
 
     // Grids
+    private FlowPane localConnectionsGrid;
+    private FlowPane remoteConnectionsGrid;
     private FlowPane hostsGrid;
     private VBox snippetsDashboardContainer;
     private FlowPane terminalsGrid;
+    private ScrollPane connectionsGridScrollPane;
     private ScrollPane hostsGridScrollPane;
     private ScrollPane snippetsGridScrollPane;
     private ScrollPane terminalsGridScrollPane;
@@ -96,9 +108,11 @@ public class MainApp extends Application {
     private final ObjectProperty<HostProfile> selectedHost = new SimpleObjectProperty<>(null);
     private final ObjectProperty<Snippet> selectedSnippet = new SimpleObjectProperty<>(null);
     private final ObjectProperty<Tab> selectedSession = new SimpleObjectProperty<>(null);
+    private final ObjectProperty<TopToolBar.DropdownItem> selectedConnectionItem = new SimpleObjectProperty<>(null);
     private Label noActiveSessionsLabel;
 
     // Search Fields
+    private TextField connectionsSearchField;
     private TextField hostsSearchField;
     private TextField snippetsSearchField;
     private TextField sidebarSearchField;
@@ -108,6 +122,7 @@ public class MainApp extends Application {
     public void start(Stage primaryStage) {
         com.tinsider.util.ActivityLogger.logSystemEvent("APP_STARTUP", "T-Insider application started successfully.");
         tabSplitPaneMapStaticInstance = tabSplitPaneMap;
+        instance = this;
 
         // Load custom Codicon font
         try {
@@ -164,7 +179,17 @@ public class MainApp extends Application {
         boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
         String defaultShell = isWindows ? "CMD" : "Bash";
         String savedShell = settings.getOrDefault("shell", defaultShell);
-        String savedThemeName = settings.getOrDefault("theme", "Default Space Blue");
+        
+        String savedThemeName = settings.get("theme");
+        if (savedThemeName == null || savedThemeName.trim().isEmpty()) {
+            savedThemeName = "Default Space Blue"; // Default fallback
+            for (TerminalTheme theme : availableThemes) {
+                if ("Gotham-default".equalsIgnoreCase(theme.getName())) {
+                    savedThemeName = theme.getName();
+                    break;
+                }
+            }
+        }
 
         for (TerminalTheme theme : availableThemes) {
             if (theme.getName().equalsIgnoreCase(savedThemeName)) {
@@ -212,34 +237,107 @@ public class MainApp extends Application {
         appTitleLabel.getStyleClass().add("app-title");
         appTitleLabel.setStyle("-fx-font-size: 16px; -fx-padding: 0 0 20px 0;");
 
+        ToggleButton navConnectionsBtn = new ToggleButton("Connections");
         ToggleButton navHostsBtn = new ToggleButton("Hosts");
         ToggleButton navSnippetsBtn = new ToggleButton("Snippets");
         ToggleButton navTerminalsBtn = new ToggleButton("Terminals");
 
         ToggleGroup navGroup = new ToggleGroup();
+        navConnectionsBtn.setToggleGroup(navGroup);
         navHostsBtn.setToggleGroup(navGroup);
         navSnippetsBtn.setToggleGroup(navGroup);
         navTerminalsBtn.setToggleGroup(navGroup);
-        navHostsBtn.setSelected(true);
+        navConnectionsBtn.setSelected(true);
 
+        navConnectionsBtn.setMaxWidth(Double.MAX_VALUE);
         navHostsBtn.setMaxWidth(Double.MAX_VALUE);
         navSnippetsBtn.setMaxWidth(Double.MAX_VALUE);
         navTerminalsBtn.setMaxWidth(Double.MAX_VALUE);
 
+        navConnectionsBtn.getStyleClass().add("nav-button");
         navHostsBtn.getStyleClass().add("nav-button");
         navSnippetsBtn.getStyleClass().add("nav-button");
         navTerminalsBtn.getStyleClass().add("nav-button");
 
-        slimNavRail.getChildren().addAll(appTitleLabel, navHostsBtn, navSnippetsBtn, navTerminalsBtn);
+        slimNavRail.getChildren().addAll(appTitleLabel, navConnectionsBtn, navHostsBtn, navSnippetsBtn, navTerminalsBtn);
 
         // Navigation Actions
+        navConnectionsBtn.setOnAction(e -> switchDashboardTab(DashboardTab.CONNECTIONS));
         navHostsBtn.setOnAction(e -> switchDashboardTab(DashboardTab.HOSTS));
         navSnippetsBtn.setOnAction(e -> switchDashboardTab(DashboardTab.SNIPPETS));
         navTerminalsBtn.setOnAction(e -> switchDashboardTab(DashboardTab.TERMINALS));
 
-        // 3. Build Dashboard Center Panes (Hosts, Snippets, Terminals)
+        // 3. Build Dashboard Center Panes (Connections, Hosts, Snippets, Terminals)
         dashboardCenterStack = new StackPane();
         dashboardCenterStack.getStyleClass().add("dashboard-center-stack");
+
+        // --- Connections Dashboard ---
+        connectionsDashboard = new VBox(15);
+        connectionsDashboard.setPadding(new Insets(25));
+        connectionsDashboard.getStyleClass().add("dashboard-view");
+
+        Label connectionsTitle = new Label("Quick Connections");
+        connectionsTitle.getStyleClass().add("dashboard-title");
+        connectionsTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+
+        connectionsSearchField = new TextField();
+        connectionsSearchField.setPromptText("🔍 Search hosts or local terminals...");
+        connectionsSearchField.getStyleClass().add("text-field");
+        connectionsSearchField.textProperty().addListener((obs, oldVal, newVal) -> rebuildConnectionsGrid());
+
+        VBox connectionsContainer = new VBox(20);
+        connectionsContainer.setStyle("-fx-background-color: transparent;");
+
+        // Local terminals section
+        VBox localSection = new VBox(10);
+        HBox localHeader = new HBox(8);
+        localHeader.setAlignment(Pos.CENTER_LEFT);
+        Label localIcon = new Label("\uEA85");
+        localIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 15px; -fx-text-fill: #94a3b8;");
+        Label localText = new Label("Local Terminals");
+        localText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;");
+        localHeader.getChildren().addAll(localIcon, localText);
+
+        localConnectionsGrid = new FlowPane(15, 15);
+        localConnectionsGrid.setPadding(new Insets(10, 0, 10, 0));
+        localSection.getChildren().addAll(localHeader, localConnectionsGrid);
+
+        // Remote connections section
+        VBox remoteSection = new VBox(10);
+        HBox remoteHeader = new HBox(8);
+        remoteHeader.setAlignment(Pos.CENTER_LEFT);
+        Label remoteIcon = new Label("\uEB01");
+        remoteIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 15px; -fx-text-fill: #94a3b8;");
+        Label remoteText = new Label("Remote Connections");
+        remoteText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;");
+        remoteHeader.getChildren().addAll(remoteIcon, remoteText);
+
+        remoteConnectionsGrid = new FlowPane(15, 15);
+        remoteConnectionsGrid.setPadding(new Insets(10, 0, 10, 0));
+        remoteSection.getChildren().addAll(remoteHeader, remoteConnectionsGrid);
+
+        connectionsContainer.getChildren().addAll(localSection, remoteSection);
+
+        connectionsGridScrollPane = new ScrollPane(connectionsContainer);
+        connectionsGridScrollPane.setFitToWidth(true);
+        connectionsGridScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        connectionsGridScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        connectionsGridScrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        VBox.setVgrow(connectionsGridScrollPane, Priority.ALWAYS);
+
+        HBox connectionsButtons = new HBox(10);
+        Button connectBtn = new Button("⚡ Connect");
+        connectBtn.getStyleClass().add("button");
+        connectBtn.setPrefWidth(100);
+        connectionsButtons.getChildren().addAll(connectBtn);
+        connectionsButtons.setAlignment(Pos.CENTER_LEFT);
+
+        connectBtn.setOnAction(e -> {
+            initiateConnectionFromDropdownItem(selectedConnectionItem.get());
+        });
+        connectBtn.disableProperty().bind(selectedConnectionItem.isNull());
+
+        connectionsDashboard.getChildren().addAll(connectionsTitle, connectionsSearchField, connectionsGridScrollPane, connectionsButtons);
 
         // --- Hosts Dashboard ---
         hostsDashboard = new VBox(15);
@@ -428,7 +526,7 @@ public class MainApp extends Application {
         terminalsDashboard.getChildren().addAll(terminalsTitle, noActiveSessionsLabel, terminalsGridScrollPane);
 
         // Add to stack
-        dashboardCenterStack.getChildren().addAll(hostsDashboard, snippetsDashboard, terminalsDashboard);
+        dashboardCenterStack.getChildren().addAll(connectionsDashboard, hostsDashboard, snippetsDashboard, terminalsDashboard);
 
         // Initial Grid Renderings
         rebuildHostsGrid();
@@ -440,11 +538,6 @@ public class MainApp extends Application {
         snippetExecutionSidebar.setPadding(new Insets(20, 10, 20, 10));
         snippetExecutionSidebar.setPrefWidth(240);
         snippetExecutionSidebar.getStyleClass().add("sidebar");
-
-        Button backToDashboardBtn = new Button("< Dashboard");
-        backToDashboardBtn.getStyleClass().add("back-button");
-        backToDashboardBtn.setMaxWidth(Double.MAX_VALUE);
-        backToDashboardBtn.setOnAction(e -> switchMode(AppMode.DASHBOARD));
 
         Label terminalSnippetsHeader = new Label("Snippets Launcher");
         terminalSnippetsHeader.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
@@ -475,10 +568,10 @@ public class MainApp extends Application {
 
         rebuildTerminalSnippetsSidebar();
 
-        snippetExecutionSidebar.getChildren().addAll(backToDashboardBtn, terminalSnippetsHeader, sidebarSearchField, sidebarScrollPane);
+        snippetExecutionSidebar.getChildren().addAll(terminalSnippetsHeader, sidebarSearchField, sidebarScrollPane);
 
         // 5. Root Layout & Theme Control
-        topToolBar = new TopToolBar(availableThemes, savedThemeName, savedShell, hosts,
+        topToolBar = new TopToolBar(availableThemes, currentTheme.getName(), savedShell, hosts,
             theme -> {
                 applyTheme(theme);
                 Map<String, String> currentSettings = StorageManager.loadSettings();
@@ -488,7 +581,7 @@ public class MainApp extends Application {
             shell -> {
                 Map<String, String> currentSettings = StorageManager.loadSettings();
                 currentSettings.put("shell", shell);
-                StorageManager.saveSettings(currentSettings);
+                StorageManager.saveSettings(settings);
             },
             () -> {
                 com.tinsider.terminal.TerminalTabFactory.increaseZoom(tabSplitPaneMap.values());
@@ -504,6 +597,12 @@ public class MainApp extends Application {
             },
             () -> {
                 toggleSidebar();
+            },
+            () -> {
+                switchMode(AppMode.DASHBOARD);
+            },
+            () -> {
+                switchMode(AppMode.TERMINAL);
             }
         );
         topToolBar.setShellSelectionVisible(false);
@@ -512,7 +611,7 @@ public class MainApp extends Application {
         
         // Initial state
         switchMode(AppMode.DASHBOARD);
-        switchDashboardTab(DashboardTab.HOSTS);
+        switchDashboardTab(DashboardTab.CONNECTIONS);
 
         // Pack top panel controls
         VBox topContainer = new VBox();
@@ -622,6 +721,8 @@ public class MainApp extends Application {
             if (topToolBar != null) {
                 topToolBar.setShellSelectionVisible(false);
                 topToolBar.setSidebarToggleVisible(false);
+                topToolBar.setZoomVisible(false);
+                topToolBar.setTerminalButtonVisible(!tabSplitPaneMap.isEmpty());
             }
         } else {
             if (sidebarVisible) {
@@ -639,6 +740,8 @@ public class MainApp extends Application {
             if (topToolBar != null) {
                 topToolBar.setShellSelectionVisible(true);
                 topToolBar.setSidebarToggleVisible(true);
+                topToolBar.setZoomVisible(true);
+                topToolBar.setTerminalButtonVisible(false);
             }
         }
     }
@@ -646,11 +749,16 @@ public class MainApp extends Application {
     private void switchDashboardTab(DashboardTab tab) {
         com.tinsider.util.ActivityLogger.logUserAction("SWITCH_DASHBOARD_TAB", "User switched dashboard tab to: " + tab);
         this.currentDashboardTab = tab;
+        connectionsDashboard.setVisible(false);
         hostsDashboard.setVisible(false);
         snippetsDashboard.setVisible(false);
         terminalsDashboard.setVisible(false);
 
-        if (tab == DashboardTab.HOSTS) {
+        if (tab == DashboardTab.CONNECTIONS) {
+            connectionsDashboard.setVisible(true);
+            connectionsDashboard.toFront();
+            rebuildConnectionsGrid();
+        } else if (tab == DashboardTab.HOSTS) {
             hostsDashboard.setVisible(true);
             hostsDashboard.toFront();
         } else if (tab == DashboardTab.SNIPPETS) {
@@ -904,6 +1012,16 @@ public class MainApp extends Application {
         com.jediterm.core.Color toggleActiveBorder = theme.getColor("controls.sidebar.toggle.active.border", theme.getCursorColor());
         com.jediterm.core.Color toggleActiveFg = theme.getColor("controls.sidebar.toggle.active.foreground", theme.getBackgroundColor());
 
+        com.jediterm.core.Color homeBg = theme.getColor("controls.home.background", theme.getBackgroundColor());
+        com.jediterm.core.Color homeBorder = theme.getColor("controls.home.border", theme.getSelectionColor());
+        com.jediterm.core.Color homeFg = theme.getColor("controls.home.foreground", theme.getTextColor());
+        com.jediterm.core.Color homeHoverBg = theme.getColor("controls.home.hover.background", theme.getSelectionColor());
+        com.jediterm.core.Color homeHoverBorder = theme.getColor("controls.home.hover.border", theme.getCursorColor());
+        com.jediterm.core.Color homeHoverFg = theme.getColor("controls.home.hover.foreground", theme.getTextColor());
+        com.jediterm.core.Color homeActiveBg = theme.getColor("controls.home.active.background", theme.getCursorColor());
+        com.jediterm.core.Color homeActiveBorder = theme.getColor("controls.home.active.border", theme.getCursorColor());
+        com.jediterm.core.Color homeActiveFg = theme.getColor("controls.home.active.foreground", theme.getBackgroundColor());
+
         com.jediterm.core.Color connBg = theme.getColor("connecting.background", theme.getBackgroundColor());
         com.jediterm.core.Color connIcon = theme.getColor("connecting.icon", theme.getCursorColor());
         com.jediterm.core.Color connFg = theme.getColor("connecting.foreground", theme.getTextColor());
@@ -1019,6 +1137,21 @@ public class MainApp extends Application {
         double toggleActiveBgOpacity = 1.0;
         double toggleActiveBorderOpacity = 1.0;
 
+        double homeBgOpacity = 1.0;
+        double homeBorderOpacity = 1.0;
+        double homeHoverBgOpacity = 1.0;
+        double homeHoverBorderOpacity = 1.0;
+        double homeActiveBgOpacity = 1.0;
+        double homeActiveBorderOpacity = 1.0;
+
+        double connItemBgOpacity = 1.0;
+        double connItemBorderOpacity = 1.0;
+        double connBadgeBgOpacity = 0.15;
+        double connHoverBgOpacity = 1.0;
+        double connHoverBorderOpacity = 1.0;
+        double connSelectedBgOpacity = 1.0;
+        double connSelectedBorderOpacity = 1.0;
+
 
         try {
             itemBgOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.background.opacity", "1.0"));
@@ -1054,6 +1187,13 @@ public class MainApp extends Application {
             toggleHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.hover.border.opacity", "1.0"));
             toggleActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.active.background.opacity", "1.0"));
             toggleActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.active.border.opacity", "1.0"));
+
+            homeBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.background.opacity", "1.0"));
+            homeBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.border.opacity", "1.0"));
+            homeHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.hover.background.opacity", "1.0"));
+            homeHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.hover.border.opacity", "1.0"));
+            homeActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.active.background.opacity", "1.0"));
+            homeActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.active.border.opacity", "1.0"));
         } catch (Exception ignored) {}
 
         // Format raw colors to RGBA with parsed opacities
@@ -1076,6 +1216,16 @@ public class MainApp extends Application {
         String rgbaToggleActiveBg = toRgba(toggleActiveBg, toggleActiveBgOpacity);
         String rgbaToggleActiveBorder = toRgba(toggleActiveBorder, toggleActiveBorderOpacity);
         String hexToggleActiveFg = toHex(toggleActiveFg);
+
+        String rgbaHomeBg = toRgba(homeBg, homeBgOpacity);
+        String rgbaHomeBorder = toRgba(homeBorder, homeBorderOpacity);
+        String hexHomeFg = toHex(homeFg);
+        String rgbaHomeHoverBg = toRgba(homeHoverBg, homeHoverBgOpacity);
+        String rgbaHomeHoverBorder = toRgba(homeHoverBorder, homeHoverBorderOpacity);
+        String hexHomeHoverFg = toHex(homeHoverFg);
+        String rgbaHomeActiveBg = toRgba(homeActiveBg, homeActiveBgOpacity);
+        String rgbaHomeActiveBorder = toRgba(homeActiveBorder, homeActiveBorderOpacity);
+        String hexHomeActiveFg = toHex(homeActiveFg);
 
         String rgbaCardsItemBg = toRgba(cardsItemBg, itemBgOpacity);
         String rgbaCardsItemBorder = toRgba(cardsItemBorder, itemBorderOpacity);
@@ -1164,6 +1314,12 @@ public class MainApp extends Application {
                             ".button.sidebar-toggle-btn { -fx-background-color: " + rgbaToggleBg + "; -fx-border-color: " + rgbaToggleBorder + "; -fx-text-fill: " + hexToggleFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.sidebar-toggle-btn:hover { -fx-background-color: " + rgbaToggleHoverBg + "; -fx-border-color: " + rgbaToggleHoverBorder + "; -fx-text-fill: " + hexToggleHoverFg + "; }\n" +
                             ".button.sidebar-toggle-btn:pressed { -fx-background-color: " + rgbaToggleActiveBg + "; -fx-border-color: " + rgbaToggleActiveBorder + "; -fx-text-fill: " + hexToggleActiveFg + "; }\n" +
+                            ".button.home-btn { -fx-background-color: " + rgbaHomeBg + "; -fx-border-color: " + rgbaHomeBorder + "; -fx-text-fill: " + hexHomeFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
+                            ".button.home-btn:hover { -fx-background-color: " + rgbaHomeHoverBg + "; -fx-border-color: " + rgbaHomeHoverBorder + "; -fx-text-fill: " + hexHomeHoverFg + "; }\n" +
+                            ".button.home-btn:pressed { -fx-background-color: " + rgbaHomeActiveBg + "; -fx-border-color: " + rgbaHomeActiveBorder + "; -fx-text-fill: " + hexHomeActiveFg + "; }\n" +
+                            ".button.terminal-btn { -fx-background-color: " + rgbaHomeBg + "; -fx-border-color: " + rgbaHomeBorder + "; -fx-text-fill: " + hexHomeFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
+                            ".button.terminal-btn:hover { -fx-background-color: " + rgbaHomeHoverBg + "; -fx-border-color: " + rgbaHomeHoverBorder + "; -fx-text-fill: " + hexHomeHoverFg + "; }\n" +
+                            ".button.terminal-btn:pressed { -fx-background-color: " + rgbaHomeActiveBg + "; -fx-border-color: " + rgbaHomeActiveBorder + "; -fx-text-fill: " + hexHomeActiveFg + "; }\n" +
                             ".combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; }\n" +
                             ".combo-box.shell-dropdown { -fx-pref-width: 140px; -fx-max-width: 140px; }\n" +
                             ".combo-box.theme-dropdown { -fx-border-color: transparent; -fx-border-width: 0px; }\n" +
@@ -1199,6 +1355,14 @@ public class MainApp extends Application {
                             ".host-card:hover .host-badge { -fx-background-color: " + rgbaCardsBadgeHoverBg + "; -fx-text-fill: " + hexCardsBadgeHoverFg + "; }\n" +
                             ".host-name { -fx-text-fill: " + hexCardsItemTitle + "; }\n" +
                             ".host-username { -fx-text-fill: " + hexCardsItemSub + "; }\n" +
+                            ".connection-card { -fx-background-color: " + rgbaCardsItemBg + "; -fx-border-color: " + rgbaCardsItemBorder + "; -fx-background-radius: 6px; -fx-border-radius: 6px; -fx-border-width: 1px; }\n" +
+                            ".connection-badge { -fx-background-color: " + rgbaCardsBadgeBg + "; -fx-text-fill: " + hexCardsBadgeFg + "; -fx-background-radius: 16px; }\n" +
+                            ".connection-card:hover { -fx-background-color: " + rgbaCardsHoverBg + "; -fx-border-color: " + rgbaCardsHoverBorder + "; }\n" +
+                            ".connection-card:hover .connection-badge { -fx-background-color: " + rgbaCardsBadgeHoverBg + "; -fx-text-fill: " + hexCardsBadgeHoverFg + "; }\n" +
+                            ".connection-card.selected { -fx-background-color: " + rgbaCardsSelectedBg + "; -fx-border-color: " + rgbaCardsSelectedBorder + "; -fx-effect: dropshadow(three-pass-box, " + rgbaCardsSelectedGlow + ", 8, 0, 0, 0); }\n" +
+                            ".connection-card.selected .connection-badge { -fx-background-color: " + rgbaCardsBadgeSelectedBg + "; -fx-text-fill: " + hexCardsBadgeSelectedFg + "; }\n" +
+                            ".connection-name { -fx-text-fill: " + hexCardsItemTitle + "; -fx-font-weight: bold; }\n" +
+                            ".connection-username { -fx-text-fill: " + hexCardsItemSub + "; }\n" +
                             ".snippet-card { -fx-background-color: " + rgbaCardsItemBg + "; -fx-border-color: " + rgbaCardsItemBorder + "; }\n" +
                             ".snippet-badge { -fx-background-color: " + rgbaCardsBadgeBg + "; -fx-text-fill: " + hexCardsBadgeFg + "; }\n" +
                             ".snippet-card:hover .snippet-badge { -fx-background-color: " + rgbaCardsBadgeHoverBg + "; -fx-text-fill: " + hexCardsBadgeHoverFg + "; }\n" +
@@ -1372,10 +1536,6 @@ public class MainApp extends Application {
                         node.getStyleClass().add("selected");
                     }
                 }
-                if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
-                    connectToHost(item);
-                    switchMode(AppMode.TERMINAL);
-                }
             });
 
             if (selectedHost.get() == item) {
@@ -1470,8 +1630,8 @@ public class MainApp extends Application {
 
                 HBox header = new HBox(10);
                 header.setAlignment(Pos.CENTER_LEFT);
-                Label folderIcon = new Label("📁");
-                folderIcon.setStyle("-fx-font-size: 16px;");
+                Label folderIcon = new Label("\uEA83");
+                folderIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; -fx-text-fill: #94a3b8;");
                 Label title = new Label(pkg.getName());
                 title.getStyleClass().add("dashboard-package-title");
                 header.getChildren().addAll(folderIcon, title);
@@ -1513,8 +1673,8 @@ public class MainApp extends Application {
 
             HBox standaloneHeader = new HBox(10);
             standaloneHeader.setAlignment(Pos.CENTER_LEFT);
-            Label standaloneIcon = new Label("📝");
-            standaloneIcon.setStyle("-fx-font-size: 16px;");
+            Label standaloneIcon = new Label("\uEAE9");
+            standaloneIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; -fx-text-fill: #94a3b8;");
             Label standaloneTitle = new Label("Standalone Snippets (No Package)");
             standaloneTitle.getStyleClass().add("dashboard-standalone-title");
             standaloneHeader.getChildren().addAll(standaloneIcon, standaloneTitle);
@@ -1673,6 +1833,119 @@ public class MainApp extends Application {
             standaloneHeader.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-padding: 10px 0 2px 0;");
             terminalSnippetsContainer.getChildren().addAll(standaloneHeader, standaloneContainer);
         }
+    }
+
+    private void rebuildConnectionsGrid() {
+        localConnectionsGrid.getChildren().clear();
+        remoteConnectionsGrid.getChildren().clear();
+        String query = connectionsSearchField != null ? connectionsSearchField.getText().toLowerCase().trim() : "";
+
+        // 1. Gather local shells
+        List<String> locals = new ArrayList<>();
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+        if (isWindows) {
+            locals.add("CMD");
+            locals.add("PowerShell");
+            if (TopToolBar.isBashAvailableOnWindows()) {
+                locals.add("Bash");
+            }
+        } else {
+            locals.add("Bash");
+        }
+
+        // Add Local Shells as connection cards
+        for (String localShell : locals) {
+            if (!query.isEmpty() && !localShell.toLowerCase().contains(query) && !"local shell".contains(query)) {
+                continue;
+            }
+            TopToolBar.DropdownItem item = new TopToolBar.DropdownItem(localShell);
+            HBox card = createConnectionCardNode(item, localShell, "Local Shell", ">_");
+            localConnectionsGrid.getChildren().add(card);
+        }
+
+        // 2. Gather host profiles
+        for (HostProfile host : hosts) {
+            String subText = (host.getUsername() != null ? host.getUsername() : "") + "@" + (host.getIp() != null ? host.getIp() : "");
+            if (host.getUrl() != null && !host.getUrl().isEmpty()) {
+                subText = (host.getUsername() != null ? host.getUsername() : "") + "@" + host.getUrl();
+            }
+            if (!query.isEmpty()) {
+                boolean match = (host.getName() != null && host.getName().toLowerCase().contains(query)) ||
+                                (host.getIp() != null && host.getIp().toLowerCase().contains(query)) ||
+                                (host.getUsername() != null && host.getUsername().toLowerCase().contains(query)) ||
+                                (host.getUrl() != null && host.getUrl().toLowerCase().contains(query));
+                if (!match) continue;
+            }
+            TopToolBar.DropdownItem item = new TopToolBar.DropdownItem(host);
+            String firstLetter = (host.getName() == null || host.getName().isEmpty()) ? "?" : host.getName().substring(0, 1).toUpperCase();
+            HBox card = createConnectionCardNode(item, host.getName(), subText, firstLetter);
+            remoteConnectionsGrid.getChildren().add(card);
+        }
+    }
+
+    private HBox createConnectionCardNode(TopToolBar.DropdownItem item, String title, String subtext, String badgeText) {
+        HBox card = new HBox(12);
+        card.setPadding(new Insets(12));
+        card.setAlignment(Pos.CENTER_LEFT);
+        card.getStyleClass().add("host-card");
+        card.setPrefWidth(220);
+        card.setMaxWidth(220);
+        card.setCursor(javafx.scene.Cursor.HAND);
+
+        Label badge = new Label(badgeText);
+        badge.setAlignment(Pos.CENTER);
+        badge.setPrefSize(32, 32);
+        badge.setMinSize(32, 32);
+        badge.setMaxSize(32, 32);
+        badge.getStyleClass().add("host-badge");
+
+        VBox details = new VBox(2);
+        String displayTitle = title != null ? title : "";
+        if (displayTitle.length() > 21) {
+            displayTitle = displayTitle.substring(0, 19) + "...";
+        }
+        Label nameLabel = new Label(displayTitle);
+        nameLabel.getStyleClass().add("host-name");
+
+        String displaySub = subtext != null ? subtext : "";
+        if (displaySub.length() > 26) {
+            displaySub = displaySub.substring(0, 24) + "...";
+        }
+        Label subLabel = new Label(displaySub);
+        subLabel.getStyleClass().add("host-username");
+
+        details.getChildren().addAll(nameLabel, subLabel);
+        card.getChildren().addAll(badge, details);
+
+        card.setOnMouseClicked(event -> {
+            selectedConnectionItem.set(item);
+            for (javafx.scene.Node node : localConnectionsGrid.getChildren()) {
+                node.getStyleClass().remove("selected");
+            }
+            for (javafx.scene.Node node : remoteConnectionsGrid.getChildren()) {
+                node.getStyleClass().remove("selected");
+            }
+            card.getStyleClass().add("selected");
+            if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+                initiateConnectionFromDropdownItem(item);
+            }
+        });
+
+        if (selectedConnectionItem.get() != null && selectedConnectionItem.get().equals(item)) {
+            card.getStyleClass().add("selected");
+        }
+
+        return card;
+    }
+
+    private void initiateConnectionFromDropdownItem(TopToolBar.DropdownItem item) {
+        if (item == null) return;
+        if (item.isHost()) {
+            connectToHost(item.getHostProfile());
+        } else {
+            openLocalTerminal(item.getLabel());
+        }
+        switchMode(AppMode.TERMINAL);
     }
 
     private void clearSidebarSelection() {

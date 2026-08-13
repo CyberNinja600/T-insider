@@ -32,6 +32,12 @@ public class TerminalPane extends StackPane {
     private HostProfile hostProfile;// for SSH
     private String title;
 
+    // Parent/Template details for empty placeholders
+    private String parentSessionType;
+    private String parentLocalShellType;
+    private HostProfile parentHostProfile;
+    private String parentTitle;
+
     private SplitLeafNode leafNode;
     private JediTermWidget widget;
     private SwingNode swingNode;
@@ -53,12 +59,35 @@ public class TerminalPane extends StackPane {
     private Button emptyLocalShellBtn;
 
     public TerminalPane(TerminalSplitPane splitPane, String sessionType, String localShellType, HostProfile hostProfile, String title) {
+        this(splitPane, sessionType, localShellType, hostProfile, title, null);
+    }
+
+    public TerminalPane(TerminalSplitPane splitPane, String sessionType, String localShellType, HostProfile hostProfile, String title, TerminalPane parentPane) {
         this.splitPane = splitPane;
         this.sessionType = sessionType;
-        this.localShellType = localShellType;
-        this.hostProfile = hostProfile;
-        this.title = title;
         this.currentTheme = splitPane.getCurrentTheme();
+
+        if (parentPane != null) {
+            if ("EMPTY".equals(parentPane.getSessionType())) {
+                this.parentSessionType = parentPane.getParentSessionType();
+                this.parentLocalShellType = parentPane.getParentLocalShellType();
+                this.parentHostProfile = parentPane.getParentHostProfile();
+                this.parentTitle = parentPane.getParentTitle();
+            } else {
+                this.parentSessionType = parentPane.getSessionType();
+                this.parentLocalShellType = parentPane.getLocalShellType();
+                this.parentHostProfile = parentPane.getHostProfile();
+                this.parentTitle = parentPane.getTitle();
+            }
+        }
+
+        if ("EMPTY".equals(sessionType)) {
+            this.title = "Drop Tab Here";
+        } else {
+            this.localShellType = localShellType;
+            this.hostProfile = hostProfile;
+            this.title = title;
+        }
 
         getStyleClass().add("terminal-pane");
         setStyle("-fx-border-color: #2a3356; -fx-border-width: 1.5px; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-background-color: #090F22;");
@@ -71,7 +100,7 @@ public class TerminalPane extends StackPane {
         headerBar.getStyleClass().add("terminal-pane-header");
         headerBar.setStyle("-fx-background-color: #11172a; -fx-padding: 4px 8px; -fx-alignment: center-left; -fx-border-color: transparent transparent #2a3356 transparent; -fx-border-width: 0 0 1px 0; -fx-background-radius: 5px 5px 0 0;");
 
-        titleLabel = new Label(title);
+        titleLabel = new Label(this.title);
         titleLabel.getStyleClass().add("terminal-pane-title");
         titleLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-font-weight: bold;");
         titleLabel.setMaxWidth(Double.MAX_VALUE);
@@ -179,7 +208,7 @@ public class TerminalPane extends StackPane {
         emptyContainer = new VBox(15);
         emptyContainer.setAlignment(Pos.CENTER);
         emptyContainer.setPadding(new Insets(20));
-        emptyContainer.setStyle("-fx-border-style: dashed; -fx-border-width: 2px; -fx-background-radius: 6px; -fx-border-radius: 6px; -fx-border-insets: 20px; -fx-padding: 20px;");
+        emptyContainer.setStyle("-fx-border-style: none; -fx-border-width: 0px; -fx-background-radius: 6px; -fx-border-radius: 6px; -fx-border-insets: 20px; -fx-padding: 20px;");
 
         emptyDragLabel = new Label("Drop Tab Here");
         emptyDragLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
@@ -187,11 +216,18 @@ public class TerminalPane extends StackPane {
         emptyDescLabel = new Label("Drag & drop any active tab here to split");
         emptyDescLabel.setStyle("-fx-font-size: 11px;");
 
-        emptyLocalShellBtn = new Button("Or Open Local CMD");
+        String buttonText = "Or Open Local CMD";
+        if ("SSH".equals(parentSessionType) && parentHostProfile != null) {
+            buttonText = "Duplicate Session (" + parentTitle + ")";
+        } else if ("LOCAL".equals(parentSessionType) && parentLocalShellType != null) {
+            buttonText = "Duplicate Session (" + parentLocalShellType + ")";
+        }
+
+        emptyLocalShellBtn = new Button(buttonText);
         emptyLocalShellBtn.getStyleClass().add("terminal-pane-btn");
         emptyLocalShellBtn.setStyle("-fx-cursor: hand; -fx-padding: 6px 14px; -fx-background-radius: 4px;");
         emptyLocalShellBtn.setOnAction(e -> {
-            splitPane.initiatePaneConnectionForLocalCmd(this);
+            splitPane.initiatePaneConnectionFromTemplate(this, parentSessionType, parentLocalShellType, parentHostProfile, parentTitle);
         });
 
         // Setup hover behavior for local CMD button
@@ -271,15 +307,22 @@ public class TerminalPane extends StackPane {
     }
 
     public DropPosition calculateDropPosition(double x, double y, double w, double h) {
-        double pctX = x / w;
-        double pctY = y / h;
+        if ("EMPTY".equals(getSessionType())) {
+            return DropPosition.CENTER;
+        }
 
-        if (pctX < 0.25) return DropPosition.LEFT;
-        if (pctX > 0.75) return DropPosition.RIGHT;
-        if (pctY < 0.25) return DropPosition.TOP;
-        if (pctY > 0.75) return DropPosition.BOTTOM;
+        // Divide active pane into 4 split zones based on the closest edge to the cursor (no deadzones, VS Code style)
+        double distLeft = x;
+        double distRight = w - x;
+        double distTop = y;
+        double distBottom = h - y;
 
-        return DropPosition.CENTER;
+        double minDist = Math.min(Math.min(distLeft, distRight), Math.min(distTop, distBottom));
+
+        if (minDist == distLeft) return DropPosition.LEFT;
+        if (minDist == distRight) return DropPosition.RIGHT;
+        if (minDist == distTop) return DropPosition.TOP;
+        return DropPosition.BOTTOM;
     }
 
     public void showDragOverlay(DropPosition pos) {
@@ -488,7 +531,7 @@ public class TerminalPane extends StackPane {
         com.jediterm.core.Color btnBg = theme.getColor("terminal.pane.empty.button.background", theme.getSelectionColor());
         com.jediterm.core.Color btnFg = theme.getColor("terminal.pane.empty.button.foreground", theme.getTextColor());
 
-        emptyContainer.setStyle("-fx-border-style: dashed; -fx-border-color: " + toHex(containerBorder) + "; -fx-border-width: 2px; -fx-background-color: " + toHex(containerBg) + "; -fx-background-radius: 6px; -fx-border-radius: 6px; -fx-border-insets: 20px; -fx-padding: 20px;");
+        emptyContainer.setStyle("-fx-border-style: none; -fx-border-width: 0px; -fx-background-color: " + toHex(containerBg) + "; -fx-background-radius: 6px; -fx-border-radius: 6px; -fx-border-insets: 20px; -fx-padding: 20px;");
         emptyDragLabel.setStyle("-fx-text-fill: " + toHex(dragFg) + "; -fx-font-size: 14px; -fx-font-weight: bold;");
         emptyDescLabel.setStyle("-fx-text-fill: " + toHex(descFg) + "; -fx-font-size: 11px;");
         
@@ -589,12 +632,40 @@ public class TerminalPane extends StackPane {
         return sessionType;
     }
 
+    public void setSessionType(String sessionType) {
+        this.sessionType = sessionType;
+    }
+
+    public String getParentSessionType() {
+        return parentSessionType;
+    }
+
     public String getLocalShellType() {
         return localShellType;
     }
 
+    public void setLocalShellType(String localShellType) {
+        this.localShellType = localShellType;
+    }
+
+    public String getParentLocalShellType() {
+        return parentLocalShellType;
+    }
+
     public HostProfile getHostProfile() {
         return hostProfile;
+    }
+
+    public void setHostProfile(HostProfile hostProfile) {
+        this.hostProfile = hostProfile;
+    }
+
+    public HostProfile getParentHostProfile() {
+        return parentHostProfile;
+    }
+
+    public String getParentTitle() {
+        return parentTitle;
     }
 
     public String getTitle() {
