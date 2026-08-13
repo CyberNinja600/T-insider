@@ -127,8 +127,12 @@ public class ConnectionManager {
         Tab previousTab = tabPane.getSelectionModel().getSelectedItem();
         Tab loadingTab = new Tab("Connecting " + truncate(host.getName(), 5) + "...");
         ProgressIndicator spinner = new ProgressIndicator();
-        VBox vBox = new VBox(15, new Label("Connecting to " + connectIp + ":" + connectPort + "..."), spinner);
+        spinner.getStyleClass().add("connecting-spinner");
+        Label connLabel = new Label("Connecting to " + connectIp + ":" + connectPort + "...");
+        connLabel.getStyleClass().add("connecting-label");
+        VBox vBox = new VBox(15, connLabel, spinner);
         vBox.setAlignment(Pos.CENTER);
+        vBox.getStyleClass().add("connecting-pane");
         loadingTab.setContent(vBox);
 
         // Insert loadingTab before the "+" Tab

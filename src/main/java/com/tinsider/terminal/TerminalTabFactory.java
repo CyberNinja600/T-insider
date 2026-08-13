@@ -177,6 +177,21 @@ public class TerminalTabFactory {
                     }
 
                     @Override
+                    public java.awt.Dimension getPreferredSize() {
+                        java.awt.Dimension dim = super.getPreferredSize();
+                        int scrollWidth = 10;
+                        try {
+                            scrollWidth = Integer.parseInt(com.tinsider.config.ThemeManager.getProperty("scrollbar.width", "10"));
+                        } catch (Exception ignored) {}
+                        if (getOrientation() == JScrollBar.VERTICAL) {
+                            dim.width = scrollWidth;
+                        } else {
+                            dim.height = scrollWidth;
+                        }
+                        return dim;
+                    }
+
+                    @Override
                     public void updateUI() {
                         if (!initialized) {
                             super.updateUI();

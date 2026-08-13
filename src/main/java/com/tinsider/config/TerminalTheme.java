@@ -90,6 +90,9 @@ public class TerminalTheme {
         colors.put("titlebar.close.hover.foreground", text);
 
         colors.put("terminal.pane.background", bg);
+        colors.put("terminal.splitpane.background", bg);
+        colors.put("terminal.splitpane.divider.background", selection);
+        colors.put("terminal.splitpane.divider.hover", cursor);
         colors.put("terminal.pane.border", selection);
         colors.put("terminal.pane.header.background", selection);
         colors.put("terminal.pane.header.border", selection);
@@ -106,6 +109,10 @@ public class TerminalTheme {
         colors.put("terminal.pane.empty.button.foreground", text);
         colors.put("terminal.pane.empty.button.hover.background", cursor);
         colors.put("terminal.pane.empty.button.hover.foreground", bg);
+
+        colors.put("connecting.background", bg);
+        colors.put("connecting.icon", cursor);
+        colors.put("connecting.foreground", text);
         
         // Set standard ANSI-16 color palette initialization (modern vibrant Terminal theme colors)
         ansiColors[0] = new Color(22, 27, 48);       // 0: Black (matching dark themes)

@@ -836,6 +836,23 @@ public class MainApp extends Application {
         com.jediterm.core.Color inputBorder = theme.getColor("controls.input.border", theme.getBackgroundColor());
         com.jediterm.core.Color inputFg = theme.getColor("controls.input.foreground", theme.getTextColor());
 
+        com.jediterm.core.Color zoomBg = theme.getColor("controls.zoom.background", theme.getBackgroundColor());
+        com.jediterm.core.Color zoomBorder = theme.getColor("controls.zoom.border", theme.getSelectionColor());
+        com.jediterm.core.Color zoomFg = theme.getColor("controls.zoom.foreground", theme.getTextColor());
+        com.jediterm.core.Color zoomHoverBg = theme.getColor("controls.zoom.hover.background", theme.getSelectionColor());
+        com.jediterm.core.Color zoomHoverBorder = theme.getColor("controls.zoom.hover.border", theme.getCursorColor());
+        com.jediterm.core.Color zoomHoverFg = theme.getColor("controls.zoom.hover.foreground", theme.getTextColor());
+        com.jediterm.core.Color zoomActiveBg = theme.getColor("controls.zoom.active.background", theme.getCursorColor());
+        com.jediterm.core.Color zoomActiveBorder = theme.getColor("controls.zoom.active.border", theme.getCursorColor());
+        com.jediterm.core.Color zoomActiveFg = theme.getColor("controls.zoom.active.foreground", theme.getBackgroundColor());
+
+        com.jediterm.core.Color connBg = theme.getColor("connecting.background", theme.getBackgroundColor());
+        com.jediterm.core.Color connIcon = theme.getColor("connecting.icon", theme.getCursorColor());
+        com.jediterm.core.Color connFg = theme.getColor("connecting.foreground", theme.getTextColor());
+        com.jediterm.core.Color splitPaneBg = theme.getColor("terminal.splitpane.background", theme.getBackgroundColor());
+        com.jediterm.core.Color splitDividerBg = theme.getColor("terminal.splitpane.divider.background", theme.getSelectionColor());
+        com.jediterm.core.Color splitDividerHover = theme.getColor("terminal.splitpane.divider.hover", theme.getCursorColor());
+
         com.jediterm.core.Color searchBg = theme.getColor("search.bar.background", theme.getSelectionColor());
         com.jediterm.core.Color searchBorder = theme.getColor("search.bar.border", theme.getBackgroundColor());
         com.jediterm.core.Color searchFg = theme.getColor("search.bar.foreground", theme.getTextColor());
@@ -930,6 +947,12 @@ public class MainApp extends Application {
         double dialogBorderOpacity = 1.0;
         double dialogHeaderBgOpacity = 0.5;
         double searchBarBgOpacity = 1.0;
+        double zoomBgOpacity = 1.0;
+        double zoomBorderOpacity = 1.0;
+        double zoomHoverBgOpacity = 1.0;
+        double zoomHoverBorderOpacity = 1.0;
+        double zoomActiveBgOpacity = 1.0;
+        double zoomActiveBorderOpacity = 1.0;
 
 
         try {
@@ -953,9 +976,25 @@ public class MainApp extends Application {
             dialogBorderOpacity = Double.parseDouble(ThemeManager.getProperty("dialog.border.opacity", "1.0"));
             dialogHeaderBgOpacity = Double.parseDouble(ThemeManager.getProperty("dialog.header.background.opacity", "0.5"));
             searchBarBgOpacity = Double.parseDouble(ThemeManager.getProperty("search.bar.background.opacity", "1.0"));
+            zoomBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.background.opacity", "1.0"));
+            zoomBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.border.opacity", "1.0"));
+            zoomHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.hover.background.opacity", "1.0"));
+            zoomHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.hover.border.opacity", "1.0"));
+            zoomActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.active.background.opacity", "1.0"));
+            zoomActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.active.border.opacity", "1.0"));
         } catch (Exception ignored) {}
 
         // Format raw colors to RGBA with parsed opacities
+        String rgbaZoomBg = toRgba(zoomBg, zoomBgOpacity);
+        String rgbaZoomBorder = toRgba(zoomBorder, zoomBorderOpacity);
+        String hexZoomFg = toHex(zoomFg);
+        String rgbaZoomHoverBg = toRgba(zoomHoverBg, zoomHoverBgOpacity);
+        String rgbaZoomHoverBorder = toRgba(zoomHoverBorder, zoomHoverBorderOpacity);
+        String hexZoomHoverFg = toHex(zoomHoverFg);
+        String rgbaZoomActiveBg = toRgba(zoomActiveBg, zoomActiveBgOpacity);
+        String rgbaZoomActiveBorder = toRgba(zoomActiveBorder, zoomActiveBorderOpacity);
+        String hexZoomActiveFg = toHex(zoomActiveFg);
+
         String rgbaCardsItemBg = toRgba(cardsItemBg, itemBgOpacity);
         String rgbaCardsItemBorder = toRgba(cardsItemBorder, itemBorderOpacity);
         String rgbaCardsHoverBg = toRgba(cardsHoverBg, itemHoverBgOpacity);
@@ -993,6 +1032,13 @@ public class MainApp extends Application {
         String hexInputBorder = toHex(inputBorder);
         String hexInputFg = toHex(inputFg);
 
+        String hexConnBg = toHex(connBg);
+        String hexConnIcon = toHex(connIcon);
+        String hexConnFg = toHex(connFg);
+        String hexSplitPaneBg = toHex(splitPaneBg);
+        String hexSplitDividerBg = toHex(splitDividerBg);
+        String hexSplitDividerHover = toHex(splitDividerHover);
+
         String rgbaSearchBg = toRgba(searchBg, searchBarBgOpacity);
         String hexSearchBorder = toHex(searchBorder);
         String hexSearchFg = toHex(searchFg);
@@ -1029,9 +1075,12 @@ public class MainApp extends Application {
                             ".button { -fx-background-color: " + hexBtnBg + "; -fx-border-color: " + hexBtnBorder + "; -fx-text-fill: " + hexBtnFg + "; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button:hover { -fx-background-color: " + hexBtnHoverBg + "; -fx-text-fill: #ffffff; }\n" +
                             ".button:disabled { -fx-opacity: 0.4; -fx-cursor: default; }\n" +
-                            ".button.zoom-btn { -fx-padding: 3px 8px; -fx-font-size: 11px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
+                            ".button.zoom-btn { -fx-background-color: " + rgbaZoomBg + "; -fx-border-color: " + rgbaZoomBorder + "; -fx-text-fill: " + hexZoomFg + "; -fx-padding: 3px 8px; -fx-font-size: 11px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
+                            ".button.zoom-btn:hover { -fx-background-color: " + rgbaZoomHoverBg + "; -fx-border-color: " + rgbaZoomHoverBorder + "; -fx-text-fill: " + hexZoomHoverFg + "; }\n" +
+                            ".button.zoom-btn:pressed { -fx-background-color: " + rgbaZoomActiveBg + "; -fx-border-color: " + rgbaZoomActiveBorder + "; -fx-text-fill: " + hexZoomActiveFg + "; }\n" +
                             ".combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; }\n" +
                             ".combo-box.shell-dropdown { -fx-pref-width: 140px; -fx-max-width: 140px; }\n" +
+                            ".combo-box.theme-dropdown { -fx-border-color: transparent; -fx-border-width: 0px; }\n" +
                             ".combo-box .list-cell { -fx-text-fill: " + hexComboFg + "; }\n" +
                             ".combo-box:hover { -fx-background-color: " + hexBtnHoverBg + "; }\n" +
                             ".combo-box:focused { -fx-border-color: " + hexComboBorder + "; }\n" +
@@ -1129,7 +1178,14 @@ public class MainApp extends Application {
                             ".dialog-pane .text-area .content, .dialog-pane .text-area:focused .content { -fx-background-color: transparent; -fx-text-fill: " + hexInputFg + "; }\n" +
                             ".dialog-pane .text-field:disabled, .dialog-pane .text-area:disabled, .dialog-pane .password-field:disabled, .dialog-pane .combo-box:disabled { -fx-opacity: 0.5; }\n" +
                             ".dialog-pane .radio-button { -fx-text-fill: " + hexLabelFg + "; }\n" +
-                            ".dialog-pane .radio-button .radio { -fx-mark-color: " + hexTermCursor + "; -fx-border-color: transparent; }\n";
+                            ".dialog-pane .radio-button .radio { -fx-mark-color: " + hexTermCursor + "; -fx-border-color: transparent; }\n" +
+                            ".connecting-pane { -fx-background-color: " + hexConnBg + "; }\n" +
+                            ".connecting-label { -fx-text-fill: " + hexConnFg + "; -fx-font-size: 13px; }\n" +
+                            ".connecting-spinner { -fx-progress-color: " + hexConnIcon + "; }\n" +
+                            ".split-pane { -fx-background-color: " + hexSplitPaneBg + "; }\n" +
+                            ".terminal-split-pane { -fx-background-color: " + hexSplitPaneBg + "; }\n" +
+                            ".split-pane *.split-pane-divider { -fx-background-color: " + hexSplitDividerBg + "; }\n" +
+                            ".split-pane *.split-pane-divider:hover { -fx-background-color: " + hexSplitDividerHover + "; }\n";
         
         try {
             File cssFile = File.createTempFile("theme", ".css");
