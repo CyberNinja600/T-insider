@@ -179,7 +179,17 @@ public class MainApp extends Application {
         boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
         String defaultShell = isWindows ? "CMD" : "Bash";
         String savedShell = settings.getOrDefault("shell", defaultShell);
-        String savedThemeName = settings.getOrDefault("theme", "Default Space Blue");
+        
+        String savedThemeName = settings.get("theme");
+        if (savedThemeName == null || savedThemeName.trim().isEmpty()) {
+            savedThemeName = "Default Space Blue"; // Default fallback
+            for (TerminalTheme theme : availableThemes) {
+                if ("Gotham-default".equalsIgnoreCase(theme.getName())) {
+                    savedThemeName = theme.getName();
+                    break;
+                }
+            }
+        }
 
         for (TerminalTheme theme : availableThemes) {
             if (theme.getName().equalsIgnoreCase(savedThemeName)) {
@@ -561,7 +571,7 @@ public class MainApp extends Application {
         snippetExecutionSidebar.getChildren().addAll(terminalSnippetsHeader, sidebarSearchField, sidebarScrollPane);
 
         // 5. Root Layout & Theme Control
-        topToolBar = new TopToolBar(availableThemes, savedThemeName, savedShell, hosts,
+        topToolBar = new TopToolBar(availableThemes, currentTheme.getName(), savedShell, hosts,
             theme -> {
                 applyTheme(theme);
                 Map<String, String> currentSettings = StorageManager.loadSettings();
