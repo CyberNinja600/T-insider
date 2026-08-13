@@ -70,6 +70,7 @@ public class TerminalSplitPane extends BorderPane {
 
         if (pane != null) {
             pane.requestFocusOnTerminal();
+            com.tinsider.ui.MainApp.onTerminalFocused(pane);
         }
     }
 

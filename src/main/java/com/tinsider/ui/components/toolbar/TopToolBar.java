@@ -228,7 +228,7 @@ public class TopToolBar extends HBox {
         }
     }
 
-    private boolean isBashAvailableOnWindows() {
+    public static boolean isBashAvailableOnWindows() {
         // 1. Check C:\Program Files\Git\bin\bash.exe
         if (new java.io.File("C:\\Program Files\\Git\\bin\\bash.exe").exists()) return true;
 
@@ -315,6 +315,19 @@ public class TopToolBar extends HBox {
 
     public String getSelectedTheme() {
         return themeOptions.getValue();
+    }
+
+    public void selectShellOrHost(String type, HostProfile host) {
+        for (DropdownItem item : shellOptions.getItems()) {
+            if (host != null && item.isHost() && item.getHostProfile() != null && 
+                host.getId() != null && host.getId().equals(item.getHostProfile().getId())) {
+                shellOptions.setValue(item);
+                return;
+            } else if (host == null && !item.isHost() && item.getLabel().equalsIgnoreCase(type)) {
+                shellOptions.setValue(item);
+                return;
+            }
+        }
     }
 
     public void updateZoomLabel(float fontSize) {
