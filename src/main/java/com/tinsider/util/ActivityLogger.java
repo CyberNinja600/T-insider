@@ -24,8 +24,13 @@ public class ActivityLogger {
             if (!dir.exists()) {
                 dir.mkdirs();
             }
+            // Clear the activity log file on launch so it doesn't stack across runs!
+            File logFile = new File(LOG_FILE);
+            if (logFile.exists()) {
+                logFile.delete();
+            }
         } catch (Exception e) {
-            System.err.println("Failed to create log directory: " + e.getMessage());
+            System.err.println("Failed to initialize log: " + e.getMessage());
         }
     }
 
