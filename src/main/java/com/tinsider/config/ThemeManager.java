@@ -104,6 +104,24 @@ public class ThemeManager {
         setDefaultIfMissing("controls.input.border", "BackgroundColor");
         setDefaultIfMissing("controls.input.foreground", "TextColor");
 
+        setDefaultIfMissing("controls.zoom.background", "BackgroundColor");
+        setDefaultIfMissing("controls.zoom.border", "SelectionColor");
+        setDefaultIfMissing("controls.zoom.foreground", "TextColor");
+        setDefaultIfMissing("controls.zoom.background.opacity", "1.0");
+        setDefaultIfMissing("controls.zoom.border.opacity", "1.0");
+
+        setDefaultIfMissing("controls.zoom.hover.background", "SelectionColor");
+        setDefaultIfMissing("controls.zoom.hover.border", "CursorColor");
+        setDefaultIfMissing("controls.zoom.hover.foreground", "TextColor");
+        setDefaultIfMissing("controls.zoom.hover.background.opacity", "1.0");
+        setDefaultIfMissing("controls.zoom.hover.border.opacity", "1.0");
+
+        setDefaultIfMissing("controls.zoom.active.background", "CursorColor");
+        setDefaultIfMissing("controls.zoom.active.border", "CursorColor");
+        setDefaultIfMissing("controls.zoom.active.foreground", "BackgroundColor");
+        setDefaultIfMissing("controls.zoom.active.background.opacity", "1.0");
+        setDefaultIfMissing("controls.zoom.active.border.opacity", "1.0");
+
         setDefaultIfMissing("search.bar.background", "SelectionColor");
         setDefaultIfMissing("search.bar.border", "BackgroundColor");
         setDefaultIfMissing("search.bar.foreground", "TextColor");
@@ -127,6 +145,9 @@ public class ThemeManager {
 
         // 11. Partitioned Terminal Pane
         setDefaultIfMissing("terminal.pane.background", "BackgroundColor");
+        setDefaultIfMissing("terminal.splitpane.background", "BackgroundColor");
+        setDefaultIfMissing("terminal.splitpane.divider.background", "SelectionColor");
+        setDefaultIfMissing("terminal.splitpane.divider.hover", "CursorColor");
         setDefaultIfMissing("terminal.pane.border", "SelectionColor");
         setDefaultIfMissing("terminal.pane.header.background", "SelectionColor");
         setDefaultIfMissing("terminal.pane.header.border", "SelectionColor");

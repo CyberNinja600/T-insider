@@ -21,6 +21,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 
 import javax.swing.SwingUtilities;
 
@@ -100,6 +101,14 @@ public class TerminalPane extends StackPane {
         mainLayout.setTop(headerBar);
 
         getChildren().add(mainLayout);
+
+        // Apply a geometric clip to the main layout to round all corners and prevent terminal content overflow
+        Rectangle clip = new Rectangle();
+        clip.setArcWidth(12); // Matches 6px border radius (6 * 2)
+        clip.setArcHeight(12);
+        clip.widthProperty().bind(mainLayout.widthProperty());
+        clip.heightProperty().bind(mainLayout.heightProperty());
+        mainLayout.setClip(clip);
 
         // 2. Build Drag Overlay (Initially Hidden)
         dragOverlay = new Region();
@@ -306,11 +315,13 @@ public class TerminalPane extends StackPane {
         VBox container = new VBox(15);
         container.setAlignment(Pos.CENTER);
         container.setPadding(new Insets(20));
+        container.getStyleClass().add("connecting-pane");
 
         ProgressIndicator spinner = new ProgressIndicator();
         spinner.setMaxSize(40, 40);
+        spinner.getStyleClass().add("connecting-spinner");
         Label msgLabel = new Label("Connecting " + title + "...");
-        msgLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 13px;");
+        msgLabel.getStyleClass().add("connecting-label");
 
         container.getChildren().addAll(spinner, msgLabel);
         mainLayout.setCenter(container);

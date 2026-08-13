@@ -117,6 +117,7 @@ public class TopToolBar extends HBox {
 
         Label themeLabel = new Label("Theme:");
         themeOptions = new ComboBox<>();
+        themeOptions.getStyleClass().add("theme-dropdown");
         for (TerminalTheme theme : availableThemes) {
             themeOptions.getItems().add(theme.getName());
         }
