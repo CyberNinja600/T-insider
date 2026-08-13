@@ -280,16 +280,28 @@ public class MainApp extends Application {
 
         // Local terminals section
         VBox localSection = new VBox(10);
-        Label localHeader = new Label("💻 Local Terminals");
-        localHeader.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;");
+        HBox localHeader = new HBox(8);
+        localHeader.setAlignment(Pos.CENTER_LEFT);
+        Label localIcon = new Label("\uEA85");
+        localIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 15px; -fx-text-fill: #94a3b8;");
+        Label localText = new Label("Local Terminals");
+        localText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;");
+        localHeader.getChildren().addAll(localIcon, localText);
+
         localConnectionsGrid = new FlowPane(15, 15);
         localConnectionsGrid.setPadding(new Insets(10, 0, 10, 0));
         localSection.getChildren().addAll(localHeader, localConnectionsGrid);
 
         // Remote connections section
         VBox remoteSection = new VBox(10);
-        Label remoteHeader = new Label("🌐 Remote Connections");
-        remoteHeader.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;");
+        HBox remoteHeader = new HBox(8);
+        remoteHeader.setAlignment(Pos.CENTER_LEFT);
+        Label remoteIcon = new Label("\uEB01");
+        remoteIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 15px; -fx-text-fill: #94a3b8;");
+        Label remoteText = new Label("Remote Connections");
+        remoteText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;");
+        remoteHeader.getChildren().addAll(remoteIcon, remoteText);
+
         remoteConnectionsGrid = new FlowPane(15, 15);
         remoteConnectionsGrid.setPadding(new Insets(10, 0, 10, 0));
         remoteSection.getChildren().addAll(remoteHeader, remoteConnectionsGrid);
@@ -1608,8 +1620,8 @@ public class MainApp extends Application {
 
                 HBox header = new HBox(10);
                 header.setAlignment(Pos.CENTER_LEFT);
-                Label folderIcon = new Label("📁");
-                folderIcon.setStyle("-fx-font-size: 16px;");
+                Label folderIcon = new Label("\uEA83");
+                folderIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; -fx-text-fill: #94a3b8;");
                 Label title = new Label(pkg.getName());
                 title.getStyleClass().add("dashboard-package-title");
                 header.getChildren().addAll(folderIcon, title);
@@ -1651,8 +1663,8 @@ public class MainApp extends Application {
 
             HBox standaloneHeader = new HBox(10);
             standaloneHeader.setAlignment(Pos.CENTER_LEFT);
-            Label standaloneIcon = new Label("📝");
-            standaloneIcon.setStyle("-fx-font-size: 16px;");
+            Label standaloneIcon = new Label("\uEAE9");
+            standaloneIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; -fx-text-fill: #94a3b8;");
             Label standaloneTitle = new Label("Standalone Snippets (No Package)");
             standaloneTitle.getStyleClass().add("dashboard-standalone-title");
             standaloneHeader.getChildren().addAll(standaloneIcon, standaloneTitle);
