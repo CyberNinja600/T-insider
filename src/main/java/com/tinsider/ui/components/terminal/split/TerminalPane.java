@@ -271,15 +271,22 @@ public class TerminalPane extends StackPane {
     }
 
     public DropPosition calculateDropPosition(double x, double y, double w, double h) {
-        double pctX = x / w;
-        double pctY = y / h;
+        if ("EMPTY".equals(getSessionType())) {
+            return DropPosition.CENTER;
+        }
 
-        if (pctX < 0.25) return DropPosition.LEFT;
-        if (pctX > 0.75) return DropPosition.RIGHT;
-        if (pctY < 0.25) return DropPosition.TOP;
-        if (pctY > 0.75) return DropPosition.BOTTOM;
+        // Divide active pane into 4 split zones based on the closest edge to the cursor (no deadzones, VS Code style)
+        double distLeft = x;
+        double distRight = w - x;
+        double distTop = y;
+        double distBottom = h - y;
 
-        return DropPosition.CENTER;
+        double minDist = Math.min(Math.min(distLeft, distRight), Math.min(distTop, distBottom));
+
+        if (minDist == distLeft) return DropPosition.LEFT;
+        if (minDist == distRight) return DropPosition.RIGHT;
+        if (minDist == distTop) return DropPosition.TOP;
+        return DropPosition.BOTTOM;
     }
 
     public void showDragOverlay(DropPosition pos) {
