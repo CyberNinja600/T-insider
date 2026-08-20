@@ -53,6 +53,7 @@ public class MainApp extends Application {
     private AppMode currentMode = AppMode.DASHBOARD;
     private DashboardTab currentDashboardTab = DashboardTab.CONNECTIONS;
     private boolean sidebarVisible = true;
+    private boolean autoEnterSnippet = true;
 
     private final ObservableList<HostProfile> hosts = FXCollections.observableArrayList();
     private final ObservableList<Snippet> snippets = FXCollections.observableArrayList();
@@ -176,6 +177,7 @@ public class MainApp extends Application {
 
         // Load settings and restore shell type + theme selection
         Map<String, String> settings = StorageManager.loadSettings();
+        autoEnterSnippet = Boolean.parseBoolean(settings.getOrDefault("autoEnterSnippet", "true"));
         boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
         String defaultShell = isWindows ? "CMD" : "Bash";
         String savedShell = settings.getOrDefault("shell", defaultShell);
@@ -609,6 +611,13 @@ public class MainApp extends Application {
                         Map<String, String> currentSettings = StorageManager.loadSettings();
                         currentSettings.put("theme", theme.getName());
                         StorageManager.saveSettings(currentSettings);
+                    },
+                    autoEnterSnippet,
+                    checked -> {
+                        autoEnterSnippet = checked;
+                        Map<String, String> currentSettings = StorageManager.loadSettings();
+                        currentSettings.put("autoEnterSnippet", String.valueOf(checked));
+                        StorageManager.saveSettings(currentSettings);
                     }
                 );
                 dialog.showAndWait();
@@ -891,7 +900,11 @@ public class MainApp extends Application {
             try {
                 TtyConnector connector = widget.getTtyConnector();
                 if (connector != null && connector.isConnected()) {
-                    connector.write(snippet.getCode() + "\r");
+                    String code = snippet.getCode();
+                    if (autoEnterSnippet) {
+                        code += "\r";
+                    }
+                    connector.write(code);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -1478,6 +1491,10 @@ public class MainApp extends Application {
                             ".dialog-pane .text-field:disabled, .dialog-pane .text-area:disabled, .dialog-pane .password-field:disabled, .dialog-pane .combo-box:disabled { -fx-opacity: 0.5; }\n" +
                             ".dialog-pane .radio-button { -fx-text-fill: " + hexLabelFg + "; }\n" +
                             ".dialog-pane .radio-button .radio { -fx-mark-color: " + hexTermCursor + "; -fx-border-color: transparent; }\n" +
+                            ".dialog-pane .check-box { -fx-text-fill: " + hexLabelFg + "; }\n" +
+                            ".dialog-pane .check-box .box { -fx-background-color: " + hexInputBorder + "; -fx-border-color: " + hexInputBorder + "; -fx-background-radius: 3px; -fx-border-radius: 3px; }\n" +
+                            ".dialog-pane .check-box:focused .box { -fx-border-color: " + hexTermCursor + "; }\n" +
+                            ".dialog-pane .check-box:selected .mark { -fx-background-color: " + hexTermCursor + "; }\n" +
                             ".connecting-pane { -fx-background-color: " + hexConnBg + "; }\n" +
                             ".connecting-label { -fx-text-fill: " + hexConnFg + "; -fx-font-size: 13px; }\n" +
                             ".connecting-spinner { -fx-progress-color: " + hexConnIcon + "; }\n" +
