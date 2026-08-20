@@ -33,6 +33,17 @@ public class TerminalWorkspace extends StackPane {
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab == addTab) {
                 Platform.runLater(() -> {
+                    boolean wasOldTabRemoved = (oldTab != null && !tabPane.getTabs().contains(oldTab));
+                    if (wasOldTabRemoved) {
+                        // The user closed the active tab and JavaFX automatically selected addTab.
+                        // We shouldn't auto-create a new terminal.
+                        if (tabPane.getTabs().size() > 1) {
+                            // If there are other terminal tabs, select the rightmost one
+                            tabPane.getSelectionModel().select(tabPane.getTabs().size() - 2);
+                        }
+                        return; // Exit early to prevent onPlusBtnPressed
+                    }
+
                     if (oldTab != null && tabPane.getTabs().contains(oldTab)) {
                         tabPane.getSelectionModel().select(oldTab);
                     }

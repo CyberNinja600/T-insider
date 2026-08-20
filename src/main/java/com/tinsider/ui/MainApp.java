@@ -856,6 +856,9 @@ public class MainApp extends Application {
             if (workspace.getTabPane().getTabs().contains(tab)) {
                 workspace.getTabPane().getTabs().remove(tab);
             }
+            if (workspace.getTabPane().getTabs().size() <= 1) {
+                switchMode(AppMode.DASHBOARD);
+            }
         });
     }
 
