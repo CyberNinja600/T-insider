@@ -16,6 +16,13 @@ public class HostDialog extends Dialog<HostProfile> {
         ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
         getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
 
+        Button saveBtn = (Button) getDialogPane().lookupButton(saveButtonType);
+        if (saveBtn != null) {
+            Label saveIcon = new Label("\uEB4B");
+            saveIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px;");
+            saveBtn.setGraphic(saveIcon);
+        }
+
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);

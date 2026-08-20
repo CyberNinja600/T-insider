@@ -328,7 +328,10 @@ public class MainApp extends Application {
         VBox.setVgrow(connectionsGridScrollPane, Priority.ALWAYS);
 
         HBox connectionsButtons = new HBox(10);
-        Button connectBtn = new Button("⚡ Connect");
+        Button connectBtn = new Button("Connect");
+        Label connectIcon = new Label("\uEB39");
+        connectIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        connectBtn.setGraphic(connectIcon);
         connectBtn.getStyleClass().add("button");
         connectBtn.setPrefWidth(100);
         connectionsButtons.getChildren().addAll(connectBtn);
@@ -365,9 +368,21 @@ public class MainApp extends Application {
         VBox.setVgrow(hostsGridScrollPane, Priority.ALWAYS);
 
         HBox hostButtons = new HBox(10);
-        Button addHostBtn = new Button("+ Add");
+        Button addHostBtn = new Button("Add");
+        Label addHostIcon = new Label("\uEA60");
+        addHostIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        addHostBtn.setGraphic(addHostIcon);
+
         Button editHostBtn = new Button("Edit");
+        Label editHostIcon = new Label("\uEA73");
+        editHostIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        editHostBtn.setGraphic(editHostIcon);
+
         Button deleteHostBtn = new Button("Delete");
+        Label deleteHostIcon = new Label("\uEA81");
+        deleteHostIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deleteHostBtn.setGraphic(deleteHostIcon);
+
         hostButtons.getChildren().addAll(addHostBtn, editHostBtn, deleteHostBtn);
         hostButtons.setAlignment(Pos.CENTER_LEFT);
 
@@ -421,11 +436,31 @@ public class MainApp extends Application {
         VBox.setVgrow(snippetsGridScrollPane, Priority.ALWAYS);
 
         HBox snippetButtons = new HBox(10);
-        Button addSnippetBtn = new Button("+ Add Snippet");
+        Button addSnippetBtn = new Button("Add Snippet");
+        Label addSnippetIcon = new Label("\uEA60");
+        addSnippetIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        addSnippetBtn.setGraphic(addSnippetIcon);
+
         Button editSnippetBtn = new Button("Edit");
+        Label editSnippetIcon = new Label("\uEA73");
+        editSnippetIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        editSnippetBtn.setGraphic(editSnippetIcon);
+
         Button deleteSnippetBtn = new Button("Delete");
-        Button addPackageBtn = new Button("+ Add Package");
+        Label deleteSnippetIcon = new Label("\uEA81");
+        deleteSnippetIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deleteSnippetBtn.setGraphic(deleteSnippetIcon);
+
+        Button addPackageBtn = new Button("Add Package");
+        Label addPackageIcon = new Label("\uEA60");
+        addPackageIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        addPackageBtn.setGraphic(addPackageIcon);
+
         Button deletePackageBtn = new Button("Delete Package");
+        Label deletePackageIcon = new Label("\uEA81");
+        deletePackageIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deletePackageBtn.setGraphic(deletePackageIcon);
+
         snippetButtons.getChildren().addAll(addSnippetBtn, editSnippetBtn, deleteSnippetBtn, addPackageBtn, deletePackageBtn);
         snippetButtons.setAlignment(Pos.CENTER_LEFT);
 
@@ -1440,6 +1475,7 @@ public class MainApp extends Application {
                             ".button.zoom-btn:hover { -fx-background-color: " + rgbaZoomHoverBg + "; -fx-border-color: " + rgbaZoomHoverBorder + "; -fx-text-fill: " + hexZoomHoverFg + "; }\n" +
                             ".button.zoom-btn:pressed { -fx-background-color: " + rgbaZoomActiveBg + "; -fx-border-color: " + rgbaZoomActiveBorder + "; -fx-text-fill: " + hexZoomActiveFg + "; }\n" +
                             ".button.zoom-reset-btn { -fx-min-width: 56px; -fx-pref-width: 56px; -fx-max-width: 56px; }\n" +
+                            ".button.zoom-icon-btn { -fx-font-family: \"codicon\"; -fx-font-size: 11px; }\n" +
                             ".button.sidebar-toggle-btn { -fx-background-color: " + rgbaToggleBg + "; -fx-border-color: " + rgbaToggleBorder + "; -fx-text-fill: " + hexToggleFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.sidebar-toggle-btn:hover { -fx-background-color: " + rgbaToggleHoverBg + "; -fx-border-color: " + rgbaToggleHoverBorder + "; -fx-text-fill: " + hexToggleHoverFg + "; }\n" +
                             ".button.sidebar-toggle-btn:pressed { -fx-background-color: " + rgbaToggleActiveBg + "; -fx-border-color: " + rgbaToggleActiveBorder + "; -fx-text-fill: " + hexToggleActiveFg + "; }\n" +
@@ -1530,7 +1566,7 @@ public class MainApp extends Application {
                             ".dashboard-view { -fx-background-color: " + hexWinBg + "; }\n" +
                             ".back-button { -fx-background-color: " + rgbaCardsSelectedBg + "; -fx-border-color: " + hexWinBg + "; -fx-text-fill: " + hexTermCursor + "; -fx-font-weight: bold; -fx-font-size: 12px; -fx-padding: 8px; -fx-cursor: hand; -fx-background-radius: 4px; }\n" +
                             ".back-button:hover { -fx-background-color: " + hexBtnHoverBg + "; -fx-border-color: " + hexTermCursor + "; }\n" +
-                            ".context-menu { -fx-background-color: " + hexWinBg + "; -fx-border-color: " + hexWinBorder + "; }\n" +
+                            ".context-menu { -fx-background-color: " + hexWinBg + "; -fx-border-color: " + hexWinBorder + "; -fx-background-radius: 6px; -fx-border-radius: 6px; -fx-border-width: 1px; -fx-padding: 4px 0px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 8, 0, 0, 4); }\n" +
                             ".menu-item:hover { -fx-background-color: " + hexTabHoverBg + "; }\n" +
                             ".menu-item .label { -fx-text-fill: " + hexPlusFg + "; }\n" +
                             ".menu-item:hover .label { -fx-text-fill: " + hexPlusHoverFg + "; }\n" +
@@ -2134,6 +2170,9 @@ public class MainApp extends Application {
         HBox titleRow = new HBox(5);
         titleRow.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(titleRow, Priority.ALWAYS);
+        titleRow.setMinHeight(22);
+        titleRow.setPrefHeight(22);
+        titleRow.setMaxHeight(22);
 
         Label titleLabel = new Label(item.getTitle());
         titleLabel.getStyleClass().add("snippet-title");
@@ -2161,7 +2200,7 @@ public class MainApp extends Application {
         });
         runBtn.setOnMouseClicked(e -> e.consume());
 
-        Button pasteBtn = new Button("\uEBCC");
+        Button pasteBtn = new Button("\uEC36");
         pasteBtn.getStyleClass().add("snippet-hover-btn");
         pasteBtn.setMinWidth(22);
         pasteBtn.setPrefWidth(22);
@@ -2208,6 +2247,24 @@ public class MainApp extends Application {
                     card.getStyleClass().add("selected");
                 }
             }
+        });
+
+        // Right click ContextMenu for Editing Snippets
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem editItem = new MenuItem("Edit");
+        Label editIcon = new Label("\uEC68");
+        editIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        editItem.setGraphic(editIcon);
+        editItem.setOnAction(e -> {
+            showAddSnippetDialog(snippets, item);
+        });
+        contextMenu.getItems().add(editItem);
+
+        card.setOnContextMenuRequested(event -> {
+            clearSidebarSelection();
+            currentlySelectedCardNode = card;
+            card.getStyleClass().add("selected");
+            contextMenu.show(card, event.getScreenX(), event.getScreenY());
         });
 
         return card;

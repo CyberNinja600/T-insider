@@ -131,14 +131,16 @@ public class TopToolBar extends HBox {
         zoomLabel.managedProperty().bind(zoomLabel.visibleProperty());
         zoomLabel.setVisible(false); // Initially hidden since app starts in Dashboard Mode
 
-        Button zoomOutBtn = new Button("-");
+        Button zoomOutBtn = new Button("\uEB82");
         zoomResetBtn = new Button("100%");
-        Button zoomInBtn = new Button("+");
+        Button zoomInBtn = new Button("\uEB81");
 
         zoomOutBtn.getStyleClass().add("zoom-btn");
+        zoomOutBtn.getStyleClass().add("zoom-icon-btn");
         zoomResetBtn.getStyleClass().add("zoom-btn");
         zoomResetBtn.getStyleClass().add("zoom-reset-btn");
         zoomInBtn.getStyleClass().add("zoom-btn");
+        zoomInBtn.getStyleClass().add("zoom-icon-btn");
 
         zoomOutBtn.setOnAction(e -> {
             if (onZoomOut != null) onZoomOut.run();
