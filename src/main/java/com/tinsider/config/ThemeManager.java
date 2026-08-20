@@ -158,6 +158,18 @@ public class ThemeManager {
         setDefaultIfMissing("controls.settings.active.background.opacity", "1.0");
         setDefaultIfMissing("controls.settings.active.border.opacity", "1.0");
 
+        setDefaultIfMissing("controls.snippet.hover.btn.background", "BackgroundColor");
+        setDefaultIfMissing("controls.snippet.hover.btn.border", "SelectionColor");
+        setDefaultIfMissing("controls.snippet.hover.btn.foreground", "TextColor");
+        setDefaultIfMissing("controls.snippet.hover.btn.background.opacity", "1.0");
+        setDefaultIfMissing("controls.snippet.hover.btn.border.opacity", "0.3");
+
+        setDefaultIfMissing("controls.snippet.hover.btn.hover.background", "SelectionColor");
+        setDefaultIfMissing("controls.snippet.hover.btn.hover.border", "CursorColor");
+        setDefaultIfMissing("controls.snippet.hover.btn.hover.foreground", "CursorColor");
+        setDefaultIfMissing("controls.snippet.hover.btn.hover.background.opacity", "1.0");
+        setDefaultIfMissing("controls.snippet.hover.btn.hover.border.opacity", "1.0");
+
         setDefaultIfMissing("search.bar.background", "SelectionColor");
         setDefaultIfMissing("search.bar.border", "BackgroundColor");
         setDefaultIfMissing("search.bar.foreground", "TextColor");
