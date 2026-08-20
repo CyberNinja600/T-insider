@@ -140,6 +140,24 @@ public class ThemeManager {
         setDefaultIfMissing("controls.sidebar.toggle.active.background.opacity", "1.0");
         setDefaultIfMissing("controls.sidebar.toggle.active.border.opacity", "1.0");
 
+        setDefaultIfMissing("controls.settings.background", "BackgroundColor");
+        setDefaultIfMissing("controls.settings.border", "SelectionColor");
+        setDefaultIfMissing("controls.settings.foreground", "TextColor");
+        setDefaultIfMissing("controls.settings.background.opacity", "1.0");
+        setDefaultIfMissing("controls.settings.border.opacity", "1.0");
+
+        setDefaultIfMissing("controls.settings.hover.background", "SelectionColor");
+        setDefaultIfMissing("controls.settings.hover.border", "CursorColor");
+        setDefaultIfMissing("controls.settings.hover.foreground", "TextColor");
+        setDefaultIfMissing("controls.settings.hover.background.opacity", "1.0");
+        setDefaultIfMissing("controls.settings.hover.border.opacity", "1.0");
+
+        setDefaultIfMissing("controls.settings.active.background", "CursorColor");
+        setDefaultIfMissing("controls.settings.active.border", "CursorColor");
+        setDefaultIfMissing("controls.settings.active.foreground", "BackgroundColor");
+        setDefaultIfMissing("controls.settings.active.background.opacity", "1.0");
+        setDefaultIfMissing("controls.settings.active.border.opacity", "1.0");
+
         setDefaultIfMissing("search.bar.background", "SelectionColor");
         setDefaultIfMissing("search.bar.border", "BackgroundColor");
         setDefaultIfMissing("search.bar.foreground", "TextColor");

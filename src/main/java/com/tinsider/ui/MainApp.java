@@ -571,13 +571,9 @@ public class MainApp extends Application {
         snippetExecutionSidebar.getChildren().addAll(terminalSnippetsHeader, sidebarSearchField, sidebarScrollPane);
 
         // 5. Root Layout & Theme Control
-        topToolBar = new TopToolBar(availableThemes, currentTheme.getName(), savedShell, hosts,
-            theme -> {
-                applyTheme(theme);
-                Map<String, String> currentSettings = StorageManager.loadSettings();
-                currentSettings.put("theme", theme.getName());
-                StorageManager.saveSettings(currentSettings);
-            },
+        topToolBar = new TopToolBar(
+            savedShell,
+            hosts,
             shell -> {
                 Map<String, String> currentSettings = StorageManager.loadSettings();
                 currentSettings.put("shell", shell);
@@ -603,6 +599,19 @@ public class MainApp extends Application {
             },
             () -> {
                 switchMode(AppMode.TERMINAL);
+            },
+            () -> {
+                com.tinsider.ui.dialogs.SettingsDialog dialog = new com.tinsider.ui.dialogs.SettingsDialog(
+                    availableThemes,
+                    currentTheme,
+                    theme -> {
+                        applyTheme(theme);
+                        Map<String, String> currentSettings = StorageManager.loadSettings();
+                        currentSettings.put("theme", theme.getName());
+                        StorageManager.saveSettings(currentSettings);
+                    }
+                );
+                dialog.showAndWait();
             }
         );
         topToolBar.setShellSelectionVisible(false);
@@ -660,7 +669,7 @@ public class MainApp extends Application {
             Platform.runLater(() -> {
                 System.out.println("[LiveReloader] Theme or config files changed! Reloading UI colors and styles...");
                 com.tinsider.config.ThemeManager.reloadConfig();
-                String currentThemeName = topToolBar.getSelectedTheme();
+                String currentThemeName = currentTheme != null ? currentTheme.getName() : "";
                 com.tinsider.config.TerminalTheme newTheme = null;
                 File watchDir = new File("./themes");
                 File[] themeFiles = watchDir.listFiles();
@@ -1025,6 +1034,16 @@ public class MainApp extends Application {
         com.jediterm.core.Color homeActiveBorder = theme.getColor("controls.home.active.border", theme.getCursorColor());
         com.jediterm.core.Color homeActiveFg = theme.getColor("controls.home.active.foreground", theme.getBackgroundColor());
 
+        com.jediterm.core.Color settingsBg = theme.getColor("controls.settings.background", theme.getBackgroundColor());
+        com.jediterm.core.Color settingsBorder = theme.getColor("controls.settings.border", theme.getSelectionColor());
+        com.jediterm.core.Color settingsFg = theme.getColor("controls.settings.foreground", theme.getTextColor());
+        com.jediterm.core.Color settingsHoverBg = theme.getColor("controls.settings.hover.background", theme.getSelectionColor());
+        com.jediterm.core.Color settingsHoverBorder = theme.getColor("controls.settings.hover.border", theme.getCursorColor());
+        com.jediterm.core.Color settingsHoverFg = theme.getColor("controls.settings.hover.foreground", theme.getTextColor());
+        com.jediterm.core.Color settingsActiveBg = theme.getColor("controls.settings.active.background", theme.getCursorColor());
+        com.jediterm.core.Color settingsActiveBorder = theme.getColor("controls.settings.active.border", theme.getCursorColor());
+        com.jediterm.core.Color settingsActiveFg = theme.getColor("controls.settings.active.foreground", theme.getBackgroundColor());
+
         com.jediterm.core.Color connBg = theme.getColor("connecting.background", theme.getBackgroundColor());
         com.jediterm.core.Color connIcon = theme.getColor("connecting.icon", theme.getCursorColor());
         com.jediterm.core.Color connFg = theme.getColor("connecting.foreground", theme.getTextColor());
@@ -1147,6 +1166,13 @@ public class MainApp extends Application {
         double homeActiveBgOpacity = 1.0;
         double homeActiveBorderOpacity = 1.0;
 
+        double settingsBgOpacity = 1.0;
+        double settingsBorderOpacity = 1.0;
+        double settingsHoverBgOpacity = 1.0;
+        double settingsHoverBorderOpacity = 1.0;
+        double settingsActiveBgOpacity = 1.0;
+        double settingsActiveBorderOpacity = 1.0;
+
         double connItemBgOpacity = 1.0;
         double connItemBorderOpacity = 1.0;
         double connBadgeBgOpacity = 0.15;
@@ -1197,6 +1223,13 @@ public class MainApp extends Application {
             homeHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.hover.border.opacity", "1.0"));
             homeActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.active.background.opacity", "1.0"));
             homeActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.active.border.opacity", "1.0"));
+
+            settingsBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.background.opacity", "1.0"));
+            settingsBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.border.opacity", "1.0"));
+            settingsHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.hover.background.opacity", "1.0"));
+            settingsHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.hover.border.opacity", "1.0"));
+            settingsActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.active.background.opacity", "1.0"));
+            settingsActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.active.border.opacity", "1.0"));
         } catch (Exception ignored) {}
 
         // Format raw colors to RGBA with parsed opacities
@@ -1229,6 +1262,16 @@ public class MainApp extends Application {
         String rgbaHomeActiveBg = toRgba(homeActiveBg, homeActiveBgOpacity);
         String rgbaHomeActiveBorder = toRgba(homeActiveBorder, homeActiveBorderOpacity);
         String hexHomeActiveFg = toHex(homeActiveFg);
+
+        String rgbaSettingsBg = toRgba(settingsBg, settingsBgOpacity);
+        String rgbaSettingsBorder = toRgba(settingsBorder, settingsBorderOpacity);
+        String hexSettingsFg = toHex(settingsFg);
+        String rgbaSettingsHoverBg = toRgba(settingsHoverBg, settingsHoverBgOpacity);
+        String rgbaSettingsHoverBorder = toRgba(settingsHoverBorder, settingsHoverBorderOpacity);
+        String hexSettingsHoverFg = toHex(settingsHoverFg);
+        String rgbaSettingsActiveBg = toRgba(settingsActiveBg, settingsActiveBgOpacity);
+        String rgbaSettingsActiveBorder = toRgba(settingsActiveBorder, settingsActiveBorderOpacity);
+        String hexSettingsActiveFg = toHex(settingsActiveFg);
 
         String rgbaCardsItemBg = toRgba(cardsItemBg, itemBgOpacity);
         String rgbaCardsItemBorder = toRgba(cardsItemBorder, itemBorderOpacity);
@@ -1320,6 +1363,9 @@ public class MainApp extends Application {
                             ".button.home-btn { -fx-background-color: " + rgbaHomeBg + "; -fx-border-color: " + rgbaHomeBorder + "; -fx-text-fill: " + hexHomeFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.home-btn:hover { -fx-background-color: " + rgbaHomeHoverBg + "; -fx-border-color: " + rgbaHomeHoverBorder + "; -fx-text-fill: " + hexHomeHoverFg + "; }\n" +
                             ".button.home-btn:pressed { -fx-background-color: " + rgbaHomeActiveBg + "; -fx-border-color: " + rgbaHomeActiveBorder + "; -fx-text-fill: " + hexHomeActiveFg + "; }\n" +
+                            ".button.settings-btn { -fx-background-color: " + rgbaSettingsBg + "; -fx-border-color: " + rgbaSettingsBorder + "; -fx-text-fill: " + hexSettingsFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
+                            ".button.settings-btn:hover { -fx-background-color: " + rgbaSettingsHoverBg + "; -fx-border-color: " + rgbaSettingsHoverBorder + "; -fx-text-fill: " + hexSettingsHoverFg + "; }\n" +
+                            ".button.settings-btn:pressed { -fx-background-color: " + rgbaSettingsActiveBg + "; -fx-border-color: " + rgbaSettingsActiveBorder + "; -fx-text-fill: " + hexSettingsActiveFg + "; }\n" +
                             ".button.terminal-btn { -fx-background-color: " + rgbaHomeBg + "; -fx-border-color: " + rgbaHomeBorder + "; -fx-text-fill: " + hexHomeFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.terminal-btn:hover { -fx-background-color: " + rgbaHomeHoverBg + "; -fx-border-color: " + rgbaHomeHoverBorder + "; -fx-text-fill: " + hexHomeHoverFg + "; }\n" +
                             ".button.terminal-btn:pressed { -fx-background-color: " + rgbaHomeActiveBg + "; -fx-border-color: " + rgbaHomeActiveBorder + "; -fx-text-fill: " + hexHomeActiveFg + "; }\n" +
@@ -1446,9 +1492,29 @@ public class MainApp extends Application {
             Files.write(cssFile.toPath(), dynamicCss.getBytes(StandardCharsets.UTF_8));
             
             if (root.getScene() != null) {
+                String styleCssUri = getClass().getResource("/style.css").toExternalForm();
+                String dynamicCssUri = cssFile.toURI().toString();
+
                 root.getScene().getStylesheets().clear();
-                root.getScene().getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
-                root.getScene().getStylesheets().add(cssFile.toURI().toString());
+                root.getScene().getStylesheets().add(styleCssUri);
+                root.getScene().getStylesheets().add(dynamicCssUri);
+
+                // Update all active dialogs/stages so that they get themed instantly without closing
+                for (javafx.stage.Window window : javafx.stage.Window.getWindows()) {
+                    if (window != root.getScene().getWindow() && window.getScene() != null) {
+                        javafx.scene.Parent sceneRoot = window.getScene().getRoot();
+                        if (sceneRoot instanceof DialogPane) {
+                            DialogPane dp = (DialogPane) sceneRoot;
+                            dp.getStylesheets().clear();
+                            dp.getStylesheets().add(styleCssUri);
+                            dp.getStylesheets().add(dynamicCssUri);
+                        } else {
+                            window.getScene().getStylesheets().clear();
+                            window.getScene().getStylesheets().add(styleCssUri);
+                            window.getScene().getStylesheets().add(dynamicCssUri);
+                        }
+                    }
+                }
             }
         } catch (Exception ex) {
             ex.printStackTrace();
