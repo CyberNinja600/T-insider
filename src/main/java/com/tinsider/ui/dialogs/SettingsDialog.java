@@ -9,7 +9,13 @@ import java.util.function.Consumer;
 
 public class SettingsDialog extends Dialog<Void> {
     
-    public SettingsDialog(List<TerminalTheme> availableThemes, TerminalTheme currentTheme, Consumer<TerminalTheme> onThemeChanged) {
+    public SettingsDialog(
+            List<TerminalTheme> availableThemes, 
+            TerminalTheme currentTheme, 
+            Consumer<TerminalTheme> onThemeChanged,
+            boolean initialAutoEnter,
+            Consumer<Boolean> onAutoEnterChanged) {
+        
         setTitle("Settings");
 
         getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
@@ -37,8 +43,21 @@ public class SettingsDialog extends Dialog<Void> {
             }
         });
 
+        Label autoEnterLabel = new Label("Auto-enter snippet:");
+        CheckBox autoEnterCheckBox = new CheckBox();
+        autoEnterCheckBox.getStyleClass().add("settings-checkbox");
+        autoEnterCheckBox.setSelected(initialAutoEnter);
+
+        autoEnterCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            if (onAutoEnterChanged != null) {
+                onAutoEnterChanged.accept(newVal);
+            }
+        });
+
         grid.add(themeLabel, 0, 0);
         grid.add(themeOptions, 1, 0);
+        grid.add(autoEnterLabel, 0, 1);
+        grid.add(autoEnterCheckBox, 1, 1);
 
         getDialogPane().setContent(grid);
         

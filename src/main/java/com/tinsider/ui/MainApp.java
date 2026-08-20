@@ -53,6 +53,7 @@ public class MainApp extends Application {
     private AppMode currentMode = AppMode.DASHBOARD;
     private DashboardTab currentDashboardTab = DashboardTab.CONNECTIONS;
     private boolean sidebarVisible = true;
+    private boolean autoEnterSnippet = true;
 
     private final ObservableList<HostProfile> hosts = FXCollections.observableArrayList();
     private final ObservableList<Snippet> snippets = FXCollections.observableArrayList();
@@ -176,6 +177,7 @@ public class MainApp extends Application {
 
         // Load settings and restore shell type + theme selection
         Map<String, String> settings = StorageManager.loadSettings();
+        autoEnterSnippet = Boolean.parseBoolean(settings.getOrDefault("autoEnterSnippet", "true"));
         boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
         String defaultShell = isWindows ? "CMD" : "Bash";
         String savedShell = settings.getOrDefault("shell", defaultShell);
@@ -609,6 +611,13 @@ public class MainApp extends Application {
                         Map<String, String> currentSettings = StorageManager.loadSettings();
                         currentSettings.put("theme", theme.getName());
                         StorageManager.saveSettings(currentSettings);
+                    },
+                    autoEnterSnippet,
+                    checked -> {
+                        autoEnterSnippet = checked;
+                        Map<String, String> currentSettings = StorageManager.loadSettings();
+                        currentSettings.put("autoEnterSnippet", String.valueOf(checked));
+                        StorageManager.saveSettings(currentSettings);
                     }
                 );
                 dialog.showAndWait();
@@ -887,11 +896,61 @@ public class MainApp extends Application {
 
         com.tinsider.util.ActivityLogger.logUserAction("EXECUTE_SNIPPET", "User executed snippet [" + snippet.getTitle() + "] on active terminal in tab [" + activeTab.getText() + "]");
 
+        // Bring user focus to the terminal
+        Platform.runLater(() -> {
+            if (splitPane != null) {
+                splitPane.requestFocusOnActive();
+            }
+        });
+
         SwingUtilities.invokeLater(() -> {
             try {
                 TtyConnector connector = widget.getTtyConnector();
                 if (connector != null && connector.isConnected()) {
-                    connector.write(snippet.getCode() + "\r");
+                    String code = snippet.getCode();
+                    if (autoEnterSnippet) {
+                        code += "\r";
+                    }
+                    connector.write(code);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void runSnippet(Snippet snippet, boolean autoEnter) {
+        Tab activeTab = workspace.getTabPane().getSelectionModel().getSelectedItem();
+        if (activeTab == null) {
+            AlertHelper.showErrorAlert("No active terminal", "Please open a terminal tab before running a snippet.");
+            return;
+        }
+
+        com.tinsider.ui.components.terminal.split.TerminalSplitPane splitPane = tabSplitPaneMap.get(activeTab);
+        JediTermWidget widget = (splitPane != null) ? splitPane.getActiveWidget() : null;
+        if (widget == null) {
+            AlertHelper.showErrorAlert("No active terminal", "The current tab is not a terminal session.");
+            return;
+        }
+
+        com.tinsider.util.ActivityLogger.logUserAction("EXECUTE_SNIPPET_DIRECT", "User executed snippet [" + snippet.getTitle() + "] (autoEnter=" + autoEnter + ") on active terminal in tab [" + activeTab.getText() + "]");
+
+        // Bring user focus to the terminal
+        Platform.runLater(() -> {
+            if (splitPane != null) {
+                splitPane.requestFocusOnActive();
+            }
+        });
+
+        SwingUtilities.invokeLater(() -> {
+            try {
+                TtyConnector connector = widget.getTtyConnector();
+                if (connector != null && connector.isConnected()) {
+                    String code = snippet.getCode();
+                    if (autoEnter) {
+                        code += "\r";
+                    }
+                    connector.write(code);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -1044,6 +1103,13 @@ public class MainApp extends Application {
         com.jediterm.core.Color settingsActiveBorder = theme.getColor("controls.settings.active.border", theme.getCursorColor());
         com.jediterm.core.Color settingsActiveFg = theme.getColor("controls.settings.active.foreground", theme.getBackgroundColor());
 
+        com.jediterm.core.Color snippetHoverBtnBg = theme.getColor("controls.snippet.hover.btn.background", theme.getBackgroundColor());
+        com.jediterm.core.Color snippetHoverBtnBorder = theme.getColor("controls.snippet.hover.btn.border", theme.getSelectionColor());
+        com.jediterm.core.Color snippetHoverBtnFg = theme.getColor("controls.snippet.hover.btn.foreground", theme.getTextColor());
+        com.jediterm.core.Color snippetHoverBtnHoverBg = theme.getColor("controls.snippet.hover.btn.hover.background", theme.getSelectionColor());
+        com.jediterm.core.Color snippetHoverBtnHoverBorder = theme.getColor("controls.snippet.hover.btn.hover.border", theme.getCursorColor());
+        com.jediterm.core.Color snippetHoverBtnHoverFg = theme.getColor("controls.snippet.hover.btn.hover.foreground", theme.getCursorColor());
+
         com.jediterm.core.Color connBg = theme.getColor("connecting.background", theme.getBackgroundColor());
         com.jediterm.core.Color connIcon = theme.getColor("connecting.icon", theme.getCursorColor());
         com.jediterm.core.Color connFg = theme.getColor("connecting.foreground", theme.getTextColor());
@@ -1173,6 +1239,11 @@ public class MainApp extends Application {
         double settingsActiveBgOpacity = 1.0;
         double settingsActiveBorderOpacity = 1.0;
 
+        double snippetHoverBtnBgOpacity = 1.0;
+        double snippetHoverBtnBorderOpacity = 1.0;
+        double snippetHoverBtnHoverBgOpacity = 1.0;
+        double snippetHoverBtnHoverBorderOpacity = 1.0;
+
         double connItemBgOpacity = 1.0;
         double connItemBorderOpacity = 1.0;
         double connBadgeBgOpacity = 0.15;
@@ -1230,6 +1301,11 @@ public class MainApp extends Application {
             settingsHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.hover.border.opacity", "1.0"));
             settingsActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.active.background.opacity", "1.0"));
             settingsActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.active.border.opacity", "1.0"));
+
+            snippetHoverBtnBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.snippet.hover.btn.background.opacity", "1.0"));
+            snippetHoverBtnBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.snippet.hover.btn.border.opacity", "0.3"));
+            snippetHoverBtnHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.snippet.hover.btn.hover.background.opacity", "1.0"));
+            snippetHoverBtnHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.snippet.hover.btn.hover.border.opacity", "1.0"));
         } catch (Exception ignored) {}
 
         // Format raw colors to RGBA with parsed opacities
@@ -1272,6 +1348,13 @@ public class MainApp extends Application {
         String rgbaSettingsActiveBg = toRgba(settingsActiveBg, settingsActiveBgOpacity);
         String rgbaSettingsActiveBorder = toRgba(settingsActiveBorder, settingsActiveBorderOpacity);
         String hexSettingsActiveFg = toHex(settingsActiveFg);
+
+        String rgbaSnippetHoverBtnBg = toRgba(snippetHoverBtnBg, snippetHoverBtnBgOpacity);
+        String rgbaSnippetHoverBtnBorder = toRgba(snippetHoverBtnBorder, snippetHoverBtnBorderOpacity);
+        String hexSnippetHoverBtnFg = toHex(snippetHoverBtnFg);
+        String rgbaSnippetHoverBtnHoverBg = toRgba(snippetHoverBtnHoverBg, snippetHoverBtnHoverBgOpacity);
+        String rgbaSnippetHoverBtnHoverBorder = toRgba(snippetHoverBtnHoverBorder, snippetHoverBtnHoverBorderOpacity);
+        String hexSnippetHoverBtnHoverFg = toHex(snippetHoverBtnHoverFg);
 
         String rgbaCardsItemBg = toRgba(cardsItemBg, itemBgOpacity);
         String rgbaCardsItemBorder = toRgba(cardsItemBorder, itemBorderOpacity);
@@ -1366,6 +1449,8 @@ public class MainApp extends Application {
                             ".button.settings-btn { -fx-background-color: " + rgbaSettingsBg + "; -fx-border-color: " + rgbaSettingsBorder + "; -fx-text-fill: " + hexSettingsFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.settings-btn:hover { -fx-background-color: " + rgbaSettingsHoverBg + "; -fx-border-color: " + rgbaSettingsHoverBorder + "; -fx-text-fill: " + hexSettingsHoverFg + "; }\n" +
                             ".button.settings-btn:pressed { -fx-background-color: " + rgbaSettingsActiveBg + "; -fx-border-color: " + rgbaSettingsActiveBorder + "; -fx-text-fill: " + hexSettingsActiveFg + "; }\n" +
+                            ".button.snippet-hover-btn { -fx-background-color: " + rgbaSnippetHoverBtnBg + "; -fx-border-color: " + rgbaSnippetHoverBtnBorder + "; -fx-text-fill: " + hexSnippetHoverBtnFg + "; -fx-padding: 0; -fx-font-family: \"codicon\"; -fx-font-size: 11px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 3px; -fx-border-radius: 3px; }\n" +
+                            ".button.snippet-hover-btn:hover { -fx-background-color: " + rgbaSnippetHoverBtnHoverBg + "; -fx-border-color: " + rgbaSnippetHoverBtnHoverBorder + "; -fx-text-fill: " + hexSnippetHoverBtnHoverFg + "; }\n" +
                             ".button.terminal-btn { -fx-background-color: " + rgbaHomeBg + "; -fx-border-color: " + rgbaHomeBorder + "; -fx-text-fill: " + hexHomeFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.terminal-btn:hover { -fx-background-color: " + rgbaHomeHoverBg + "; -fx-border-color: " + rgbaHomeHoverBorder + "; -fx-text-fill: " + hexHomeHoverFg + "; }\n" +
                             ".button.terminal-btn:pressed { -fx-background-color: " + rgbaHomeActiveBg + "; -fx-border-color: " + rgbaHomeActiveBorder + "; -fx-text-fill: " + hexHomeActiveFg + "; }\n" +
@@ -1478,6 +1563,10 @@ public class MainApp extends Application {
                             ".dialog-pane .text-field:disabled, .dialog-pane .text-area:disabled, .dialog-pane .password-field:disabled, .dialog-pane .combo-box:disabled { -fx-opacity: 0.5; }\n" +
                             ".dialog-pane .radio-button { -fx-text-fill: " + hexLabelFg + "; }\n" +
                             ".dialog-pane .radio-button .radio { -fx-mark-color: " + hexTermCursor + "; -fx-border-color: transparent; }\n" +
+                            ".dialog-pane .check-box { -fx-text-fill: " + hexLabelFg + "; }\n" +
+                            ".dialog-pane .check-box .box { -fx-background-color: " + hexInputBorder + "; -fx-border-color: " + hexInputBorder + "; -fx-background-radius: 3px; -fx-border-radius: 3px; }\n" +
+                            ".dialog-pane .check-box:focused .box { -fx-border-color: " + hexTermCursor + "; }\n" +
+                            ".dialog-pane .check-box:selected .mark { -fx-background-color: " + hexTermCursor + "; }\n" +
                             ".connecting-pane { -fx-background-color: " + hexConnBg + "; }\n" +
                             ".connecting-label { -fx-text-fill: " + hexConnFg + "; -fx-font-size: 13px; }\n" +
                             ".connecting-spinner { -fx-progress-color: " + hexConnIcon + "; }\n" +
@@ -2038,8 +2127,56 @@ public class MainApp extends Application {
         badge.getStyleClass().add("snippet-badge");
 
         VBox details = new VBox(2);
+        VBox.setVgrow(details, Priority.ALWAYS);
+        details.setMinWidth(0);
+        HBox.setHgrow(details, Priority.ALWAYS);
+
+        HBox titleRow = new HBox(5);
+        titleRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(titleRow, Priority.ALWAYS);
+
         Label titleLabel = new Label(item.getTitle());
         titleLabel.getStyleClass().add("snippet-title");
+        titleLabel.setMinWidth(0);
+        titleLabel.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(titleLabel, Priority.ALWAYS);
+
+        // Hover buttons
+        HBox hoverButtons = new HBox(4);
+        hoverButtons.setAlignment(Pos.CENTER_RIGHT);
+        hoverButtons.setVisible(false);
+        hoverButtons.setManaged(false);
+
+        Button runBtn = new Button("\uEAD3");
+        runBtn.getStyleClass().add("snippet-hover-btn");
+        runBtn.setMinWidth(22);
+        runBtn.setPrefWidth(22);
+        runBtn.setMaxWidth(22);
+        runBtn.setMinHeight(22);
+        runBtn.setPrefHeight(22);
+        runBtn.setMaxHeight(22);
+        runBtn.setOnAction(e -> {
+            e.consume();
+            runSnippet(item, true);
+        });
+        runBtn.setOnMouseClicked(e -> e.consume());
+
+        Button pasteBtn = new Button("\uEBCC");
+        pasteBtn.getStyleClass().add("snippet-hover-btn");
+        pasteBtn.setMinWidth(22);
+        pasteBtn.setPrefWidth(22);
+        pasteBtn.setMaxWidth(22);
+        pasteBtn.setMinHeight(22);
+        pasteBtn.setPrefHeight(22);
+        pasteBtn.setMaxHeight(22);
+        pasteBtn.setOnAction(e -> {
+            e.consume();
+            runSnippet(item, false);
+        });
+        pasteBtn.setOnMouseClicked(e -> e.consume());
+
+        hoverButtons.getChildren().addAll(runBtn, pasteBtn);
+        titleRow.getChildren().addAll(titleLabel, hoverButtons);
 
         String preview = item.getCode().trim().replace("\n", " ");
         if (preview.length() > 22) {
@@ -2048,8 +2185,18 @@ public class MainApp extends Application {
         Label previewLabel = new Label(preview);
         previewLabel.getStyleClass().add("snippet-preview");
 
-        details.getChildren().addAll(titleLabel, previewLabel);
+        details.getChildren().addAll(titleRow, previewLabel);
         card.getChildren().addAll(badge, details);
+
+        // Hover behaviors
+        card.setOnMouseEntered(e -> {
+            hoverButtons.setVisible(true);
+            hoverButtons.setManaged(true);
+        });
+        card.setOnMouseExited(e -> {
+            hoverButtons.setVisible(false);
+            hoverButtons.setManaged(false);
+        });
 
         card.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY) {
