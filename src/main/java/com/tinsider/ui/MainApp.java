@@ -2134,6 +2134,9 @@ public class MainApp extends Application {
         HBox titleRow = new HBox(5);
         titleRow.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(titleRow, Priority.ALWAYS);
+        titleRow.setMinHeight(22);
+        titleRow.setPrefHeight(22);
+        titleRow.setMaxHeight(22);
 
         Label titleLabel = new Label(item.getTitle());
         titleLabel.getStyleClass().add("snippet-title");
