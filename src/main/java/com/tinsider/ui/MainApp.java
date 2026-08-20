@@ -896,6 +896,13 @@ public class MainApp extends Application {
 
         com.tinsider.util.ActivityLogger.logUserAction("EXECUTE_SNIPPET", "User executed snippet [" + snippet.getTitle() + "] on active terminal in tab [" + activeTab.getText() + "]");
 
+        // Bring user focus to the terminal
+        Platform.runLater(() -> {
+            if (splitPane != null) {
+                splitPane.requestFocusOnActive();
+            }
+        });
+
         SwingUtilities.invokeLater(() -> {
             try {
                 TtyConnector connector = widget.getTtyConnector();
