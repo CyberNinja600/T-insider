@@ -1449,7 +1449,7 @@ public class MainApp extends Application {
                             ".button.settings-btn { -fx-background-color: " + rgbaSettingsBg + "; -fx-border-color: " + rgbaSettingsBorder + "; -fx-text-fill: " + hexSettingsFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.settings-btn:hover { -fx-background-color: " + rgbaSettingsHoverBg + "; -fx-border-color: " + rgbaSettingsHoverBorder + "; -fx-text-fill: " + hexSettingsHoverFg + "; }\n" +
                             ".button.settings-btn:pressed { -fx-background-color: " + rgbaSettingsActiveBg + "; -fx-border-color: " + rgbaSettingsActiveBorder + "; -fx-text-fill: " + hexSettingsActiveFg + "; }\n" +
-                            ".button.snippet-hover-btn { -fx-background-color: " + rgbaSnippetHoverBtnBg + "; -fx-border-color: " + rgbaSnippetHoverBtnBorder + "; -fx-text-fill: " + hexSnippetHoverBtnFg + "; -fx-padding: 1px 4px; -fx-font-size: 9px; -fx-font-weight: bold; -fx-min-width: -fx-use-pref-size; -fx-pref-width: -fx-use-pref-size; -fx-max-width: -fx-use-pref-size; -fx-ellipsis-string: \"\"; -fx-text-overrun: clip; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 3px; -fx-border-radius: 3px; }\n" +
+                            ".button.snippet-hover-btn { -fx-background-color: " + rgbaSnippetHoverBtnBg + "; -fx-border-color: " + rgbaSnippetHoverBtnBorder + "; -fx-text-fill: " + hexSnippetHoverBtnFg + "; -fx-padding: 0; -fx-font-family: \"codicon\"; -fx-font-size: 11px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 3px; -fx-border-radius: 3px; }\n" +
                             ".button.snippet-hover-btn:hover { -fx-background-color: " + rgbaSnippetHoverBtnHoverBg + "; -fx-border-color: " + rgbaSnippetHoverBtnHoverBorder + "; -fx-text-fill: " + hexSnippetHoverBtnHoverFg + "; }\n" +
                             ".button.terminal-btn { -fx-background-color: " + rgbaHomeBg + "; -fx-border-color: " + rgbaHomeBorder + "; -fx-text-fill: " + hexHomeFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.terminal-btn:hover { -fx-background-color: " + rgbaHomeHoverBg + "; -fx-border-color: " + rgbaHomeHoverBorder + "; -fx-text-fill: " + hexHomeHoverFg + "; }\n" +
@@ -2147,22 +2147,28 @@ public class MainApp extends Application {
         hoverButtons.setVisible(false);
         hoverButtons.setManaged(false);
 
-        Button runBtn = new Button("Run");
+        Button runBtn = new Button("\uEAD3");
         runBtn.getStyleClass().add("snippet-hover-btn");
-        runBtn.setMinWidth(36);
-        runBtn.setPrefWidth(36);
-        runBtn.setMaxWidth(36);
+        runBtn.setMinWidth(22);
+        runBtn.setPrefWidth(22);
+        runBtn.setMaxWidth(22);
+        runBtn.setMinHeight(22);
+        runBtn.setPrefHeight(22);
+        runBtn.setMaxHeight(22);
         runBtn.setOnAction(e -> {
             e.consume();
             runSnippet(item, true);
         });
         runBtn.setOnMouseClicked(e -> e.consume());
 
-        Button pasteBtn = new Button("Paste");
+        Button pasteBtn = new Button("\uEBCC");
         pasteBtn.getStyleClass().add("snippet-hover-btn");
-        pasteBtn.setMinWidth(46);
-        pasteBtn.setPrefWidth(46);
-        pasteBtn.setMaxWidth(46);
+        pasteBtn.setMinWidth(22);
+        pasteBtn.setPrefWidth(22);
+        pasteBtn.setMaxWidth(22);
+        pasteBtn.setMinHeight(22);
+        pasteBtn.setPrefHeight(22);
+        pasteBtn.setMaxHeight(22);
         pasteBtn.setOnAction(e -> {
             e.consume();
             runSnippet(item, false);
