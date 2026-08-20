@@ -1,6 +1,5 @@
 package com.tinsider.ui.components.toolbar;
 
-import com.tinsider.config.TerminalTheme;
 import com.tinsider.model.HostProfile;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -10,7 +9,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 public class TopToolBar extends HBox {
@@ -75,7 +73,6 @@ public class TopToolBar extends HBox {
     }
 
     private final ComboBox<DropdownItem> shellOptions;
-    private final ComboBox<String> themeOptions;
     private final Label selectLabel;
     private final Button toggleSidebarBtn;
     private final Button homeBtn;
@@ -83,20 +80,19 @@ public class TopToolBar extends HBox {
     private final Label zoomLabel;
     private final HBox zoomControls;
     private Button zoomResetBtn;
+    private final Button settingsBtn;
 
     public TopToolBar(
-            List<TerminalTheme> availableThemes, 
-            String initialThemeName, 
             String initialShell,
             ObservableList<HostProfile> hosts,
-            Consumer<TerminalTheme> onThemeChanged,
             Consumer<String> onShellChanged,
             Runnable onZoomIn,
             Runnable onZoomOut,
             Runnable onZoomReset,
             Runnable onToggleSidebar,
             Runnable onHome,
-            Runnable onTerminal) {
+            Runnable onTerminal,
+            Runnable onSettings) {
         
         super(10);
         setPadding(new Insets(10));
@@ -123,22 +119,12 @@ public class TopToolBar extends HBox {
             rebuildItems(hosts, initialShell);
         });
 
-        Label themeLabel = new Label("Theme:");
-        themeOptions = new ComboBox<>();
-        themeOptions.getStyleClass().add("theme-dropdown");
-        for (TerminalTheme theme : availableThemes) {
-            themeOptions.getItems().add(theme.getName());
-        }
-        themeOptions.setValue(initialThemeName != null ? initialThemeName : "Default Space Blue");
+        // Create the settings button on far right
+        settingsBtn = new Button("\uEAF8");
+        settingsBtn.getStyleClass().add("settings-btn");
 
-        themeOptions.setOnAction(e -> {
-            String selectedName = themeOptions.getValue();
-            for (TerminalTheme theme : availableThemes) {
-                if (theme.getName().equalsIgnoreCase(selectedName)) {
-                    onThemeChanged.accept(theme);
-                    break;
-                }
-            }
+        settingsBtn.setOnAction(e -> {
+            if (onSettings != null) onSettings.run();
         });
 
         zoomLabel = new Label("Zoom:");
@@ -199,7 +185,7 @@ public class TopToolBar extends HBox {
         javafx.scene.layout.Pane spacer = new javafx.scene.layout.Pane();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-        getChildren().addAll(selectLabel, shellOptions, themeLabel, themeOptions, spacer, terminalBtn, homeBtn, toggleSidebarBtn, zoomLabel, zoomControls);
+        getChildren().addAll(selectLabel, shellOptions, spacer, terminalBtn, homeBtn, toggleSidebarBtn, zoomLabel, zoomControls, settingsBtn);
     }
 
     private void rebuildItems(ObservableList<HostProfile> hosts, String initialShell) {
@@ -326,10 +312,6 @@ public class TopToolBar extends HBox {
     public String getSelectedShell() {
         DropdownItem selected = shellOptions.getValue();
         return (selected != null) ? selected.getLabel() : null;
-    }
-
-    public String getSelectedTheme() {
-        return themeOptions.getValue();
     }
 
     public void selectShellOrHost(String type, HostProfile host) {
