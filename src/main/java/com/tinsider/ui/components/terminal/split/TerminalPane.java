@@ -107,7 +107,7 @@ public class TerminalPane extends StackPane {
         HBox.setHgrow(titleLabel, Priority.ALWAYS);
 
         splitVertBtn = new Button("Split");
-        Label splitVertIcon = new Label("\uEB57");
+        Label splitVertIcon = new Label("\uEB56");
         splitVertIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 10px; -fx-text-fill: inherit;");
         splitVertBtn.setGraphic(splitVertIcon);
         splitVertBtn.getStyleClass().add("terminal-pane-btn");
@@ -115,7 +115,7 @@ public class TerminalPane extends StackPane {
         splitVertBtn.setOnAction(e -> splitPane.splitLeaf(this.leafNode, SplitOrientation.SIDE_BY_SIDE));
 
         splitHorizBtn = new Button("Split");
-        Label splitHorizIcon = new Label("\uEB56");
+        Label splitHorizIcon = new Label("\uEB57");
         splitHorizIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 10px; -fx-text-fill: inherit;");
         splitHorizBtn.setGraphic(splitHorizIcon);
         splitHorizBtn.getStyleClass().add("terminal-pane-btn");
