@@ -97,6 +97,10 @@ public class ThemeManager {
         setDefaultIfMissing("controls.button.border", "BackgroundColor");
         setDefaultIfMissing("controls.button.foreground", "TextColor");
         setDefaultIfMissing("controls.button.hover.background", "SelectionColor");
+        setDefaultIfMissing("controls.button.hover.border", "CursorColor");
+        setDefaultIfMissing("controls.button.hover.foreground", "BackgroundColor");
+        setDefaultIfMissing("controls.button.icon", "TextColor");
+        setDefaultIfMissing("controls.button.hover.icon", "BackgroundColor");
         setDefaultIfMissing("controls.combo.background", "SelectionColor");
         setDefaultIfMissing("controls.combo.border", "BackgroundColor");
         setDefaultIfMissing("controls.combo.foreground", "TextColor");

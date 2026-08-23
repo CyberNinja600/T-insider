@@ -331,6 +331,7 @@ public class MainApp extends Application {
         Button connectBtn = new Button("Connect");
         Label connectIcon = new Label("\uEB39");
         connectIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        connectIcon.getStyleClass().add("button-icon");
         connectBtn.setGraphic(connectIcon);
         connectBtn.getStyleClass().add("button");
         connectBtn.setPrefWidth(100);
@@ -371,16 +372,19 @@ public class MainApp extends Application {
         Button addHostBtn = new Button("Add");
         Label addHostIcon = new Label("\uEA60");
         addHostIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        addHostIcon.getStyleClass().add("button-icon");
         addHostBtn.setGraphic(addHostIcon);
 
         Button editHostBtn = new Button("Edit");
         Label editHostIcon = new Label("\uEA73");
         editHostIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        editHostIcon.getStyleClass().add("button-icon");
         editHostBtn.setGraphic(editHostIcon);
 
         Button deleteHostBtn = new Button("Delete");
         Label deleteHostIcon = new Label("\uEA81");
         deleteHostIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deleteHostIcon.getStyleClass().add("button-icon");
         deleteHostBtn.setGraphic(deleteHostIcon);
 
         hostButtons.getChildren().addAll(addHostBtn, editHostBtn, deleteHostBtn);
@@ -439,26 +443,31 @@ public class MainApp extends Application {
         Button addSnippetBtn = new Button("Add Snippet");
         Label addSnippetIcon = new Label("\uEA60");
         addSnippetIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        addSnippetIcon.getStyleClass().add("button-icon");
         addSnippetBtn.setGraphic(addSnippetIcon);
 
         Button editSnippetBtn = new Button("Edit");
         Label editSnippetIcon = new Label("\uEA73");
         editSnippetIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        editSnippetIcon.getStyleClass().add("button-icon");
         editSnippetBtn.setGraphic(editSnippetIcon);
 
         Button deleteSnippetBtn = new Button("Delete");
         Label deleteSnippetIcon = new Label("\uEA81");
         deleteSnippetIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deleteSnippetIcon.getStyleClass().add("button-icon");
         deleteSnippetBtn.setGraphic(deleteSnippetIcon);
 
         Button addPackageBtn = new Button("Add Package");
         Label addPackageIcon = new Label("\uEA60");
         addPackageIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        addPackageIcon.getStyleClass().add("button-icon");
         addPackageBtn.setGraphic(addPackageIcon);
 
         Button deletePackageBtn = new Button("Delete Package");
         Label deletePackageIcon = new Label("\uEA81");
         deletePackageIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deletePackageIcon.getStyleClass().add("button-icon");
         deletePackageBtn.setGraphic(deletePackageIcon);
 
         snippetButtons.getChildren().addAll(addSnippetBtn, editSnippetBtn, deleteSnippetBtn, addPackageBtn, deletePackageBtn);
@@ -1091,6 +1100,10 @@ public class MainApp extends Application {
         com.jediterm.core.Color btnBorder = theme.getColor("controls.button.border", theme.getBackgroundColor());
         com.jediterm.core.Color btnFg = theme.getColor("controls.button.foreground", theme.getTextColor());
         com.jediterm.core.Color btnHoverBg = theme.getColor("controls.button.hover.background", theme.getSelectionColor());
+        com.jediterm.core.Color btnHoverBorder = theme.getColor("controls.button.hover.border", theme.getCursorColor());
+        com.jediterm.core.Color btnHoverFg = theme.getColor("controls.button.hover.foreground", theme.getBackgroundColor());
+        com.jediterm.core.Color btnIcon = theme.getColor("controls.button.icon", theme.getTextColor());
+        com.jediterm.core.Color btnHoverIcon = theme.getColor("controls.button.hover.icon", theme.getBackgroundColor());
         com.jediterm.core.Color comboBg = theme.getColor("controls.combo.background", theme.getSelectionColor());
         com.jediterm.core.Color comboBorder = theme.getColor("controls.combo.border", theme.getBackgroundColor());
         com.jediterm.core.Color comboFg = theme.getColor("controls.combo.foreground", theme.getTextColor());
@@ -1287,6 +1300,11 @@ public class MainApp extends Application {
         double connSelectedBgOpacity = 1.0;
         double connSelectedBorderOpacity = 1.0;
 
+        double btnBgOpacity = 1.0;
+        double btnBorderOpacity = 1.0;
+        double btnHoverBgOpacity = 1.0;
+        double btnHoverBorderOpacity = 1.0;
+
 
         try {
             itemBgOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.background.opacity", "1.0"));
@@ -1341,6 +1359,11 @@ public class MainApp extends Application {
             snippetHoverBtnBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.snippet.hover.btn.border.opacity", "0.3"));
             snippetHoverBtnHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.snippet.hover.btn.hover.background.opacity", "1.0"));
             snippetHoverBtnHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.snippet.hover.btn.hover.border.opacity", "1.0"));
+
+            btnBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.button.background.opacity", "1.0"));
+            btnBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.button.border.opacity", "1.0"));
+            btnHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.button.hover.background.opacity", "1.0"));
+            btnHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.button.hover.border.opacity", "1.0"));
         } catch (Exception ignored) {}
 
         // Format raw colors to RGBA with parsed opacities
@@ -1417,10 +1440,15 @@ public class MainApp extends Application {
         String hexCardsBadgeSelectedFg = toHex(cardsBadgeSelectedFg);
         String rgbaCardsSelectedGlow = toRgba(cardsSelectedGlow, 0.4);
 
-        String hexBtnBg = toHex(btnBg);
-        String hexBtnBorder = toHex(btnBorder);
+        String rgbaBtnBg = toRgba(btnBg, btnBgOpacity);
+        String rgbaBtnBorder = toRgba(btnBorder, btnBorderOpacity);
         String hexBtnFg = toHex(btnFg);
+        String rgbaBtnHoverBg = toRgba(btnHoverBg, btnHoverBgOpacity);
+        String rgbaBtnHoverBorder = toRgba(btnHoverBorder, btnHoverBorderOpacity);
+        String hexBtnHoverFg = toHex(btnHoverFg);
         String hexBtnHoverBg = toHex(btnHoverBg);
+        String hexBtnIcon = toHex(btnIcon);
+        String hexBtnHoverIcon = toHex(btnHoverIcon);
         String hexComboBg = toHex(comboBg);
         String hexComboBorder = toHex(comboBorder);
         String hexComboFg = toHex(comboFg);
@@ -1468,8 +1496,10 @@ public class MainApp extends Application {
                             ".button.title-btn-close:hover { -fx-background-color: " + hexTitleCloseHoverBg + "; -fx-text-fill: " + hexTitleCloseHoverFg + "; }\n" +
                             ".sidebar { -fx-background-color: " + hexSideBg + "; -fx-border-color: " + hexSideBorder + "; }\n" +
                             ".top-bar { -fx-background-color: " + hexToolBg + "; -fx-border-color: " + hexToolBorder + "; }\n" +
-                            ".button { -fx-background-color: " + hexBtnBg + "; -fx-border-color: " + hexBtnBorder + "; -fx-text-fill: " + hexBtnFg + "; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
-                            ".button:hover { -fx-background-color: " + hexBtnHoverBg + "; -fx-text-fill: #ffffff; }\n" +
+                            ".button { -fx-background-color: " + rgbaBtnBg + "; -fx-border-color: " + rgbaBtnBorder + "; -fx-text-fill: " + hexBtnFg + "; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
+                            ".button:hover { -fx-background-color: " + rgbaBtnHoverBg + "; -fx-border-color: " + rgbaBtnHoverBorder + "; -fx-text-fill: " + hexBtnHoverFg + "; }\n" +
+                            ".button .button-icon { -fx-text-fill: " + hexBtnIcon + "; }\n" +
+                            ".button:hover .button-icon { -fx-text-fill: " + hexBtnHoverIcon + "; }\n" +
                             ".button:disabled { -fx-opacity: 0.4; -fx-cursor: default; }\n" +
                             ".button.zoom-btn { -fx-background-color: " + rgbaZoomBg + "; -fx-border-color: " + rgbaZoomBorder + "; -fx-text-fill: " + hexZoomFg + "; -fx-padding: 3px 8px; -fx-font-size: 11px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.zoom-btn:hover { -fx-background-color: " + rgbaZoomHoverBg + "; -fx-border-color: " + rgbaZoomHoverBorder + "; -fx-text-fill: " + hexZoomHoverFg + "; }\n" +

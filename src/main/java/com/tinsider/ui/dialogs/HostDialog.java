@@ -20,6 +20,7 @@ public class HostDialog extends Dialog<HostProfile> {
         if (saveBtn != null) {
             Label saveIcon = new Label("\uEB4B");
             saveIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px;");
+            saveIcon.getStyleClass().add("button-icon");
             saveBtn.setGraphic(saveIcon);
         }
 
