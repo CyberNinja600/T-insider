@@ -69,6 +69,10 @@ public class TerminalTheme {
         colors.put("controls.button.border", bg);
         colors.put("controls.button.foreground", text);
         colors.put("controls.button.hover.background", selection);
+        colors.put("controls.button.hover.border", cursor);
+        colors.put("controls.button.hover.foreground", bg);
+        colors.put("controls.button.icon", text);
+        colors.put("controls.button.hover.icon", bg);
         colors.put("controls.combo.background", selection);
         colors.put("controls.combo.border", bg);
         colors.put("controls.combo.foreground", text);
