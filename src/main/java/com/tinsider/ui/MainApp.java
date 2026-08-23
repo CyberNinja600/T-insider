@@ -328,7 +328,10 @@ public class MainApp extends Application {
         VBox.setVgrow(connectionsGridScrollPane, Priority.ALWAYS);
 
         HBox connectionsButtons = new HBox(10);
-        Button connectBtn = new Button("⚡ Connect");
+        Button connectBtn = new Button("Connect");
+        Label connectIcon = new Label("\uEB39");
+        connectIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        connectBtn.setGraphic(connectIcon);
         connectBtn.getStyleClass().add("button");
         connectBtn.setPrefWidth(100);
         connectionsButtons.getChildren().addAll(connectBtn);
@@ -365,9 +368,21 @@ public class MainApp extends Application {
         VBox.setVgrow(hostsGridScrollPane, Priority.ALWAYS);
 
         HBox hostButtons = new HBox(10);
-        Button addHostBtn = new Button("+ Add");
+        Button addHostBtn = new Button("Add");
+        Label addHostIcon = new Label("\uEA60");
+        addHostIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        addHostBtn.setGraphic(addHostIcon);
+
         Button editHostBtn = new Button("Edit");
+        Label editHostIcon = new Label("\uEA73");
+        editHostIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        editHostBtn.setGraphic(editHostIcon);
+
         Button deleteHostBtn = new Button("Delete");
+        Label deleteHostIcon = new Label("\uEA81");
+        deleteHostIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deleteHostBtn.setGraphic(deleteHostIcon);
+
         hostButtons.getChildren().addAll(addHostBtn, editHostBtn, deleteHostBtn);
         hostButtons.setAlignment(Pos.CENTER_LEFT);
 
@@ -421,11 +436,31 @@ public class MainApp extends Application {
         VBox.setVgrow(snippetsGridScrollPane, Priority.ALWAYS);
 
         HBox snippetButtons = new HBox(10);
-        Button addSnippetBtn = new Button("+ Add Snippet");
+        Button addSnippetBtn = new Button("Add Snippet");
+        Label addSnippetIcon = new Label("\uEA60");
+        addSnippetIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        addSnippetBtn.setGraphic(addSnippetIcon);
+
         Button editSnippetBtn = new Button("Edit");
+        Label editSnippetIcon = new Label("\uEA73");
+        editSnippetIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        editSnippetBtn.setGraphic(editSnippetIcon);
+
         Button deleteSnippetBtn = new Button("Delete");
-        Button addPackageBtn = new Button("+ Add Package");
+        Label deleteSnippetIcon = new Label("\uEA81");
+        deleteSnippetIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deleteSnippetBtn.setGraphic(deleteSnippetIcon);
+
+        Button addPackageBtn = new Button("Add Package");
+        Label addPackageIcon = new Label("\uEA60");
+        addPackageIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        addPackageBtn.setGraphic(addPackageIcon);
+
         Button deletePackageBtn = new Button("Delete Package");
+        Label deletePackageIcon = new Label("\uEA81");
+        deletePackageIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deletePackageBtn.setGraphic(deletePackageIcon);
+
         snippetButtons.getChildren().addAll(addSnippetBtn, editSnippetBtn, deleteSnippetBtn, addPackageBtn, deletePackageBtn);
         snippetButtons.setAlignment(Pos.CENTER_LEFT);
 

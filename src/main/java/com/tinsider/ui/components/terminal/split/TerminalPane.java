@@ -106,12 +106,18 @@ public class TerminalPane extends StackPane {
         titleLabel.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(titleLabel, Priority.ALWAYS);
 
-        splitVertBtn = new Button("Split ❘");
+        splitVertBtn = new Button("Split");
+        Label splitVertIcon = new Label("\uEB57");
+        splitVertIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 10px; -fx-text-fill: inherit;");
+        splitVertBtn.setGraphic(splitVertIcon);
         splitVertBtn.getStyleClass().add("terminal-pane-btn");
         splitVertBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #94a3b8; -fx-cursor: hand; -fx-font-size: 10px; -fx-padding: 2px 6px;");
         splitVertBtn.setOnAction(e -> splitPane.splitLeaf(this.leafNode, SplitOrientation.SIDE_BY_SIDE));
 
-        splitHorizBtn = new Button("Split ━");
+        splitHorizBtn = new Button("Split");
+        Label splitHorizIcon = new Label("\uEB56");
+        splitHorizIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 10px; -fx-text-fill: inherit;");
+        splitHorizBtn.setGraphic(splitHorizIcon);
         splitHorizBtn.getStyleClass().add("terminal-pane-btn");
         splitHorizBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #94a3b8; -fx-cursor: hand; -fx-font-size: 10px; -fx-padding: 2px 6px;");
         splitHorizBtn.setOnAction(e -> splitPane.splitLeaf(this.leafNode, SplitOrientation.TOP_AND_BOTTOM));
