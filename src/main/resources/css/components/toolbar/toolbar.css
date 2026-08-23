@@ -3,6 +3,9 @@
     -fx-background-color: #090F22;
     -fx-border-color: #161B30;
     -fx-border-width: 0 0 1 0; /* Bottom border only */
+    -fx-pref-height: 46px;
+    -fx-min-height: 46px;
+    -fx-max-height: 46px;
 }
 
 /* Custom Title Bar */

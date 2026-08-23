@@ -22,12 +22,16 @@ public class TerminalTheme {
         // Populate standard default keys directly to maintain backward compatibility and default theme setup!
         colors.put("app.window.background", bg);
         colors.put("app.window.border", selection);
+        colors.put("app.window.background.gradient.start", selection);
+        colors.put("app.window.background.gradient.end", bg);
         colors.put("titlebar.background", bg);
         colors.put("titlebar.border", selection);
         colors.put("toolbar.background", bg);
         colors.put("toolbar.border", selection);
         colors.put("sidebar.background", bg);
         colors.put("sidebar.border", selection);
+        colors.put("sidebar.background.gradient.start", selection);
+        colors.put("sidebar.background.gradient.end", bg);
         colors.put("global.label.foreground", text);
         colors.put("snippetLauncher.label", cursor);
 
@@ -117,6 +121,8 @@ public class TerminalTheme {
         colors.put("connecting.background", bg);
         colors.put("connecting.icon", cursor);
         colors.put("connecting.foreground", text);
+        colors.put("dialog.background.gradient.start", selection);
+        colors.put("dialog.background.gradient.end", bg);
         
         // Set standard ANSI-16 color palette initialization (modern vibrant Terminal theme colors)
         ansiColors[0] = new Color(22, 27, 48);       // 0: Black (matching dark themes)

@@ -45,12 +45,16 @@ public class ThemeManager {
         // Establish fallbacks if properties or keys are missing inside the configuration file
         setDefaultIfMissing("app.window.background", "BackgroundColor");
         setDefaultIfMissing("app.window.border", "SelectionColor");
+        setDefaultIfMissing("app.window.background.gradient.start", "SelectionColor");
+        setDefaultIfMissing("app.window.background.gradient.end", "BackgroundColor");
         setDefaultIfMissing("titlebar.background", "BackgroundColor");
         setDefaultIfMissing("titlebar.border", "SelectionColor");
         setDefaultIfMissing("toolbar.background", "BackgroundColor");
         setDefaultIfMissing("toolbar.border", "SelectionColor");
         setDefaultIfMissing("sidebar.background", "BackgroundColor");
         setDefaultIfMissing("sidebar.border", "SelectionColor");
+        setDefaultIfMissing("sidebar.background.gradient.start", "SelectionColor");
+        setDefaultIfMissing("sidebar.background.gradient.end", "BackgroundColor");
         setDefaultIfMissing("sidebar.nav.foreground", "TextColor");
         setDefaultIfMissing("sidebar.nav.hover.background", "SelectionColor");
         setDefaultIfMissing("sidebar.nav.hover.foreground", "CursorColor");
@@ -216,6 +220,9 @@ public class ThemeManager {
         setDefaultIfMissing("terminal.pane.empty.button.foreground", "TextColor");
         setDefaultIfMissing("terminal.pane.empty.button.hover.background", "CursorColor");
         setDefaultIfMissing("terminal.pane.empty.button.hover.foreground", "BackgroundColor");
+
+        setDefaultIfMissing("dialog.background.gradient.start", "SelectionColor");
+        setDefaultIfMissing("dialog.background.gradient.end", "BackgroundColor");
     }
 
     private static void setDefaultIfMissing(String key, String plistValue) {
@@ -302,5 +309,25 @@ public class ThemeManager {
 
     public static String getProperty(String key, String defaultValue) {
         return config.getProperty(key, defaultValue);
+    }
+
+    public static void setProperty(String key, String value) {
+        config.setProperty(key, value);
+        saveConfig();
+    }
+
+    private static void saveConfig() {
+        File configFile = new File("./config/theme.config.properties");
+        try {
+            File parent = configFile.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+            try (java.io.FileOutputStream out = new java.io.FileOutputStream(configFile)) {
+                config.store(out, "T-Insider Dynamic UI Color Mapping Configurations");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

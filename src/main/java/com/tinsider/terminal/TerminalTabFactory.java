@@ -4,6 +4,7 @@ import com.jediterm.terminal.TtyConnector;
 import com.jediterm.terminal.ui.JediTermWidget;
 import com.jediterm.terminal.ui.settings.DefaultSettingsProvider;
 import com.tinsider.config.TerminalTheme;
+import com.tinsider.config.ThemeManager;
 import com.tinsider.model.HostProfile;
 import com.tinsider.ui.components.terminal.split.*;
 import javafx.application.Platform;
@@ -181,7 +182,7 @@ public class TerminalTabFactory {
                         java.awt.Dimension dim = super.getPreferredSize();
                         int scrollWidth = 10;
                         try {
-                            scrollWidth = Integer.parseInt(com.tinsider.config.ThemeManager.getProperty("scrollbar.width", "10"));
+                            scrollWidth = Integer.parseInt(ThemeManager.getProperty("scrollbar.width", "10"));
                         } catch (Exception ignored) {}
                         if (getOrientation() == JScrollBar.VERTICAL) {
                             dim.width = scrollWidth;
@@ -224,7 +225,7 @@ public class TerminalTabFactory {
                                 
                                 float opacity = 0.3f;
                                 try {
-                                    opacity = Float.parseFloat(com.tinsider.config.ThemeManager.getProperty("scrollbar.thumb.opacity", "0.3"));
+                                    opacity = Float.parseFloat(ThemeManager.getProperty("scrollbar.thumb.opacity", "0.3"));
                                 } catch (Exception ignored) {}
                                 
                                 java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
