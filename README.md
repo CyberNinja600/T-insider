@@ -1,22 +1,66 @@
 # T-insider
 
-  Core Language & Build Tools
-   * Language: Java 21
-   * Build System: Maven
-   * UI Framework: JavaFX 21.0.2 (using CSS for styling)
+T-insider is a highly polished, multi-pane terminal emulation and SSH client application designed for modern software development. It features a robust, split-pane layout model, advanced visual tab manipulation, high-performance terminal rendering, and dynamic run-time styling.
 
-  Terminal & SSH Capabilities
-   * Terminal Emulation: JetBrains JediTerm (v3.43) - handles the terminal UI and ANSI rendering.
-   * Local Process Spawning: JetBrains Pty4J - for local terminal instances (PTY).
-   * SSH Client: Apache MINA SSHD (v2.13.0) - handles SSH connections.
-   * Cryptography: BouncyCastle and I2P EdDSA - providing support for modern OpenSSH keys (like Ed25519).
+---
 
-  Utilities & Integration
-   * Native OS Integration: JNA (Java Native Access) - specifically used for native Windows aero dragging/custom title bars.
-   * Data Serialization: Google Gson - for handling JSON configuration (like storing host profiles/snippets).
-   * Logging: SLF4J (with slf4j-simple)
+## 🛠️ Core Language & Build Tools
 
-## How to Run
+The application leverages a modern, robust, and platform-integrated stack:
+
+*   **Core Language:** **Java 21 (LTS)** — Utilizes modern language features (pattern matching, enhanced switch expressions, and virtual threads ready) for clean and efficient execution.
+*   **Build System:** **Apache Maven 3.9+** — Standardized build orchestration and dependency management. Includes standard Maven wrappers (`mvnw` / `mvnw.cmd`) for absolute zero-setup bootstrapping.
+*   **UI & Graphics Framework:** **JavaFX 21.0.2** — Delivers high-performance, hardware-accelerated user interfaces styled dynamically via CSS.
+*   **Native Platform Integration:** **Java Native Access (JNA) 5.13.0** — Interacts with operating system APIs for premium native effects like Windows Aero glass integration, custom frame decorations, and glass drag-and-drop.
+
+---
+
+## 🚀 Key Features (Prioritized)
+
+This is the curated list of T-insider features, ranked by engineering complexity, user-facing importance, and architectural centrality:
+
+### 1. Terminal Splitting & Dynamic Grid Layout (BSP Tree)
+*   **Description:** Supports infinite horizontal and vertical terminal splitting to create custom grid layouts.
+*   **Under the Hood:** Modeled as a **Binary Space Partitioning (BSP) Split Tree**. `TerminalSplitPane` coordinates split relationships across tree nodes, using `SplitParentNode` (JavaFX `SplitPane` wrappers) and `SplitLeafNode` (holding actual `TerminalPane` elements). Supports drag-and-drop tab-splitting, resize listeners, automatic sibling collapse/cleanup, and seamless focus preservation when closing panes.
+
+### 2. Advanced Terminal Tab Drag-and-Drop with Animations
+*   **Description:** Rich, interactive tab reordering and drag-to-dock actions with immersive visual indicators.
+*   **Under the Hood:** Orchestrated by `TabDragManager`. Spawns an animated floating snapshot of the tab (`TabGhost`) with premium shadow effects. As you drag, adjacent tabs dynamically slide out of the way via `TabAnimationManager`, and edge auto-scrolling is triggered if hovering near boundaries. Uses DPI-immune scene coordinate calculations to pinpoint drop targets.
+
+### 3. SSH Client Integration & Modern Cryptography
+*   **Description:** High-performance, secure remote terminal connections that stay alive under any network conditions.
+*   **Under the Hood:** Powered by **Apache MINA SSHD (v2.13.0)**. Employs a robust 15-second heartbeat interval to prevent idle disconnects. Supported by **BouncyCastle** and **I2P EdDSA** providers to seamlessly authenticate with modern OpenSSH credentials, including PEM and Ed25519 host keys.
+
+### 4. Local Shell Terminal Emulation (PTY)
+*   **Description:** Complete local terminal access with full ANSI support, rich keyboard intercepts, and shell compatibility.
+*   **Under the Hood:** Integrates **JetBrains JediTerm (v3.43)** for ANSI rendering and **Pty4J (v0.12.13)** for native process spawning. Automatically detects and spawns native local shells (CMD, PowerShell, WSL, or Git Bash on Windows; environment shell on Unix). Employs SwingNode event filters to swallow leaks (like JavaFX `Ctrl+C` clashes) and styles custom `JScrollBar` elements to match the selected dark/light theme.
+
+### 5. Dynamic Terminal Font Zooming & Layout Scaling
+*   **Description:** Scale the terminal font size dynamically across all active terminal tabs simultaneously. Supports intuitive toolbar buttons and global keyboard shortcuts.
+*   **Under the Hood:** Implemented via reflection-based invocations of JediTerm's internal `reinitFontAndResize` API within `TerminalTabFactory`, allowing dynamic adjustments of the viewport font and bounds at runtime. Includes the following user controls:
+    *   **Toolbar Buttons:** Use the `-`, `[Percentage]`, and `+` buttons on the top toolbar to decrease, reset, or increase the font size.
+    *   **Keyboard Shortcuts:**
+        *   **Zoom In:** `Ctrl + =` or `Ctrl + +` (or Numpad `+`)
+        *   **Zoom Out:** `Ctrl + -` (or Numpad `-`)
+        *   **Reset to 100%:** `Ctrl + 0` (or Numpad `0`)
+
+### 6. Interactive Snippet Management
+*   **Description:** A searchable sidebar accordion and full-grid snippet dashboard to store and execute reusable command blocks.
+*   **Under the Hood:** Serializes snippet configurations as JSON files (`snippets.json` and `packages.json`) via **Google Gson**. Supports two execution paths:
+    *   *Direct Run:* Safely passes the raw command block into the active JediTerm session with an appended carriage return (`\r`) for immediate execution.
+    *   *Paste Only:* Injects the raw string directly into the shell buffer without running it immediately.
+
+### 7. SSH Host Connection Profile Management
+*   **Description:** Quick-connect host profile database supporting customizable SSH targets, credentials, custom ports, and key files.
+*   **Under the Hood:** Leverages a unified JSON storage backend via `StorageManager` to handle host configuration CRUD operations. Provides parsing support for the standard `ssh://` URI scheme to immediately extract hostname, port, and username details.
+
+### 8. Dynamic UI Customization & Live CSS Hot-Reloading
+*   **Description:** Real-time hot-swappable custom themes and styling.
+*   **Under the Hood:** Custom terminal themes are parsed dynamically from macOS Terminal XML `.plist` files, decoding Base64 floating-point colors and maps them via a decoupled configuration properties mapping (`theme.config.properties`). Includes `LiveReloader` — a background daemon utilizing Java's `WatchService` with a 500ms debounce to automatically hot-reload UI stylesheets during development when CSS or properties are modified.
+
+---
+
+## ⚙️ How to Run
 
 This application is completely self-contained and cross-platform. It requires zero manual configuration or pre-setup!
 
@@ -33,18 +77,9 @@ This application is completely self-contained and cross-platform. It requires ze
    ```
 3. The script will automatically detect or download a portable JDK 21 for your OS and architecture, then start the application seamlessly.
 
-## Terminal Zoom Feature
+---
 
-You can scale the terminal font size dynamically across all active terminal tabs simultaneously.
-
-### Zoom Controls
-- **Toolbar Buttons**: Use the `-`, `[Percentage]`, and `+` buttons located on the top toolbar to decrease, reset, or increase the font size.
-- **Keyboard Shortcuts**:
-  - **Zoom In**: `Ctrl + =` or `Ctrl + +` (or Numpad `+`)
-  - **Zoom Out**: `Ctrl + -` (or Numpad `-`)
-  - **Reset to 100%**: `Ctrl + 0` (or Numpad `0`)
-
-## Local Shell Requirements (Windows)
+## 💻 Local Shell Requirements (Windows)
 
 For **Bash** to be detected and available as a local shell option on Windows, it must be installed in one of the following locations (otherwise, the application dynamically hides the option to prevent PTY creation failures):
 
