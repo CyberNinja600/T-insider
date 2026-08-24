@@ -614,16 +614,25 @@ public class MainApp extends Application {
 
         rebuildTerminalSnippetsSidebar();
 
-        snippetExecutionSidebar.getChildren().addAll(terminalSnippetsHeader, sidebarSearchField, sidebarScrollPane);
+        Button addSnippetSidebarBtn = new Button("Add Snippet");
+        Label addIcon = new Label("\uEA60");
+        addIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        addIcon.getStyleClass().add("button-icon");
+        addSnippetSidebarBtn.setGraphic(addIcon);
+        addSnippetSidebarBtn.getStyleClass().add("button");
+        addSnippetSidebarBtn.setMaxWidth(Double.MAX_VALUE); // Full-width
+        addSnippetSidebarBtn.setOnAction(e -> showAddSnippetDialog(snippets, null));
+
+        snippetExecutionSidebar.getChildren().addAll(terminalSnippetsHeader, sidebarSearchField, addSnippetSidebarBtn, sidebarScrollPane);
 
         // 5. Root Layout & Theme Control
         topToolBar = new TopToolBar(
             savedShell,
             hosts,
             shell -> {
-                Map<String, String> currentSettings = StorageManager.loadSettings();
-                currentSettings.put("shell", shell);
-                StorageManager.saveSettings(settings);
+                Map<String, String> innerSettings = StorageManager.loadSettings();
+                innerSettings.put("shell", shell);
+                StorageManager.saveSettings(innerSettings);
             },
             () -> {
                 com.tinsider.terminal.TerminalTabFactory.increaseZoom(tabSplitPaneMap.values());
@@ -647,21 +656,34 @@ public class MainApp extends Application {
                 switchMode(AppMode.TERMINAL);
             },
             () -> {
+                Map<String, String> currentSettings = StorageManager.loadSettings();
+                boolean initialGradients = Boolean.parseBoolean(currentSettings.getOrDefault("gradientEnabled", "false"));
                 com.tinsider.ui.dialogs.SettingsDialog dialog = new com.tinsider.ui.dialogs.SettingsDialog(
                     availableThemes,
                     currentTheme,
                     theme -> {
                         applyTheme(theme);
-                        Map<String, String> currentSettings = StorageManager.loadSettings();
-                        currentSettings.put("theme", theme.getName());
-                        StorageManager.saveSettings(currentSettings);
+                        Map<String, String> innerSettings = StorageManager.loadSettings();
+                        innerSettings.put("theme", theme.getName());
+                        StorageManager.saveSettings(innerSettings);
                     },
                     autoEnterSnippet,
                     checked -> {
                         autoEnterSnippet = checked;
-                        Map<String, String> currentSettings = StorageManager.loadSettings();
-                        currentSettings.put("autoEnterSnippet", String.valueOf(checked));
-                        StorageManager.saveSettings(currentSettings);
+                        Map<String, String> innerSettings = StorageManager.loadSettings();
+                        innerSettings.put("autoEnterSnippet", String.valueOf(checked));
+                        StorageManager.saveSettings(innerSettings);
+                    },
+                    initialGradients,
+                    checked -> {
+                        Map<String, String> innerSettings = StorageManager.loadSettings();
+                        if (checked) {
+                            innerSettings.put("gradientEnabled", "true");
+                        } else {
+                            innerSettings.remove("gradientEnabled");
+                        }
+                        StorageManager.saveSettings(innerSettings);
+                        applyTheme(currentTheme);
                     }
                 );
                 dialog.showAndWait();
@@ -1050,6 +1072,16 @@ public class MainApp extends Application {
 
     private void applyTheme(TerminalTheme theme) {
         this.currentTheme = theme;
+        boolean gradientsEnabled = Boolean.parseBoolean(StorageManager.loadSettings().getOrDefault("gradientEnabled", "false"));
+
+        double appWinBgOpacity = 1.0;
+        double appWinBorderOpacity = 1.0;
+        double titleBgOpacity = 1.0;
+        double titleBorderOpacity = 1.0;
+        double toolbarBgOpacity = 1.0;
+        double toolbarBorderOpacity = 1.0;
+        double sidebarBgOpacity = 1.0;
+        double sidebarBorderOpacity = 1.0;
 
         // Resolve each granular color from the theme map with standard robust fallbacks
         com.jediterm.core.Color winBg = theme.getColor("app.window.background", theme.getBackgroundColor());
@@ -1195,6 +1227,7 @@ public class MainApp extends Application {
 
         com.jediterm.core.Color pkgBg = theme.getColor("dashboard.package.background", theme.getSelectionColor());
         com.jediterm.core.Color pkgBorder = theme.getColor("dashboard.package.border", theme.getSelectionColor());
+        com.jediterm.core.Color sidebarPkgContentBg = theme.getColor("sidebar.package.content.background", theme.getBackgroundColor());
         com.jediterm.core.Color scrollThumb = theme.getColor("scrollbar.thumb", theme.getCursorColor());
         com.jediterm.core.Color scrollThumbHover = theme.getColor("scrollbar.thumb.hover", theme.getCursorColor());
         com.jediterm.core.Color dropScrollThumb = theme.getColor("dropdown.scrollbar.thumb", theme.getSelectionColor());
@@ -1204,15 +1237,36 @@ public class MainApp extends Application {
         com.jediterm.core.Color dialogHeaderBg = theme.getColor("dialog.header.background", theme.getBackgroundColor());
         com.jediterm.core.Color dialogHeaderFg = theme.getColor("dialog.header.foreground", theme.getCursorColor());
 
-        // Format to hex strings for CSS
-        String hexWinBg = toHex(winBg);
-        String hexWinBorder = toHex(winBorder);
-        String hexTitleBg = toHex(titleBg);
-        String hexTitleBorder = toHex(titleBorder);
-        String hexToolBg = toHex(toolBg);
-        String hexToolBorder = toHex(toolBorder);
-        String hexSideBg = toHex(sideBg);
-        String hexSideBorder = toHex(sideBorder);
+        // Format to hex/rgba/gradient strings for CSS
+        String hexWinBg;
+        if (gradientsEnabled) {
+            com.jediterm.core.Color winBgStart = theme.getColor("app.window.background.gradient.start", winBg);
+            com.jediterm.core.Color winBgEnd = theme.getColor("app.window.background.gradient.end", theme.getBackgroundColor());
+            String winBgRatio = ThemeManager.getProperty("app.window.background.gradient.ratio", "0% 100%");
+            hexWinBg = getGradientStyle(winBgStart, appWinBgOpacity, winBgEnd, appWinBgOpacity, "to bottom", winBgRatio);
+        } else {
+            hexWinBg = toRgba(winBg, appWinBgOpacity);
+        }
+
+        String hexWinBorder = toRgba(winBorder, appWinBorderOpacity);
+
+        String hexTitleBg = toRgba(titleBg, titleBgOpacity);
+        String hexTitleBorder = toRgba(titleBorder, titleBorderOpacity);
+
+        String hexToolBg = toRgba(toolBg, toolbarBgOpacity);
+        String hexToolBorder = toRgba(toolBorder, toolbarBorderOpacity);
+
+        String hexSideBg;
+        if (gradientsEnabled) {
+            com.jediterm.core.Color sideBgStart = theme.getColor("sidebar.background.gradient.start", sideBg);
+            com.jediterm.core.Color sideBgEnd = theme.getColor("sidebar.background.gradient.end", theme.getBackgroundColor());
+            String sideBgRatio = ThemeManager.getProperty("sidebar.background.gradient.ratio", "0% 100%");
+            hexSideBg = getGradientStyle(sideBgStart, sidebarBgOpacity, sideBgEnd, sidebarBgOpacity, "to bottom", sideBgRatio);
+        } else {
+            hexSideBg = toRgba(sideBg, sidebarBgOpacity);
+        }
+
+        String hexSideBorder = toRgba(sideBorder, sidebarBorderOpacity);
         String hexLabelFg = toHex(labelFg);
 
         String hexTermBg = toHex(termBg);
@@ -1251,6 +1305,7 @@ public class MainApp extends Application {
         double sideNavSelectedBgOpacity = 1.0;
         double pkgBgOpacity = 0.3;
         double pkgBorderOpacity = 1.0;
+        double sidebarPkgContentBgOpacity = 1.0;
         double scrollThumbOpacity = 0.3;
         double scrollThumbHoverOpacity = 0.6;
         double dropScrollThumbOpacity = 0.4;
@@ -1319,6 +1374,7 @@ public class MainApp extends Application {
             sideNavSelectedBgOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.nav.selected.background.opacity", "1.0"));
             pkgBgOpacity = Double.parseDouble(ThemeManager.getProperty("dashboard.package.background.opacity", "0.3"));
             pkgBorderOpacity = Double.parseDouble(ThemeManager.getProperty("dashboard.package.border.opacity", "1.0"));
+            sidebarPkgContentBgOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.package.content.background.opacity", "1.0"));
             scrollThumbOpacity = Double.parseDouble(ThemeManager.getProperty("scrollbar.thumb.opacity", "0.3"));
             scrollThumbHoverOpacity = Double.parseDouble(ThemeManager.getProperty("scrollbar.thumb.hover.opacity", "0.6"));
             dropScrollThumbOpacity = Double.parseDouble(ThemeManager.getProperty("dropdown.scrollbar.thumb.opacity", "0.4"));
@@ -1364,6 +1420,15 @@ public class MainApp extends Application {
             btnBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.button.border.opacity", "1.0"));
             btnHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.button.hover.background.opacity", "1.0"));
             btnHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.button.hover.border.opacity", "1.0"));
+
+            appWinBgOpacity = Double.parseDouble(ThemeManager.getProperty("app.window.background.opacity", "1.0"));
+            appWinBorderOpacity = Double.parseDouble(ThemeManager.getProperty("app.window.border.opacity", "1.0"));
+            titleBgOpacity = Double.parseDouble(ThemeManager.getProperty("titlebar.background.opacity", "1.0"));
+            titleBorderOpacity = Double.parseDouble(ThemeManager.getProperty("titlebar.border.opacity", "1.0"));
+            toolbarBgOpacity = Double.parseDouble(ThemeManager.getProperty("toolbar.background.opacity", "1.0"));
+            toolbarBorderOpacity = Double.parseDouble(ThemeManager.getProperty("toolbar.border.opacity", "1.0"));
+            sidebarBgOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.background.opacity", "1.0"));
+            sidebarBorderOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.border.opacity", "1.0"));
         } catch (Exception ignored) {}
 
         // Format raw colors to RGBA with parsed opacities
@@ -1426,11 +1491,22 @@ public class MainApp extends Application {
         String rgbaSideNavSelectedBg = toRgba(sideNavSelectedBg, sideNavSelectedBgOpacity);
         String rgbaPkgBg = toRgba(pkgBg, pkgBgOpacity);
         String rgbaPkgBorder = toRgba(pkgBorder, pkgBorderOpacity);
+        String rgbaSidebarPkgContentBg = toRgba(sidebarPkgContentBg, sidebarPkgContentBgOpacity);
         String rgbaScrollThumb = toRgba(scrollThumb, scrollThumbOpacity);
         String rgbaScrollThumbHover = toRgba(scrollThumbHover, scrollThumbHoverOpacity);
         String rgbaDropScrollThumb = toRgba(dropScrollThumb, dropScrollThumbOpacity);
         String rgbaDropScrollThumbHover = toRgba(dropScrollThumbHover, dropScrollThumbHoverOpacity);
-        String rgbaDialogBg = toRgba(dialogBg, dialogBgOpacity);
+        
+        String rgbaDialogBg;
+        if (gradientsEnabled) {
+            com.jediterm.core.Color dialogBgStart = theme.getColor("dialog.background.gradient.start", dialogBg);
+            com.jediterm.core.Color dialogBgEnd = theme.getColor("dialog.background.gradient.end", theme.getBackgroundColor());
+            String dialogBgRatio = ThemeManager.getProperty("dialog.background.gradient.ratio", "0% 100%");
+            rgbaDialogBg = getGradientStyle(dialogBgStart, dialogBgOpacity, dialogBgEnd, dialogBgOpacity, "to bottom", dialogBgRatio);
+        } else {
+            rgbaDialogBg = toRgba(dialogBg, dialogBgOpacity);
+        }
+        
         String rgbaDialogBorder = toRgba(dialogBorder, dialogBorderOpacity);
         String rgbaDialogHeaderBg = toRgba(dialogHeaderBg, dialogHeaderBgOpacity);
         String hexDialogHeaderFg = toHex(dialogHeaderFg);
@@ -1495,7 +1571,7 @@ public class MainApp extends Application {
                             ".button.title-btn-close { -fx-background-color: transparent; -fx-border-color: transparent; -fx-border-width: 0px; -fx-pref-width: 46px; -fx-pref-height: 36px; -fx-min-width: 46px; -fx-min-height: 36px; -fx-max-width: 46px; -fx-max-height: 36px; -fx-padding: 0; -fx-alignment: center; -fx-text-fill: " + hexTitleBtnFg + "; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; }\n" +
                             ".button.title-btn-close:hover { -fx-background-color: " + hexTitleCloseHoverBg + "; -fx-text-fill: " + hexTitleCloseHoverFg + "; }\n" +
                             ".sidebar { -fx-background-color: " + hexSideBg + "; -fx-border-color: " + hexSideBorder + "; }\n" +
-                            ".top-bar { -fx-background-color: " + hexToolBg + "; -fx-border-color: " + hexToolBorder + "; }\n" +
+                            ".top-bar { -fx-background-color: " + hexToolBg + "; -fx-border-color: " + hexToolBorder + "; -fx-pref-height: 46px; -fx-min-height: 46px; -fx-max-height: 46px; }\n" +
                             ".button { -fx-background-color: " + rgbaBtnBg + "; -fx-border-color: " + rgbaBtnBorder + "; -fx-text-fill: " + hexBtnFg + "; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button:hover { -fx-background-color: " + rgbaBtnHoverBg + "; -fx-border-color: " + rgbaBtnHoverBorder + "; -fx-text-fill: " + hexBtnHoverFg + "; }\n" +
                             ".button .button-icon { -fx-text-fill: " + hexBtnIcon + "; }\n" +
@@ -1608,7 +1684,7 @@ public class MainApp extends Application {
                             ".package-titled-pane > .title { -fx-background-color: " + rgbaCardsItemBg + "; -fx-border-color: " + rgbaCardsItemBorder + "; -fx-border-width: 1px; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-padding: 8px 12px; }\n" +
                             ".package-titled-pane > .title:hover { -fx-background-color: " + rgbaCardsHoverBg + "; -fx-border-color: " + rgbaCardsHoverBorder + "; }\n" +
                             ".package-titled-pane > .title > .arrow-button .arrow { -fx-background-color: " + hexTermCursor + "; }\n" +
-                            ".package-titled-pane > .content { -fx-background-color: " + hexWinBg + "; -fx-border-color: " + hexSideBorder + "; -fx-border-width: 0 1px 1px 1px; -fx-border-radius: 0 0 4px 4px; -fx-background-radius: 0 0 4px 4px; -fx-padding: 8px; }\n" +
+                            ".package-titled-pane > .content { -fx-background-color: " + rgbaSidebarPkgContentBg + "; -fx-border-color: " + hexSideBorder + "; -fx-border-width: 0 1px 1px 1px; -fx-border-radius: 0 0 4px 4px; -fx-background-radius: 0 0 4px 4px; -fx-padding: 8px; }\n" +
                             ".dashboard-package-title { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: " + hexCardsItemTitle + "; }\n" +
                             ".dashboard-standalone-title { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: " + hexCardsItemTitle + "; }\n" +
                             ".scroll-bar { -fx-background-color: transparent; }\n" +
@@ -2306,6 +2382,20 @@ public class MainApp extends Application {
 
     private String toRgba(com.jediterm.core.Color color, double opacity) {
         return String.format("rgba(%d, %d, %d, %.2f)", color.getRed(), color.getGreen(), color.getBlue(), opacity);
+    }
+
+    private String getGradientStyle(com.jediterm.core.Color startColor, double startOpacity,
+                                    com.jediterm.core.Color endColor, double endOpacity,
+                                    String direction, String ratio) {
+        String[] stops = ratio.trim().split("\\s+");
+        String stop1 = stops.length > 0 ? stops[0] : "0%";
+        String stop2 = stops.length > 1 ? stops[1] : "100%";
+        
+        return String.format("linear-gradient(%s, %s %s, %s %s)",
+            direction,
+            toRgba(startColor, startOpacity), stop1,
+            toRgba(endColor, endOpacity), stop2
+        );
     }
 
     private interface MyDwmAPI extends com.sun.jna.win32.StdCallLibrary {

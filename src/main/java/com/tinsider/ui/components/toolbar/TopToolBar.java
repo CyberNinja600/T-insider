@@ -99,6 +99,11 @@ public class TopToolBar extends HBox {
         setAlignment(Pos.CENTER_LEFT);
         getStyleClass().add("top-bar");
 
+        // Lock height to exactly 46px to avoid vertical button shifts between dashboard and terminal mode
+        setPrefHeight(46);
+        setMinHeight(46);
+        setMaxHeight(46);
+
         selectLabel = new Label("Shell / Host:");
         selectLabel.managedProperty().bind(selectLabel.visibleProperty());
 
@@ -187,7 +192,7 @@ public class TopToolBar extends HBox {
         javafx.scene.layout.Pane spacer = new javafx.scene.layout.Pane();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-        getChildren().addAll(selectLabel, shellOptions, spacer, terminalBtn, homeBtn, toggleSidebarBtn, zoomLabel, zoomControls, settingsBtn);
+        getChildren().addAll(selectLabel, shellOptions, spacer, toggleSidebarBtn, zoomLabel, zoomControls, terminalBtn, homeBtn,  settingsBtn);
     }
 
     private void rebuildItems(ObservableList<HostProfile> hosts, String initialShell) {
