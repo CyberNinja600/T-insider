@@ -108,6 +108,25 @@ public class ThemeManager {
         setDefaultIfMissing("controls.combo.background", "SelectionColor");
         setDefaultIfMissing("controls.combo.border", "BackgroundColor");
         setDefaultIfMissing("controls.combo.foreground", "TextColor");
+        setDefaultIfMissing("controls.colorpicker.background", "BackgroundColor");
+        setDefaultIfMissing("controls.colorpicker.border", "SelectionColor");
+        setDefaultIfMissing("controls.colorpicker.foreground", "TextColor");
+        setDefaultIfMissing("controls.colorpicker.popup.background", "BackgroundColor");
+        setDefaultIfMissing("controls.colorpicker.popup.border", "SelectionColor");
+        setDefaultIfMissing("controls.colorpicker.custom.background", "BackgroundColor");
+        setDefaultIfMissing("controls.colorpicker.custom.controls.background", "SelectionColor");
+        setDefaultIfMissing("controls.colorpicker.custom.button.background", "SelectionColor");
+        setDefaultIfMissing("controls.colorpicker.custom.button.border", "BackgroundColor");
+        setDefaultIfMissing("controls.colorpicker.custom.button.foreground", "TextColor");
+        setDefaultIfMissing("controls.colorpicker.custom.button.hover.background", "SelectionColor");
+        setDefaultIfMissing("controls.colorpicker.custom.button.hover.border", "CursorColor");
+        setDefaultIfMissing("controls.colorpicker.custom.button.hover.foreground", "CursorColor");
+        setDefaultIfMissing("controls.colorpicker.custom.toggle.background", "BackgroundColor");
+        setDefaultIfMissing("controls.colorpicker.custom.toggle.border", "SelectionColor");
+        setDefaultIfMissing("controls.colorpicker.custom.toggle.foreground", "TextColor");
+        setDefaultIfMissing("controls.colorpicker.custom.toggle.selected.background", "CursorColor");
+        setDefaultIfMissing("controls.colorpicker.custom.toggle.selected.border", "CursorColor");
+        setDefaultIfMissing("controls.colorpicker.custom.toggle.selected.foreground", "BackgroundColor");
         setDefaultIfMissing("controls.input.background", "SelectionColor");
         setDefaultIfMissing("controls.input.border", "BackgroundColor");
         setDefaultIfMissing("controls.input.foreground", "TextColor");
@@ -223,6 +242,21 @@ public class ThemeManager {
 
         setDefaultIfMissing("dialog.background.gradient.start", "SelectionColor");
         setDefaultIfMissing("dialog.background.gradient.end", "BackgroundColor");
+
+        // 12. Word Highlight UI Theming Keys
+        setDefaultIfMissing("highlights.sidebar.toggle.background", "BackgroundColor");
+        setDefaultIfMissing("highlights.sidebar.toggle.background.opacity", "1.0");
+        setDefaultIfMissing("highlights.sidebar.toggle.border.opacity", "1.0");
+        setDefaultIfMissing("highlights.sidebar.toggle.hover.background", "SelectionColor");
+        setDefaultIfMissing("highlights.sidebar.toggle.hover.border", "CursorColor");
+        setDefaultIfMissing("highlights.sidebar.toggle.hover.background.opacity", "1.0");
+        setDefaultIfMissing("highlights.sidebar.toggle.hover.border.opacity", "1.0");
+        setDefaultIfMissing("highlights.sidebar.toggle.active.background", "SelectionColor");
+        setDefaultIfMissing("highlights.sidebar.toggle.active.background.opacity", "1.0");
+        setDefaultIfMissing("highlights.sidebar.toggle.active.border", "SelectionColor");
+        setDefaultIfMissing("highlights.sidebar.toggle.active.border.opacity", "1.0");
+        setDefaultIfMissing("highlights.sidebar.toggle.foreground", "TextColor");
+        setDefaultIfMissing("highlights.sidebar.toggle.active.foreground", "CursorColor");
     }
 
     private static void setDefaultIfMissing(String key, String plistValue) {
