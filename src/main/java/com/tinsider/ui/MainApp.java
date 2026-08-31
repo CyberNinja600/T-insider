@@ -747,9 +747,29 @@ public class MainApp extends Application {
         snippetExecutionSidebar.setPrefWidth(240);
         snippetExecutionSidebar.getStyleClass().add("sidebar");
 
-        Label terminalSnippetsHeader = new Label("Snippets Launcher");
-        terminalSnippetsHeader.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
-        terminalSnippetsHeader.getStyleClass().add("snippets-launcher-header");
+        // Segmented Sidebar Navigation Tabs
+        HBox sidebarNav = new HBox(5);
+        sidebarNav.setAlignment(Pos.CENTER);
+        
+        ToggleButton sidebarSnippetsBtn = new ToggleButton("Snippets");
+        ToggleButton sidebarHighlightsBtn = new ToggleButton("Highlights");
+        ToggleGroup sidebarGroup = new ToggleGroup();
+        sidebarSnippetsBtn.setToggleGroup(sidebarGroup);
+        sidebarHighlightsBtn.setToggleGroup(sidebarGroup);
+        sidebarSnippetsBtn.setSelected(true); // default selected
+
+        sidebarSnippetsBtn.setMaxWidth(Double.MAX_VALUE);
+        sidebarHighlightsBtn.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(sidebarSnippetsBtn, Priority.ALWAYS);
+        HBox.setHgrow(sidebarHighlightsBtn, Priority.ALWAYS);
+
+        sidebarSnippetsBtn.getStyleClass().add("sidebar-tab-button");
+        sidebarHighlightsBtn.getStyleClass().add("sidebar-tab-button");
+        sidebarNav.getChildren().addAll(sidebarSnippetsBtn, sidebarHighlightsBtn);
+
+        // -- Snippets Content Container --
+        VBox snippetsSidebarContent = new VBox(10);
+        VBox.setVgrow(snippetsSidebarContent, Priority.ALWAYS);
 
         sidebarSearchField = new TextField();
         sidebarSearchField.setPromptText("🔍 Search snippets or packages...");
@@ -785,9 +805,11 @@ public class MainApp extends Application {
         addSnippetSidebarBtn.setMaxWidth(Double.MAX_VALUE); // Full-width
         addSnippetSidebarBtn.setOnAction(e -> showAddSnippetDialog(snippets, null));
 
-        Label highlightsHeader = new Label("Active Highlights");
-        highlightsHeader.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 10px 0 0 0;");
-        highlightsHeader.getStyleClass().add("snippets-launcher-header");
+        snippetsSidebarContent.getChildren().addAll(sidebarSearchField, addSnippetSidebarBtn, sidebarScrollPane);
+
+        // -- Highlights Content Container --
+        VBox highlightsSidebarContent = new VBox(10);
+        VBox.setVgrow(highlightsSidebarContent, Priority.ALWAYS);
 
         terminalHighlightsContainer = new VBox(8);
         terminalHighlightsContainer.setStyle("-fx-background-color: transparent;");
@@ -798,10 +820,37 @@ public class MainApp extends Application {
         highlightsScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         highlightsScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         highlightsScrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        highlightsScrollPane.setMinHeight(120); // Prevent it from being squeezed below this on small screen heights
-        highlightsScrollPane.setPrefHeight(150); // Balanced default height
+        VBox.setVgrow(highlightsScrollPane, Priority.ALWAYS);
 
-        snippetExecutionSidebar.getChildren().addAll(terminalSnippetsHeader, sidebarSearchField, addSnippetSidebarBtn, sidebarScrollPane, highlightsHeader, highlightsScrollPane);
+        highlightsSidebarContent.getChildren().addAll(highlightsScrollPane);
+
+        // Initial Visibility
+        snippetsSidebarContent.setVisible(true);
+        snippetsSidebarContent.setManaged(true);
+        highlightsSidebarContent.setVisible(false);
+        highlightsSidebarContent.setManaged(false);
+
+        // Nav Handlers
+        sidebarSnippetsBtn.setOnAction(e -> {
+            sidebarSnippetsBtn.setSelected(true); // keep selected
+            snippetsSidebarContent.setVisible(true);
+            snippetsSidebarContent.setManaged(true);
+            highlightsSidebarContent.setVisible(false);
+            highlightsSidebarContent.setManaged(false);
+            com.tinsider.util.ActivityLogger.logUserAction("SIDEBAR_SWITCH_TAB", "User switched sidebar tab to Snippets");
+        });
+
+        sidebarHighlightsBtn.setOnAction(e -> {
+            sidebarHighlightsBtn.setSelected(true); // keep selected
+            snippetsSidebarContent.setVisible(false);
+            snippetsSidebarContent.setManaged(false);
+            highlightsSidebarContent.setVisible(true);
+            highlightsSidebarContent.setManaged(true);
+            com.tinsider.util.ActivityLogger.logUserAction("SIDEBAR_SWITCH_TAB", "User switched sidebar tab to Highlights");
+            rebuildSidebarHighlights(); // force refresh
+        });
+
+        snippetExecutionSidebar.getChildren().addAll(sidebarNav, snippetsSidebarContent, highlightsSidebarContent);
 
         // 5. Root Layout & Theme Control
         topToolBar = new TopToolBar(
@@ -2014,7 +2063,10 @@ public class MainApp extends Application {
                             ".custom-color-dialog .toggle-button { -fx-background-color: " + hexColorPickerCustomToggleBg + "; -fx-border-color: " + hexColorPickerCustomToggleBorder + "; -fx-text-fill: " + hexColorPickerCustomToggleFg + "; -fx-border-width: 1px; -fx-background-insets: 0; }\n" +
                             ".custom-color-dialog .toggle-button:selected { -fx-background-color: " + hexColorPickerCustomToggleSelectedBg + "; -fx-border-color: " + hexColorPickerCustomToggleSelectedBorder + "; -fx-text-fill: " + hexColorPickerCustomToggleSelectedFg + "; }\n" +
                             ".custom-color-dialog .controls-pane { -fx-background-color: " + hexColorPickerCustomControlsBg + "; -fx-padding: 10px; -fx-border-color: " + hexColorPickerCustomToggleBorder + "; -fx-border-width: 1px; -fx-border-radius: 6px; -fx-background-radius: 6px; }\n" +
-                            ".custom-color-dialog .customcolor-controls-background { -fx-background-color: transparent; }\n";
+                            ".custom-color-dialog .customcolor-controls-background { -fx-background-color: transparent; }\n" +
+                            ".sidebar-tab-button { -fx-background-color: " + rgbaBtnBg + "; -fx-border-color: " + rgbaBtnBorder + "; -fx-text-fill: " + hexBtnFg + "; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-cursor: hand; -fx-font-weight: bold; -fx-font-size: 11px; }\n" +
+                            ".sidebar-tab-button:hover { -fx-background-color: " + rgbaBtnHoverBg + "; -fx-border-color: " + rgbaBtnHoverBorder + "; -fx-text-fill: " + hexBtnHoverFg + "; }\n" +
+                            ".sidebar-tab-button:selected { -fx-background-color: " + rgbaCardsSelectedBg + "; -fx-border-color: " + hexSideNavSelectedBorder + "; -fx-text-fill: " + hexSideNavSelectedBorder + "; }\n";
         
         try {
             File cssFile = File.createTempFile("theme", ".css");
