@@ -133,6 +133,7 @@ public class MainApp extends Application {
     private TextField snippetsSearchField;
     private TextField highlightsSearchField;
     private TextField sidebarSearchField;
+    private TextField sidebarHighlightsSearchField;
 
 
     @Override
@@ -811,6 +812,11 @@ public class MainApp extends Application {
         VBox highlightsSidebarContent = new VBox(10);
         VBox.setVgrow(highlightsSidebarContent, Priority.ALWAYS);
 
+        sidebarHighlightsSearchField = new TextField();
+        sidebarHighlightsSearchField.setPromptText("🔍 Search highlights or packages...");
+        sidebarHighlightsSearchField.getStyleClass().add("text-field");
+        sidebarHighlightsSearchField.textProperty().addListener((obs, oldVal, newVal) -> rebuildSidebarHighlights());
+
         terminalHighlightsContainer = new VBox(8);
         terminalHighlightsContainer.setStyle("-fx-background-color: transparent;");
         terminalHighlightsContainer.setPadding(new Insets(5, 5, 5, 0));
@@ -822,7 +828,7 @@ public class MainApp extends Application {
         highlightsScrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         VBox.setVgrow(highlightsScrollPane, Priority.ALWAYS);
 
-        highlightsSidebarContent.getChildren().addAll(highlightsScrollPane);
+        highlightsSidebarContent.getChildren().addAll(sidebarHighlightsSearchField, highlightsScrollPane);
 
         // Initial Visibility
         snippetsSidebarContent.setVisible(true);
@@ -3072,12 +3078,19 @@ public class MainApp extends Application {
 
         Set<String> activeIds = activePane.getActiveHighlightIds();
 
+        String query = sidebarHighlightsSearchField != null ? sidebarHighlightsSearchField.getText().toLowerCase().trim() : "";
+
         // 1. Grouped by Package
         for (HighlightPackage pkg : highlightPackages) {
+            boolean pkgMatches = pkg.getName() != null && pkg.getName().toLowerCase().contains(query);
+            
             List<WordHighlight> packageHighlights = new ArrayList<>();
             for (WordHighlight wh : highlights) {
                 if (pkg.getId().equals(wh.getPackageId())) {
-                    packageHighlights.add(wh);
+                    boolean whMatches = wh.getWord() != null && wh.getWord().toLowerCase().contains(query);
+                    if (query.isEmpty() || pkgMatches || whMatches) {
+                        packageHighlights.add(wh);
+                    }
                 }
             }
 
@@ -3145,7 +3158,10 @@ public class MainApp extends Application {
         List<WordHighlight> standaloneHighlights = new ArrayList<>();
         for (WordHighlight wh : highlights) {
             if (wh.getPackageId() == null || wh.getPackageId().isEmpty()) {
-                standaloneHighlights.add(wh);
+                boolean whMatches = wh.getWord() != null && wh.getWord().toLowerCase().contains(query);
+                if (query.isEmpty() || whMatches) {
+                    standaloneHighlights.add(wh);
+                }
             }
         }
 
