@@ -7,6 +7,7 @@ import com.tinsider.model.HostProfile;
 import com.tinsider.model.Snippet;
 import com.tinsider.model.SnippetPackage;
 import com.tinsider.model.WordHighlight;
+import com.tinsider.model.HighlightPackage;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -23,6 +24,7 @@ public class StorageManager {
     private static final String SNIPPETS_FILE = CONFIG_DIR + "/snippets.json";
     private static final String SETTINGS_FILE = CONFIG_DIR + "/settings.json";
     private static final String PACKAGES_FILE = CONFIG_DIR + "/packages.json";
+    private static final String HIGHLIGHT_PACKAGES_FILE = CONFIG_DIR + "/highlight_packages.json";
     private static final String HIGHLIGHTS_FILE = CONFIG_DIR + "/highlights.json";
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -144,6 +146,29 @@ public class StorageManager {
     public static void saveHighlights(List<WordHighlight> highlights) {
         try (Writer writer = new FileWriter(HIGHLIGHTS_FILE)) {
             gson.toJson(highlights, writer);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static List<HighlightPackage> loadHighlightPackages() {
+        File file = new File(HIGHLIGHT_PACKAGES_FILE);
+        if (!file.exists()) {
+            return new ArrayList<>();
+        }
+        try (Reader reader = new FileReader(file)) {
+            Type listType = new TypeToken<ArrayList<HighlightPackage>>(){}.getType();
+            List<HighlightPackage> list = gson.fromJson(reader, listType);
+            return list != null ? list : new ArrayList<>();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    public static void saveHighlightPackages(List<HighlightPackage> highlightPackages) {
+        try (Writer writer = new FileWriter(HIGHLIGHT_PACKAGES_FILE)) {
+            gson.toJson(highlightPackages, writer);
         } catch (Exception e) {
             e.printStackTrace();
         }

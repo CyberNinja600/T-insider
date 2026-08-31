@@ -7,6 +7,7 @@ public class WordHighlight {
     private String word;
     private String colorHex;
     private boolean caseInsensitive;
+    private String packageId;
 
     public WordHighlight() {
         this.id = UUID.randomUUID().toString();
@@ -56,6 +57,14 @@ public class WordHighlight {
 
     public void setCaseInsensitive(boolean caseInsensitive) {
         this.caseInsensitive = caseInsensitive;
+    }
+
+    public String getPackageId() {
+        return packageId;
+    }
+
+    public void setPackageId(String packageId) {
+        this.packageId = packageId;
     }
 
     @Override

@@ -8,6 +8,7 @@ import com.tinsider.model.HostProfile;
 import com.tinsider.model.Snippet;
 import com.tinsider.model.SnippetPackage;
 import com.tinsider.model.WordHighlight;
+import com.tinsider.model.HighlightPackage;
 import com.tinsider.storage.StorageManager;
 import com.tinsider.terminal.ConnectionManager;
 import com.tinsider.terminal.TerminalTabFactory;
@@ -33,6 +34,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import com.tinsider.ui.dialogs.HostDialog;
 import com.tinsider.ui.dialogs.SnippetDialog;
+import com.tinsider.ui.dialogs.HighlightDialog;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -64,6 +66,7 @@ public class MainApp extends Application {
     private final ObservableList<Snippet> snippets = FXCollections.observableArrayList();
     private final ObservableList<SnippetPackage> packages = FXCollections.observableArrayList();
     private final ObservableList<WordHighlight> highlights = FXCollections.observableArrayList();
+    private final ObservableList<HighlightPackage> highlightPackages = FXCollections.observableArrayList();
 
     private final Map<Tab, com.tinsider.ui.components.terminal.split.TerminalSplitPane> tabSplitPaneMap = new HashMap<>();
     
@@ -106,6 +109,7 @@ public class MainApp extends Application {
     private FlowPane remoteConnectionsGrid;
     private FlowPane hostsGrid;
     private VBox snippetsDashboardContainer;
+    private VBox highlightsDashboardContainer;
     private FlowPane terminalsGrid;
     private FlowPane highlightsGrid;
     private ScrollPane connectionsGridScrollPane;
@@ -127,6 +131,7 @@ public class MainApp extends Application {
     private TextField connectionsSearchField;
     private TextField hostsSearchField;
     private TextField snippetsSearchField;
+    private TextField highlightsSearchField;
     private TextField sidebarSearchField;
 
 
@@ -186,6 +191,7 @@ public class MainApp extends Application {
         snippets.addAll(StorageManager.loadSnippets());
         packages.addAll(StorageManager.loadPackages());
         highlights.addAll(StorageManager.loadHighlights());
+        highlightPackages.addAll(StorageManager.loadHighlightPackages());
 
         // Load settings and restore shell type + theme selection
         Map<String, String> settings = StorageManager.loadSettings();
@@ -597,91 +603,133 @@ public class MainApp extends Application {
         highlightsTitle.getStyleClass().add("dashboard-title");
         highlightsTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
-        HBox highlightInputs = new HBox(15);
-        highlightInputs.setAlignment(Pos.CENTER_LEFT);
-        highlightInputs.setPadding(new Insets(10, 0, 10, 0));
+        highlightsSearchField = new TextField();
+        highlightsSearchField.setPromptText("🔍 Search highlights by word or packages by name...");
+        highlightsSearchField.getStyleClass().add("text-field");
+        highlightsSearchField.textProperty().addListener((obs, oldVal, newVal) -> rebuildHighlightsGrid());
 
-        TextField wordField = new TextField();
-        wordField.setPromptText("Enter word to highlight...");
-        wordField.getStyleClass().add("text-field");
-        wordField.setPrefWidth(250);
-
-        ColorPicker colorPicker = new ColorPicker(javafx.scene.paint.Color.YELLOW);
-        colorPicker.getStyleClass().add("color-picker");
-
-        Button saveHighlightBtn = new Button("Add Highlight");
-        Label saveHighlightIcon = new Label("\uEA60");
-        saveHighlightIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
-        saveHighlightIcon.getStyleClass().add("button-icon");
-        saveHighlightBtn.setGraphic(saveHighlightIcon);
-
-        // Deactivate button initially, enable only when there are words/characters in the input field
-        saveHighlightBtn.setDisable(true);
-        wordField.textProperty().addListener((obs, oldVal, newVal) -> {
-            saveHighlightBtn.setDisable(newVal == null || newVal.trim().isEmpty());
-        });
-
-        highlightInputs.getChildren().addAll(new Label("Word:"), wordField, new Label("Color:"), colorPicker, saveHighlightBtn);
-
-        highlightsGrid = new FlowPane(15, 15);
-        highlightsGrid.setPadding(new Insets(10));
-        highlightsGridScrollPane = new ScrollPane(highlightsGrid);
+        highlightsDashboardContainer = new VBox(20);
+        highlightsDashboardContainer.setPadding(new Insets(10));
+        highlightsGridScrollPane = new ScrollPane(highlightsDashboardContainer);
         highlightsGridScrollPane.setFitToWidth(true);
         highlightsGridScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         highlightsGridScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         highlightsGridScrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         VBox.setVgrow(highlightsGridScrollPane, Priority.ALWAYS);
 
-        highlightsDashboard.getChildren().addAll(highlightsTitle, highlightInputs, highlightsGridScrollPane);
+        HBox highlightButtons = new HBox(10);
+        Button addHighlightBtn = new Button("Add Highlight");
+        Label addHighlightIcon = new Label("\uEA60");
+        addHighlightIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        addHighlightIcon.getStyleClass().add("button-icon");
+        addHighlightBtn.setGraphic(addHighlightIcon);
 
-        saveHighlightBtn.setOnAction(e -> {
-            String word = wordField.getText().trim();
-            if (word.isEmpty()) {
-                AlertHelper.showErrorAlert("Empty Word", "Please enter a word to highlight.");
-                return;
-            }
+        Button editHighlightBtn = new Button("Edit");
+        Label editHighlightIcon = new Label("\uEA73");
+        editHighlightIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        editHighlightIcon.getStyleClass().add("button-icon");
+        editHighlightBtn.setGraphic(editHighlightIcon);
 
-            WordHighlight existing = selectedHighlight.get();
-            boolean isDuplicate = false;
-            for (WordHighlight wh : highlights) {
-                if (wh != existing && wh.getWord().equalsIgnoreCase(word)) {
-                    isDuplicate = true;
-                    break;
-                }
-            }
-            if (isDuplicate) {
-                AlertHelper.showErrorAlert("Duplicate Highlight", "The word '" + word + "' is already configured for highlighting.");
-                return;
-            }
+        Button deleteHighlightBtn = new Button("Delete");
+        Label deleteHighlightIcon = new Label("\uEA81");
+        deleteHighlightIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deleteHighlightIcon.getStyleClass().add("button-icon");
+        deleteHighlightBtn.setGraphic(deleteHighlightIcon);
 
-            javafx.scene.paint.Color color = colorPicker.getValue();
-            String hexColor = String.format("#%02X%02X%02X",
-                (int)(color.getRed() * 255),
-                (int)(color.getGreen() * 255),
-                (int)(color.getBlue() * 255)
-            );
-            
-            if (existing != null) {
-                existing.setWord(word);
-                existing.setColorHex(hexColor);
-                selectedHighlight.set(null);
-                saveHighlightBtn.setText("Add Highlight");
-            } else {
-                WordHighlight wh = new WordHighlight(word, hexColor);
-                highlights.add(wh);
-            }
-            StorageManager.saveHighlights(new ArrayList<>(highlights));
-            wordField.clear();
-            colorPicker.setValue(javafx.scene.paint.Color.YELLOW);
-            rebuildHighlightsGrid();
-            repaintAllTerminals();
+        Button addHighlightPackageBtn = new Button("Add Package");
+        Label addHighlightPackageIcon = new Label("\uEA60");
+        addHighlightPackageIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        addHighlightPackageIcon.getStyleClass().add("button-icon");
+        addHighlightPackageBtn.setGraphic(addHighlightPackageIcon);
+
+        Button deleteHighlightPackageBtn = new Button("Delete Package");
+        Label deleteHighlightPackageIcon = new Label("\uEA81");
+        deleteHighlightPackageIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deleteHighlightPackageIcon.getStyleClass().add("button-icon");
+        deleteHighlightPackageBtn.setGraphic(deleteHighlightPackageIcon);
+
+        highlightButtons.getChildren().addAll(addHighlightBtn, editHighlightBtn, deleteHighlightBtn, addHighlightPackageBtn, deleteHighlightPackageBtn);
+        highlightButtons.setAlignment(Pos.CENTER_LEFT);
+
+        editHighlightBtn.disableProperty().bind(selectedHighlight.isNull());
+        deleteHighlightBtn.disableProperty().bind(selectedHighlight.isNull());
+
+        addHighlightBtn.setOnAction(e -> showAddHighlightDialog(highlights, null));
+        editHighlightBtn.setOnAction(e -> {
+            WordHighlight selected = selectedHighlight.get();
+            if (selected != null) showAddHighlightDialog(highlights, selected);
         });
+        deleteHighlightBtn.setOnAction(e -> {
+            WordHighlight selected = selectedHighlight.get();
+            if (selected != null) {
+                highlights.remove(selected);
+                StorageManager.saveHighlights(new ArrayList<>(highlights));
+                selectedHighlight.set(null);
+            }
+        });
+
+        addHighlightPackageBtn.setOnAction(e -> {
+            TextInputDialog dialog = new TextInputDialog();
+            dialog.setTitle("Add Highlight Package");
+            dialog.setContentText("Package Name:");
+            com.tinsider.ui.dialogs.AlertHelper.themeDialog(dialog);
+            Optional<String> result = dialog.showAndWait();
+            result.ifPresent(name -> {
+                if (!name.trim().isEmpty()) {
+                    HighlightPackage pkg = new HighlightPackage(name.trim());
+                    highlightPackages.add(pkg);
+                    StorageManager.saveHighlightPackages(new ArrayList<>(highlightPackages));
+                }
+            });
+        });
+
+        deleteHighlightPackageBtn.setOnAction(e -> {
+            if (highlightPackages.isEmpty()) {
+                com.tinsider.ui.dialogs.AlertHelper.showErrorAlert("No Packages", "There are no packages to delete.");
+                return;
+            }
+            ChoiceDialog<HighlightPackage> dialog = new ChoiceDialog<>(highlightPackages.get(0), highlightPackages);
+            dialog.setTitle("Delete Highlight Package");
+            dialog.setContentText("Package:");
+            com.tinsider.ui.dialogs.AlertHelper.themeDialog(dialog);
+            Optional<HighlightPackage> result = dialog.showAndWait();
+            result.ifPresent(pkg -> {
+                if (pkg != null) {
+                    highlightPackages.remove(pkg);
+                    // orphan highlights in this package
+                    for (WordHighlight wh : highlights) {
+                        if (pkg.getId().equals(wh.getPackageId())) {
+                            wh.setPackageId(null);
+                        }
+                    }
+                    StorageManager.saveHighlights(new ArrayList<>(highlights));
+                    StorageManager.saveHighlightPackages(new ArrayList<>(highlightPackages));
+                }
+            });
+        });
+
+        highlightsDashboard.getChildren().addAll(highlightsTitle, highlightsSearchField, highlightsGridScrollPane, highlightButtons);
 
         highlights.addListener(new javafx.collections.ListChangeListener<WordHighlight>() {
             @Override
             public void onChanged(javafx.collections.ListChangeListener.Change<? extends WordHighlight> c) {
                 rebuildHighlightsGrid();
             }
+        });
+
+        highlightPackages.addListener(new javafx.collections.ListChangeListener<HighlightPackage>() {
+            @Override
+            public void onChanged(javafx.collections.ListChangeListener.Change<? extends HighlightPackage> c) {
+                rebuildHighlightsGrid();
+            }
+        });
+
+        // Rebuild sidebar highlights automatically when data changes
+        highlights.addListener((javafx.collections.ListChangeListener<WordHighlight>) change -> {
+            rebuildSidebarHighlights();
+        });
+        highlightPackages.addListener((javafx.collections.ListChangeListener<HighlightPackage>) change -> {
+            rebuildSidebarHighlights();
         });
 
         // Add to stack
@@ -978,6 +1026,7 @@ public class MainApp extends Application {
         hostsDashboard.setVisible(false);
         snippetsDashboard.setVisible(false);
         terminalsDashboard.setVisible(false);
+        highlightsDashboard.setVisible(false);
 
         if (tab == DashboardTab.CONNECTIONS) {
             connectionsDashboard.setVisible(true);
@@ -993,6 +1042,10 @@ public class MainApp extends Application {
             terminalsDashboard.setVisible(true);
             terminalsDashboard.toFront();
             updateActiveSessionsList();
+        } else if (tab == DashboardTab.HIGHLIGHTS) {
+            highlightsDashboard.setVisible(true);
+            highlightsDashboard.toFront();
+            rebuildHighlightsGrid();
         }
     }
 
@@ -2668,50 +2721,287 @@ public class MainApp extends Application {
         );
     }
 
-    private void rebuildHighlightsGrid() {
-        if (highlightsGrid == null) return;
-        highlightsGrid.getChildren().clear();
-        for (WordHighlight wh : highlights) {
-            HBox card = new HBox(12);
-            card.setPadding(new Insets(12));
-            card.setAlignment(Pos.CENTER_LEFT);
-            card.getStyleClass().add("highlight-card");
-            card.setPrefWidth(220);
-            card.setMaxWidth(220);
-            card.setCursor(javafx.scene.Cursor.HAND);
+    private void showAddHighlightDialog(ObservableList<WordHighlight> highlights, WordHighlight existing) {
+        HighlightDialog dialog = new HighlightDialog(existing, highlightPackages);
+        Optional<WordHighlight> result = dialog.showAndWait();
+        result.ifPresent(wh -> {
+            if (existing != null) {
+                com.tinsider.util.ActivityLogger.logUserAction("EDIT_HIGHLIGHT", "User edited highlight: " + wh.getWord());
+                highlights.remove(existing);
+            } else {
+                com.tinsider.util.ActivityLogger.logUserAction("ADD_HIGHLIGHT", "User added highlight: " + wh.getWord());
+            }
+            highlights.add(wh);
+            StorageManager.saveHighlights(new ArrayList<>(highlights));
+            rebuildHighlightsGrid();
+            repaintAllTerminals();
+        });
+    }
 
-            Label colorBox = new Label();
-            colorBox.setPrefSize(20, 20);
-            colorBox.setMinSize(20, 20);
-            colorBox.setMaxSize(20, 20);
-            colorBox.setStyle("-fx-background-color: " + wh.getColorHex() + "; -fx-background-radius: 10px;");
-
-            VBox details = new VBox(2);
-            Label wordLabel = new Label(wh.getWord());
-            wordLabel.getStyleClass().add("host-name");
-            wordLabel.setStyle("-fx-font-weight: bold;");
-
-            Label colorLabel = new Label(wh.getColorHex());
-            colorLabel.getStyleClass().add("host-username");
-            details.getChildren().addAll(wordLabel, colorLabel);
-
-            Region spacer = new Region();
-            HBox.setHgrow(spacer, Priority.ALWAYS);
-
-            Button deleteBtn = new Button("\uEA81");
-            deleteBtn.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px; -fx-padding: 3px 6px;");
-            deleteBtn.getStyleClass().add("button");
-            deleteBtn.setOnAction(e -> {
-                e.consume();
-                highlights.remove(wh);
-                StorageManager.saveHighlights(new ArrayList<>(highlights));
-                rebuildHighlightsGrid();
-                repaintAllTerminals();
-            });
-
-            card.getChildren().addAll(colorBox, details, spacer, deleteBtn);
-            highlightsGrid.getChildren().add(card);
+    private void clearDashboardHighlightSelection() {
+        if (highlightsDashboardContainer == null) return;
+        for (javafx.scene.Node section : highlightsDashboardContainer.getChildren()) {
+            if (section instanceof VBox) {
+                for (javafx.scene.Node child : ((VBox) section).getChildren()) {
+                    if (child instanceof FlowPane) {
+                        for (javafx.scene.Node node : ((FlowPane) child).getChildren()) {
+                            if (node instanceof HBox) {
+                                node.getStyleClass().remove("selected");
+                            }
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    private javafx.scene.Node createDashboardHighlightCard(WordHighlight wh) {
+        HBox card = new HBox(12);
+        card.setPadding(new Insets(12));
+        card.setAlignment(Pos.CENTER_LEFT);
+        card.getStyleClass().add("highlight-card");
+        card.setPrefWidth(220);
+        card.setMaxWidth(220);
+        card.setCursor(javafx.scene.Cursor.HAND);
+
+        Label colorBox = new Label();
+        colorBox.setPrefSize(20, 20);
+        colorBox.setMinSize(20, 20);
+        colorBox.setMaxSize(20, 20);
+        colorBox.setStyle("-fx-background-color: " + wh.getColorHex() + "; -fx-background-radius: 10px;");
+
+        VBox details = new VBox(2);
+        Label wordLabel = new Label(wh.getWord());
+        wordLabel.getStyleClass().add("host-name");
+        wordLabel.setStyle("-fx-font-weight: bold;");
+
+        Label colorLabel = new Label(wh.getColorHex());
+        colorLabel.getStyleClass().add("host-username");
+        details.getChildren().addAll(wordLabel, colorLabel);
+
+        card.getChildren().addAll(colorBox, details);
+
+        card.setOnMouseClicked(event -> {
+            selectedHighlight.set(wh);
+            clearDashboardHighlightSelection();
+            card.getStyleClass().add("selected");
+        });
+
+        if (selectedHighlight.get() == wh) {
+            card.getStyleClass().add("selected");
+        }
+
+        return card;
+    }
+
+    private void rebuildHighlightsGrid() {
+        if (highlightsDashboardContainer == null) return;
+        highlightsDashboardContainer.getChildren().clear();
+        String query = highlightsSearchField != null ? highlightsSearchField.getText().toLowerCase().trim() : "";
+
+        // 1. Render Packages on top
+        for (HighlightPackage pkg : highlightPackages) {
+            boolean pkgMatches = pkg.getName() != null && pkg.getName().toLowerCase().contains(query);
+            
+            List<WordHighlight> matchingHighlightsInPkg = new ArrayList<>();
+            for (WordHighlight item : highlights) {
+                if (pkg.getId().equals(item.getPackageId())) {
+                    boolean highlightMatches = (item.getWord() != null && item.getWord().toLowerCase().contains(query));
+                    if (query.isEmpty() || highlightMatches || pkgMatches) {
+                        matchingHighlightsInPkg.add(item);
+                    }
+                }
+            }
+
+            if (query.isEmpty() || pkgMatches || !matchingHighlightsInPkg.isEmpty()) {
+                VBox packageSection = new VBox(10);
+                packageSection.getStyleClass().add("dashboard-package-section");
+
+                HBox header = new HBox(10);
+                header.setAlignment(Pos.CENTER_LEFT);
+                Label folderIcon = new Label("\uEA83");
+                folderIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; -fx-text-fill: #94a3b8;");
+                Label title = new Label(pkg.getName());
+                title.getStyleClass().add("dashboard-package-title");
+                header.getChildren().addAll(folderIcon, title);
+
+                FlowPane grid = new FlowPane(15, 15);
+                grid.setPadding(new Insets(10, 0, 0, 0));
+
+                for (WordHighlight item : matchingHighlightsInPkg) {
+                    javafx.scene.Node card = createDashboardHighlightCard(item);
+                    grid.getChildren().add(card);
+                }
+
+                if (matchingHighlightsInPkg.isEmpty()) {
+                    Label emptyLabel = new Label("No highlights in this package");
+                    emptyLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic; -fx-font-size: 11px; -fx-padding: 5px 0 0 5px;");
+                    grid.getChildren().add(emptyLabel);
+                }
+
+                packageSection.getChildren().addAll(header, grid);
+                highlightsDashboardContainer.getChildren().add(packageSection);
+            }
+        }
+
+        // 2. Render Highlights without package below
+        List<WordHighlight> matchingStandalone = new ArrayList<>();
+        for (WordHighlight item : highlights) {
+            if (item.getPackageId() == null || item.getPackageId().isEmpty()) {
+                boolean highlightMatches = item.getWord().toLowerCase().contains(query);
+                if (query.isEmpty() || highlightMatches) {
+                    matchingStandalone.add(item);
+                }
+            }
+        }
+
+        if (query.isEmpty() || !matchingStandalone.isEmpty()) {
+            VBox standaloneSection = new VBox(10);
+            standaloneSection.getStyleClass().add("dashboard-package-section");
+
+            HBox standaloneHeader = new HBox(10);
+            standaloneHeader.setAlignment(Pos.CENTER_LEFT);
+            Label standaloneIcon = new Label("\uEAE9");
+            standaloneIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; -fx-text-fill: #94a3b8;");
+            Label standaloneTitle = new Label("Standalone Highlights (No Package)");
+            standaloneTitle.getStyleClass().add("dashboard-standalone-title");
+            standaloneHeader.getChildren().addAll(standaloneIcon, standaloneTitle);
+
+            FlowPane standaloneGrid = new FlowPane(15, 15);
+            standaloneGrid.setPadding(new Insets(10, 0, 0, 0));
+
+            for (WordHighlight item : matchingStandalone) {
+                javafx.scene.Node card = createDashboardHighlightCard(item);
+                standaloneGrid.getChildren().add(card);
+            }
+
+            if (matchingStandalone.isEmpty()) {
+                Label emptyLabel = new Label("No standalone highlights");
+                emptyLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic; -fx-font-size: 11px; -fx-padding: 5px 0 0 5px;");
+                standaloneGrid.getChildren().add(emptyLabel);
+            }
+
+            standaloneSection.getChildren().addAll(standaloneHeader, standaloneGrid);
+            highlightsDashboardContainer.getChildren().add(standaloneSection);
+        }
+    }
+
+    private javafx.scene.Node createSidebarHighlightCardNode(WordHighlight wh, com.tinsider.ui.components.terminal.split.TerminalPane activePane, Set<String> activeIds, com.tinsider.ui.components.terminal.split.TerminalSplitPane splitPane) {
+        boolean active = activeIds.contains(wh.getId());
+
+        HBox card = new HBox(8);
+        card.setAlignment(Pos.CENTER_LEFT);
+        card.getStyleClass().add("highlight-sidebar-card");
+        if (active) {
+            card.getStyleClass().add("active");
+        }
+
+        Label indicator = new Label();
+        indicator.setPrefSize(8, 8);
+        indicator.setMinSize(8, 8);
+        indicator.setMaxSize(8, 8);
+        indicator.setStyle("-fx-background-color: " + wh.getColorHex() + "; -fx-background-radius: 4px;");
+
+        Label wordLabel = new Label(wh.getWord());
+        wordLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Label eyeIcon = new Label(active ? "\uEB79" : "\uEB7A");
+        eyeIcon.getStyleClass().add("toggle-icon");
+
+        Button caseIcon = new Button("\uEAB1");
+        caseIcon.getStyleClass().add("snippet-hover-btn");
+        caseIcon.setMinWidth(22);
+        caseIcon.setPrefWidth(22);
+        caseIcon.setMaxWidth(22);
+        caseIcon.setMinHeight(22);
+        caseIcon.setPrefHeight(22);
+        caseIcon.setMaxHeight(22);
+        
+        // Toggle style dynamically depending on state
+        Runnable updateCaseIconStyle = () -> {
+            boolean isInsensitive = activePane.getCaseInsensitiveHighlightIds().contains(wh.getId());
+            TerminalTheme currentTheme = splitPane.getCurrentTheme();
+            com.jediterm.core.Color accentColor = currentTheme.getCursorColor();
+            com.jediterm.core.Color btnBg = currentTheme.getColor("controls.snippet.hover.btn.background", currentTheme.getBackgroundColor());
+            com.jediterm.core.Color btnBorder = currentTheme.getColor("controls.snippet.hover.btn.border", currentTheme.getSelectionColor());
+            com.jediterm.core.Color btnHoverBg = currentTheme.getColor("controls.snippet.hover.btn.hover.background", currentTheme.getSelectionColor());
+            com.jediterm.core.Color btnHoverBorder = currentTheme.getColor("controls.snippet.hover.btn.hover.border", currentTheme.getCursorColor());
+
+            String hexAccent = toHex(accentColor);
+            String hexBtnBg = toHex(btnBg);
+            String hexBtnBorder = toHex(btnBorder);
+            String hexBtnHoverBg = toHex(btnHoverBg);
+            String hexBtnHoverBorder = toHex(btnHoverBorder);
+
+            if (isInsensitive) {
+                caseIcon.setStyle(
+                    "-fx-font-family: 'codicon'; " +
+                    "-fx-font-size: 11px; " +
+                    "-fx-text-fill: " + hexAccent + "; " +
+                    "-fx-background-color: " + hexBtnHoverBg + "; " +
+                    "-fx-border-color: " + hexBtnHoverBorder + "; " +
+                    "-fx-border-width: 1px; " +
+                    "-fx-background-radius: 3px; " +
+                    "-fx-border-radius: 3px; " +
+                    "-fx-opacity: 1.0; " +
+                    "-fx-cursor: hand;"
+                );
+            } else {
+                caseIcon.setStyle(
+                    "-fx-font-family: 'codicon'; " +
+                    "-fx-font-size: 11px; " +
+                    "-fx-text-fill: #94a3b8; " +
+                    "-fx-background-color: " + hexBtnBg + "; " +
+                    "-fx-border-color: " + hexBtnBorder + "; " +
+                    "-fx-border-width: 1px; " +
+                    "-fx-background-radius: 3px; " +
+                    "-fx-border-radius: 3px; " +
+                    "-fx-opacity: 0.5; " +
+                    "-fx-cursor: hand;"
+                );
+            }
+        };
+        updateCaseIconStyle.run();
+
+        caseIcon.setTooltip(new javafx.scene.control.Tooltip("Toggle Case Insensitive Match"));
+
+        caseIcon.setOnAction(e -> e.consume());
+        caseIcon.setOnMouseClicked(e -> {
+            e.consume(); // Prevent toggling the card's active state
+            boolean nextState = !activePane.getCaseInsensitiveHighlightIds().contains(wh.getId());
+            activePane.toggleCaseInsensitive(wh.getId(), nextState);
+            
+            // Also update the global WordHighlight object and save it,
+            // so that this preference is persisted in highlights.json for future terminals / sessions!
+            wh.setCaseInsensitive(nextState);
+            StorageManager.saveHighlights(new ArrayList<>(highlights));
+            
+            updateCaseIconStyle.run();
+        });
+
+        card.getChildren().addAll(indicator, wordLabel, spacer, caseIcon, eyeIcon);
+
+        card.setOnMouseClicked(e -> {
+            boolean currentlyActive = activePane.getActiveHighlightIds().contains(wh.getId());
+            boolean nextState = !currentlyActive;
+            activePane.toggleHighlight(wh.getId(), nextState);
+            
+            // Update UI state immediately
+            if (nextState) {
+                if (!card.getStyleClass().contains("active")) {
+                    card.getStyleClass().add("active");
+                }
+                eyeIcon.setText("\uEB79");
+            } else {
+                card.getStyleClass().remove("active");
+                eyeIcon.setText("\uEB7A");
+            }
+        });
+
+        return card;
     }
 
     public void rebuildSidebarHighlights() {
@@ -2729,122 +3019,137 @@ public class MainApp extends Application {
 
         Set<String> activeIds = activePane.getActiveHighlightIds();
 
-        for (WordHighlight wh : highlights) {
-            boolean active = activeIds.contains(wh.getId());
-
-            HBox card = new HBox(8);
-            card.setAlignment(Pos.CENTER_LEFT);
-            card.getStyleClass().add("highlight-sidebar-card");
-            if (active) {
-                card.getStyleClass().add("active");
+        // 1. Grouped by Package
+        for (HighlightPackage pkg : highlightPackages) {
+            List<WordHighlight> packageHighlights = new ArrayList<>();
+            for (WordHighlight wh : highlights) {
+                if (pkg.getId().equals(wh.getPackageId())) {
+                    packageHighlights.add(wh);
+                }
             }
 
-            Label indicator = new Label();
-            indicator.setPrefSize(8, 8);
-            indicator.setMinSize(8, 8);
-            indicator.setMaxSize(8, 8);
-            indicator.setStyle("-fx-background-color: " + wh.getColorHex() + "; -fx-background-radius: 4px;");
+            if (!packageHighlights.isEmpty()) {
+                TitledPane pane = new TitledPane();
+                pane.getStyleClass().add("package-titled-pane");
+                pane.setExpanded(true); // default open
 
-            Label wordLabel = new Label(wh.getWord());
-            wordLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
-
-            Region spacer = new Region();
-            HBox.setHgrow(spacer, Priority.ALWAYS);
-
-            Label eyeIcon = new Label(active ? "\uEB79" : "\uEB7A");
-            eyeIcon.getStyleClass().add("toggle-icon");
-
-            Button caseIcon = new Button("\uEAB1");
-            caseIcon.getStyleClass().add("snippet-hover-btn");
-            caseIcon.setMinWidth(22);
-            caseIcon.setPrefWidth(22);
-            caseIcon.setMaxWidth(22);
-            caseIcon.setMinHeight(22);
-            caseIcon.setPrefHeight(22);
-            caseIcon.setMaxHeight(22);
-            
-            // Toggle style dynamically depending on state
-            Runnable updateCaseIconStyle = () -> {
-                boolean isInsensitive = activePane.getCaseInsensitiveHighlightIds().contains(wh.getId());
-                TerminalTheme currentTheme = splitPane.getCurrentTheme();
-                com.jediterm.core.Color accentColor = currentTheme.getCursorColor();
-                com.jediterm.core.Color btnBg = currentTheme.getColor("controls.snippet.hover.btn.background", currentTheme.getBackgroundColor());
-                com.jediterm.core.Color btnBorder = currentTheme.getColor("controls.snippet.hover.btn.border", currentTheme.getSelectionColor());
-                com.jediterm.core.Color btnHoverBg = currentTheme.getColor("controls.snippet.hover.btn.hover.background", currentTheme.getSelectionColor());
-                com.jediterm.core.Color btnHoverBorder = currentTheme.getColor("controls.snippet.hover.btn.hover.border", currentTheme.getCursorColor());
-
-                String hexAccent = toHex(accentColor);
-                String hexBtnBg = toHex(btnBg);
-                String hexBtnBorder = toHex(btnBorder);
-                String hexBtnHoverBg = toHex(btnHoverBg);
-                String hexBtnHoverBorder = toHex(btnHoverBorder);
-
-                if (isInsensitive) {
-                    caseIcon.setStyle(
-                        "-fx-font-family: 'codicon'; " +
-                        "-fx-font-size: 11px; " +
-                        "-fx-text-fill: " + hexAccent + "; " +
-                        "-fx-background-color: " + hexBtnHoverBg + "; " +
-                        "-fx-border-color: " + hexBtnHoverBorder + "; " +
-                        "-fx-border-width: 1px; " +
-                        "-fx-background-radius: 3px; " +
-                        "-fx-border-radius: 3px; " +
-                        "-fx-opacity: 1.0; " +
-                        "-fx-cursor: hand;"
-                    );
-                } else {
-                    caseIcon.setStyle(
-                        "-fx-font-family: 'codicon'; " +
-                        "-fx-font-size: 11px; " +
-                        "-fx-text-fill: #94a3b8; " +
-                        "-fx-background-color: " + hexBtnBg + "; " +
-                        "-fx-border-color: " + hexBtnBorder + "; " +
-                        "-fx-border-width: 1px; " +
-                        "-fx-background-radius: 3px; " +
-                        "-fx-border-radius: 3px; " +
-                        "-fx-opacity: 0.5; " +
-                        "-fx-cursor: hand;"
-                    );
-                }
-            };
-            updateCaseIconStyle.run();
-
-            caseIcon.setTooltip(new javafx.scene.control.Tooltip("Toggle Case Insensitive Match"));
-
-            caseIcon.setOnAction(e -> e.consume());
-            caseIcon.setOnMouseClicked(e -> {
-                e.consume(); // Prevent toggling the card's active state
-                boolean nextState = !activePane.getCaseInsensitiveHighlightIds().contains(wh.getId());
-                activePane.toggleCaseInsensitive(wh.getId(), nextState);
-                
-                // Also update the global WordHighlight object and save it,
-                // so that this preference is persisted in highlights.json for future terminals / sessions!
-                wh.setCaseInsensitive(nextState);
-                StorageManager.saveHighlights(new ArrayList<>(highlights));
-                
-                updateCaseIconStyle.run();
-            });
-
-            card.getChildren().addAll(indicator, wordLabel, spacer, caseIcon, eyeIcon);
-
-            card.setOnMouseClicked(e -> {
-                boolean currentlyActive = activePane.getActiveHighlightIds().contains(wh.getId());
-                boolean nextState = !currentlyActive;
-                activePane.toggleHighlight(wh.getId(), nextState);
-                
-                // Update UI state immediately
-                if (nextState) {
-                    if (!card.getStyleClass().contains("active")) {
-                        card.getStyleClass().add("active");
+                // Calculate package active state
+                int activeCount = 0;
+                for (WordHighlight wh : packageHighlights) {
+                    if (activeIds.contains(wh.getId())) {
+                        activeCount++;
                     }
-                    eyeIcon.setText("\uEB79");
-                } else {
-                    card.getStyleClass().remove("active");
-                    eyeIcon.setText("\uEB7A");
                 }
+                boolean pkgAllActive = (activeCount == packageHighlights.size());
+                boolean pkgAnyActive = (activeCount > 0);
+
+                // Build custom header with title and eye icon for package activation
+                HBox header = new HBox(8);
+                header.setAlignment(Pos.CENTER_LEFT);
+                HBox.setHgrow(header, Priority.ALWAYS);
+                header.setMaxWidth(Double.MAX_VALUE);
+
+                Label folderIcon = new Label("\uEA83");
+                folderIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px; -fx-text-fill: #94a3b8;");
+
+                Label titleLabel = new Label(pkg.getName());
+                titleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #cbd5e1;");
+                titleLabel.setMinWidth(0);
+                titleLabel.setMaxWidth(Double.MAX_VALUE);
+                HBox.setHgrow(titleLabel, Priority.ALWAYS);
+
+                Label pkgEyeIcon = new Label(pkgAnyActive ? "\uEB79" : "\uEB7A");
+                pkgEyeIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px; -fx-text-fill: " + (pkgAnyActive ? "#00adb5" : "#94a3b8") + "; -fx-cursor: hand;");
+                pkgEyeIcon.setTooltip(new Tooltip(pkgAnyActive ? "Deactivate Package" : "Activate Package"));
+
+                pkgEyeIcon.setOnMouseClicked(ev -> {
+                    ev.consume(); // Prevent expanding/collapsing the TitledPane
+                    boolean nextState = !pkgAnyActive; // if any active, turn off; otherwise turn on
+                    for (WordHighlight wh : packageHighlights) {
+                        activePane.toggleHighlight(wh.getId(), nextState);
+                    }
+                    rebuildSidebarHighlights();
+                });
+
+                header.getChildren().addAll(folderIcon, titleLabel, pkgEyeIcon);
+                pane.setGraphic(header);
+
+                VBox packageContent = new VBox(8);
+                packageContent.setPadding(new Insets(10));
+                packageContent.setStyle("-fx-background-color: transparent;");
+
+                for (WordHighlight wh : packageHighlights) {
+                    javafx.scene.Node card = createSidebarHighlightCardNode(wh, activePane, activeIds, splitPane);
+                    packageContent.getChildren().add(card);
+                }
+
+                pane.setContent(packageContent);
+                terminalHighlightsContainer.getChildren().add(pane);
+            }
+        }
+
+        // 2. Standalone highlights
+        List<WordHighlight> standaloneHighlights = new ArrayList<>();
+        for (WordHighlight wh : highlights) {
+            if (wh.getPackageId() == null || wh.getPackageId().isEmpty()) {
+                standaloneHighlights.add(wh);
+            }
+        }
+
+        if (!standaloneHighlights.isEmpty()) {
+            TitledPane pane = new TitledPane();
+            pane.getStyleClass().add("package-titled-pane");
+            pane.setExpanded(true); // default open
+
+            int activeCount = 0;
+            for (WordHighlight wh : standaloneHighlights) {
+                if (activeIds.contains(wh.getId())) {
+                    activeCount++;
+                }
+            }
+            boolean pkgAnyActive = (activeCount > 0);
+
+            HBox header = new HBox(8);
+            header.setAlignment(Pos.CENTER_LEFT);
+            HBox.setHgrow(header, Priority.ALWAYS);
+            header.setMaxWidth(Double.MAX_VALUE);
+
+            Label standaloneIcon = new Label("\uEAE9");
+            standaloneIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px; -fx-text-fill: #94a3b8;");
+
+            Label titleLabel = new Label("Standalone Highlights");
+            titleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #cbd5e1;");
+            titleLabel.setMinWidth(0);
+            titleLabel.setMaxWidth(Double.MAX_VALUE);
+            HBox.setHgrow(titleLabel, Priority.ALWAYS);
+
+            Label pkgEyeIcon = new Label(pkgAnyActive ? "\uEB79" : "\uEB7A");
+            pkgEyeIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px; -fx-text-fill: " + (pkgAnyActive ? "#00adb5" : "#94a3b8") + "; -fx-cursor: hand;");
+            pkgEyeIcon.setTooltip(new Tooltip(pkgAnyActive ? "Deactivate Standalone" : "Activate Standalone"));
+
+            pkgEyeIcon.setOnMouseClicked(ev -> {
+                ev.consume();
+                boolean nextState = !pkgAnyActive;
+                for (WordHighlight wh : standaloneHighlights) {
+                    activePane.toggleHighlight(wh.getId(), nextState);
+                }
+                rebuildSidebarHighlights();
             });
 
-            terminalHighlightsContainer.getChildren().add(card);
+            header.getChildren().addAll(standaloneIcon, titleLabel, pkgEyeIcon);
+            pane.setGraphic(header);
+
+            VBox standaloneContent = new VBox(8);
+            standaloneContent.setPadding(new Insets(10));
+            standaloneContent.setStyle("-fx-background-color: transparent;");
+
+            for (WordHighlight wh : standaloneHighlights) {
+                javafx.scene.Node card = createSidebarHighlightCardNode(wh, activePane, activeIds, splitPane);
+                standaloneContent.getChildren().add(card);
+            }
+
+            pane.setContent(standaloneContent);
+            terminalHighlightsContainer.getChildren().add(pane);
         }
     }
 
