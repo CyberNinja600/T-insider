@@ -2036,6 +2036,7 @@ public class MainApp extends Application {
                             ".split-pane *.split-pane-divider:hover { -fx-background-color: " + hexSplitDividerHover + "; }\n" +
                             ".highlight-card { -fx-background-color: " + rgbaCardsItemBg + "; -fx-border-color: " + rgbaCardsItemBorder + "; -fx-border-width: 1px; -fx-border-radius: 6px; -fx-background-radius: 6px; }\n" +
                             ".highlight-card:hover { -fx-background-color: " + rgbaCardsHoverBg + "; -fx-border-color: " + rgbaCardsHoverBorder + "; }\n" +
+                            ".highlight-card.selected { -fx-background-color: " + rgbaCardsSelectedBg + "; -fx-border-color: " + rgbaCardsSelectedBorder + "; -fx-effect: dropshadow(three-pass-box, " + rgbaCardsSelectedGlow + ", 8, 0, 0, 0); }\n" +
                             ".highlight-badge { -fx-background-color: " + rgbaCardsBadgeBg + "; -fx-background-radius: 16px; }\n" +
                             ".highlight-sidebar-card { -fx-background-color: " + rgbaHlSideBg + "; -fx-border-color: " + rgbaHlSideBorder + "; -fx-border-width: 1px; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-padding: 6px 10px; -fx-cursor: hand; }\n" +
                             ".highlight-sidebar-card:hover { -fx-background-color: " + rgbaHlSideHoverBg + "; -fx-border-color: " + rgbaHlSideHoverBorder + "; }\n" +
