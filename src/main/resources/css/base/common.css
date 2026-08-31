@@ -36,6 +36,16 @@
     -fx-border-color: #2a3356;
     -fx-border-radius: 4px;
     -fx-background-radius: 4px;
+    -fx-background-insets: 0;
+}
+.combo-box .arrow-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+.combo-box .arrow-button .arrow {
+    -fx-background-color: white;
+    -fx-background-insets: 0;
 }
 .combo-box:hover {
     -fx-background-color: #212846;

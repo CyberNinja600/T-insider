@@ -7,6 +7,7 @@ import com.tinsider.config.ThemeManager;
 import com.tinsider.model.HostProfile;
 import com.tinsider.model.Snippet;
 import com.tinsider.model.SnippetPackage;
+import com.tinsider.model.WordHighlight;
 import com.tinsider.storage.StorageManager;
 import com.tinsider.terminal.ConnectionManager;
 import com.tinsider.terminal.TerminalTabFactory;
@@ -40,13 +41,17 @@ import java.util.*;
 
 public class MainApp extends Application {
     public enum AppMode { DASHBOARD, TERMINAL }
-    public enum DashboardTab { CONNECTIONS, HOSTS, SNIPPETS, TERMINALS }
+    public enum DashboardTab { CONNECTIONS, HOSTS, SNIPPETS, TERMINALS, HIGHLIGHTS }
 
     private static MainApp instance;
 
     public static void onTerminalFocused(com.tinsider.ui.components.terminal.split.TerminalPane pane) {
         if (instance != null && instance.topToolBar != null && pane != null) {
             instance.topToolBar.selectShellOrHost(pane.getLocalShellType(), pane.getHostProfile());
+        }
+        // Force refresh the sidebar highlights list when active terminal focus changes
+        if (instance != null) {
+            instance.rebuildSidebarHighlights();
         }
     }
 
@@ -58,6 +63,7 @@ public class MainApp extends Application {
     private final ObservableList<HostProfile> hosts = FXCollections.observableArrayList();
     private final ObservableList<Snippet> snippets = FXCollections.observableArrayList();
     private final ObservableList<SnippetPackage> packages = FXCollections.observableArrayList();
+    private final ObservableList<WordHighlight> highlights = FXCollections.observableArrayList();
 
     private final Map<Tab, com.tinsider.ui.components.terminal.split.TerminalSplitPane> tabSplitPaneMap = new HashMap<>();
     
@@ -93,6 +99,7 @@ public class MainApp extends Application {
     private VBox hostsDashboard;
     private VBox snippetsDashboard;
     private VBox terminalsDashboard;
+    private VBox highlightsDashboard;
 
     // Grids
     private FlowPane localConnectionsGrid;
@@ -100,12 +107,16 @@ public class MainApp extends Application {
     private FlowPane hostsGrid;
     private VBox snippetsDashboardContainer;
     private FlowPane terminalsGrid;
+    private FlowPane highlightsGrid;
     private ScrollPane connectionsGridScrollPane;
     private ScrollPane hostsGridScrollPane;
     private ScrollPane snippetsGridScrollPane;
     private ScrollPane terminalsGridScrollPane;
+    private ScrollPane highlightsGridScrollPane;
+    private VBox terminalHighlightsContainer;
 
     // Selection Trackers
+    private final ObjectProperty<WordHighlight> selectedHighlight = new SimpleObjectProperty<>(null);
     private final ObjectProperty<HostProfile> selectedHost = new SimpleObjectProperty<>(null);
     private final ObjectProperty<Snippet> selectedSnippet = new SimpleObjectProperty<>(null);
     private final ObjectProperty<Tab> selectedSession = new SimpleObjectProperty<>(null);
@@ -174,6 +185,7 @@ public class MainApp extends Application {
         hosts.addAll(StorageManager.loadHosts());
         snippets.addAll(StorageManager.loadSnippets());
         packages.addAll(StorageManager.loadPackages());
+        highlights.addAll(StorageManager.loadHighlights());
 
         // Load settings and restore shell type + theme selection
         Map<String, String> settings = StorageManager.loadSettings();
@@ -243,31 +255,36 @@ public class MainApp extends Application {
         ToggleButton navHostsBtn = new ToggleButton("Hosts");
         ToggleButton navSnippetsBtn = new ToggleButton("Snippets");
         ToggleButton navTerminalsBtn = new ToggleButton("Terminals");
+        ToggleButton navHighlightsBtn = new ToggleButton("Highlighter");
 
         ToggleGroup navGroup = new ToggleGroup();
         navConnectionsBtn.setToggleGroup(navGroup);
         navHostsBtn.setToggleGroup(navGroup);
         navSnippetsBtn.setToggleGroup(navGroup);
         navTerminalsBtn.setToggleGroup(navGroup);
+        navHighlightsBtn.setToggleGroup(navGroup);
         navConnectionsBtn.setSelected(true);
 
         navConnectionsBtn.setMaxWidth(Double.MAX_VALUE);
         navHostsBtn.setMaxWidth(Double.MAX_VALUE);
         navSnippetsBtn.setMaxWidth(Double.MAX_VALUE);
         navTerminalsBtn.setMaxWidth(Double.MAX_VALUE);
+        navHighlightsBtn.setMaxWidth(Double.MAX_VALUE);
 
         navConnectionsBtn.getStyleClass().add("nav-button");
         navHostsBtn.getStyleClass().add("nav-button");
         navSnippetsBtn.getStyleClass().add("nav-button");
         navTerminalsBtn.getStyleClass().add("nav-button");
+        navHighlightsBtn.getStyleClass().add("nav-button");
 
-        slimNavRail.getChildren().addAll(appTitleLabel, navConnectionsBtn, navHostsBtn, navSnippetsBtn, navTerminalsBtn);
+        slimNavRail.getChildren().addAll(appTitleLabel, navConnectionsBtn, navHostsBtn, navSnippetsBtn, navTerminalsBtn, navHighlightsBtn);
 
         // Navigation Actions
         navConnectionsBtn.setOnAction(e -> switchDashboardTab(DashboardTab.CONNECTIONS));
         navHostsBtn.setOnAction(e -> switchDashboardTab(DashboardTab.HOSTS));
         navSnippetsBtn.setOnAction(e -> switchDashboardTab(DashboardTab.SNIPPETS));
         navTerminalsBtn.setOnAction(e -> switchDashboardTab(DashboardTab.TERMINALS));
+        navHighlightsBtn.setOnAction(e -> switchDashboardTab(DashboardTab.HIGHLIGHTS));
 
         // 3. Build Dashboard Center Panes (Connections, Hosts, Snippets, Terminals)
         dashboardCenterStack = new StackPane();
@@ -571,13 +588,110 @@ public class MainApp extends Application {
 
         terminalsDashboard.getChildren().addAll(terminalsTitle, noActiveSessionsLabel, terminalsGridScrollPane);
 
+        // --- Highlights Dashboard ---
+        highlightsDashboard = new VBox(15);
+        highlightsDashboard.setPadding(new Insets(25));
+        highlightsDashboard.getStyleClass().add("dashboard-view");
+
+        Label highlightsTitle = new Label("Word Highlights Management");
+        highlightsTitle.getStyleClass().add("dashboard-title");
+        highlightsTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+
+        HBox highlightInputs = new HBox(15);
+        highlightInputs.setAlignment(Pos.CENTER_LEFT);
+        highlightInputs.setPadding(new Insets(10, 0, 10, 0));
+
+        TextField wordField = new TextField();
+        wordField.setPromptText("Enter word to highlight...");
+        wordField.getStyleClass().add("text-field");
+        wordField.setPrefWidth(250);
+
+        ColorPicker colorPicker = new ColorPicker(javafx.scene.paint.Color.YELLOW);
+        colorPicker.getStyleClass().add("color-picker");
+
+        Button saveHighlightBtn = new Button("Add Highlight");
+        Label saveHighlightIcon = new Label("\uEA60");
+        saveHighlightIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        saveHighlightIcon.getStyleClass().add("button-icon");
+        saveHighlightBtn.setGraphic(saveHighlightIcon);
+
+        // Deactivate button initially, enable only when there are words/characters in the input field
+        saveHighlightBtn.setDisable(true);
+        wordField.textProperty().addListener((obs, oldVal, newVal) -> {
+            saveHighlightBtn.setDisable(newVal == null || newVal.trim().isEmpty());
+        });
+
+        highlightInputs.getChildren().addAll(new Label("Word:"), wordField, new Label("Color:"), colorPicker, saveHighlightBtn);
+
+        highlightsGrid = new FlowPane(15, 15);
+        highlightsGrid.setPadding(new Insets(10));
+        highlightsGridScrollPane = new ScrollPane(highlightsGrid);
+        highlightsGridScrollPane.setFitToWidth(true);
+        highlightsGridScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        highlightsGridScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        highlightsGridScrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        VBox.setVgrow(highlightsGridScrollPane, Priority.ALWAYS);
+
+        highlightsDashboard.getChildren().addAll(highlightsTitle, highlightInputs, highlightsGridScrollPane);
+
+        saveHighlightBtn.setOnAction(e -> {
+            String word = wordField.getText().trim();
+            if (word.isEmpty()) {
+                AlertHelper.showErrorAlert("Empty Word", "Please enter a word to highlight.");
+                return;
+            }
+
+            WordHighlight existing = selectedHighlight.get();
+            boolean isDuplicate = false;
+            for (WordHighlight wh : highlights) {
+                if (wh != existing && wh.getWord().equalsIgnoreCase(word)) {
+                    isDuplicate = true;
+                    break;
+                }
+            }
+            if (isDuplicate) {
+                AlertHelper.showErrorAlert("Duplicate Highlight", "The word '" + word + "' is already configured for highlighting.");
+                return;
+            }
+
+            javafx.scene.paint.Color color = colorPicker.getValue();
+            String hexColor = String.format("#%02X%02X%02X",
+                (int)(color.getRed() * 255),
+                (int)(color.getGreen() * 255),
+                (int)(color.getBlue() * 255)
+            );
+            
+            if (existing != null) {
+                existing.setWord(word);
+                existing.setColorHex(hexColor);
+                selectedHighlight.set(null);
+                saveHighlightBtn.setText("Add Highlight");
+            } else {
+                WordHighlight wh = new WordHighlight(word, hexColor);
+                highlights.add(wh);
+            }
+            StorageManager.saveHighlights(new ArrayList<>(highlights));
+            wordField.clear();
+            colorPicker.setValue(javafx.scene.paint.Color.YELLOW);
+            rebuildHighlightsGrid();
+            repaintAllTerminals();
+        });
+
+        highlights.addListener(new javafx.collections.ListChangeListener<WordHighlight>() {
+            @Override
+            public void onChanged(javafx.collections.ListChangeListener.Change<? extends WordHighlight> c) {
+                rebuildHighlightsGrid();
+            }
+        });
+
         // Add to stack
-        dashboardCenterStack.getChildren().addAll(connectionsDashboard, hostsDashboard, snippetsDashboard, terminalsDashboard);
+        dashboardCenterStack.getChildren().addAll(connectionsDashboard, hostsDashboard, snippetsDashboard, terminalsDashboard, highlightsDashboard);
 
         // Initial Grid Renderings
         rebuildHostsGrid();
         rebuildSnippetsGrid();
         rebuildSessionsGrid();
+        rebuildHighlightsGrid();
 
         // 4. Build Terminal Mode - Snippet Execution Sidebar (Left)
         snippetExecutionSidebar = new VBox(15);
@@ -623,7 +737,23 @@ public class MainApp extends Application {
         addSnippetSidebarBtn.setMaxWidth(Double.MAX_VALUE); // Full-width
         addSnippetSidebarBtn.setOnAction(e -> showAddSnippetDialog(snippets, null));
 
-        snippetExecutionSidebar.getChildren().addAll(terminalSnippetsHeader, sidebarSearchField, addSnippetSidebarBtn, sidebarScrollPane);
+        Label highlightsHeader = new Label("Active Highlights");
+        highlightsHeader.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 10px 0 0 0;");
+        highlightsHeader.getStyleClass().add("snippets-launcher-header");
+
+        terminalHighlightsContainer = new VBox(8);
+        terminalHighlightsContainer.setStyle("-fx-background-color: transparent;");
+        terminalHighlightsContainer.setPadding(new Insets(5, 5, 5, 0));
+
+        ScrollPane highlightsScrollPane = new ScrollPane(terminalHighlightsContainer);
+        highlightsScrollPane.setFitToWidth(true);
+        highlightsScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        highlightsScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        highlightsScrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        highlightsScrollPane.setMinHeight(120); // Prevent it from being squeezed below this on small screen heights
+        highlightsScrollPane.setPrefHeight(150); // Balanced default height
+
+        snippetExecutionSidebar.getChildren().addAll(terminalSnippetsHeader, sidebarSearchField, addSnippetSidebarBtn, sidebarScrollPane, highlightsHeader, highlightsScrollPane);
 
         // 5. Root Layout & Theme Control
         topToolBar = new TopToolBar(
@@ -738,6 +868,17 @@ public class MainApp extends Application {
         });
 
         primaryStage.setScene(scene);
+
+        // Listen for new windows/dialogs (like custom color dialog) and auto-apply the theme and JNA titlebar styling
+        javafx.stage.Window.getWindows().addListener((javafx.collections.ListChangeListener<javafx.stage.Window>) change -> {
+            while (change.next()) {
+                if (change.wasAdded()) {
+                    for (javafx.stage.Window win : change.getAddedSubList()) {
+                        styleNewWindow(win);
+                    }
+                }
+            }
+        });
 
         // Start Live Reloader for themes and properties files
         Runnable themeReloader = () -> {
@@ -1139,6 +1280,25 @@ public class MainApp extends Application {
         com.jediterm.core.Color comboBg = theme.getColor("controls.combo.background", theme.getSelectionColor());
         com.jediterm.core.Color comboBorder = theme.getColor("controls.combo.border", theme.getBackgroundColor());
         com.jediterm.core.Color comboFg = theme.getColor("controls.combo.foreground", theme.getTextColor());
+        com.jediterm.core.Color colorPickerBg = theme.getColor("controls.colorpicker.background", theme.getBackgroundColor());
+        com.jediterm.core.Color colorPickerBorder = theme.getColor("controls.colorpicker.border", theme.getSelectionColor());
+        com.jediterm.core.Color colorPickerFg = theme.getColor("controls.colorpicker.foreground", theme.getTextColor());
+        com.jediterm.core.Color colorPickerPopupBg = theme.getColor("controls.colorpicker.popup.background", theme.getBackgroundColor());
+        com.jediterm.core.Color colorPickerPopupBorder = theme.getColor("controls.colorpicker.popup.border", theme.getSelectionColor());
+        com.jediterm.core.Color colorPickerCustomBg = theme.getColor("controls.colorpicker.custom.background", theme.getBackgroundColor());
+        com.jediterm.core.Color colorPickerCustomControlsBg = theme.getColor("controls.colorpicker.custom.controls.background", theme.getSelectionColor());
+        com.jediterm.core.Color colorPickerCustomBtnBg = theme.getColor("controls.colorpicker.custom.button.background", theme.getSelectionColor());
+        com.jediterm.core.Color colorPickerCustomBtnBorder = theme.getColor("controls.colorpicker.custom.button.border", theme.getBackgroundColor());
+        com.jediterm.core.Color colorPickerCustomBtnFg = theme.getColor("controls.colorpicker.custom.button.foreground", theme.getTextColor());
+        com.jediterm.core.Color colorPickerCustomBtnHoverBg = theme.getColor("controls.colorpicker.custom.button.hover.background", theme.getSelectionColor());
+        com.jediterm.core.Color colorPickerCustomBtnHoverBorder = theme.getColor("controls.colorpicker.custom.button.hover.border", theme.getCursorColor());
+        com.jediterm.core.Color colorPickerCustomBtnHoverFg = theme.getColor("controls.colorpicker.custom.button.hover.foreground", theme.getCursorColor());
+        com.jediterm.core.Color colorPickerCustomToggleBg = theme.getColor("controls.colorpicker.custom.toggle.background", theme.getBackgroundColor());
+        com.jediterm.core.Color colorPickerCustomToggleBorder = theme.getColor("controls.colorpicker.custom.toggle.border", theme.getSelectionColor());
+        com.jediterm.core.Color colorPickerCustomToggleFg = theme.getColor("controls.colorpicker.custom.toggle.foreground", theme.getTextColor());
+        com.jediterm.core.Color colorPickerCustomToggleSelectedBg = theme.getColor("controls.colorpicker.custom.toggle.selected.background", theme.getCursorColor());
+        com.jediterm.core.Color colorPickerCustomToggleSelectedBorder = theme.getColor("controls.colorpicker.custom.toggle.selected.border", theme.getCursorColor());
+        com.jediterm.core.Color colorPickerCustomToggleSelectedFg = theme.getColor("controls.colorpicker.custom.toggle.selected.foreground", theme.getBackgroundColor());
         com.jediterm.core.Color inputBg = theme.getColor("controls.input.background", theme.getSelectionColor());
         com.jediterm.core.Color inputBorder = theme.getColor("controls.input.border", theme.getBackgroundColor());
         com.jediterm.core.Color inputFg = theme.getColor("controls.input.foreground", theme.getTextColor());
@@ -1236,6 +1396,18 @@ public class MainApp extends Application {
         com.jediterm.core.Color dialogBorder = theme.getColor("dialog.border", theme.getSelectionColor());
         com.jediterm.core.Color dialogHeaderBg = theme.getColor("dialog.header.background", theme.getBackgroundColor());
         com.jediterm.core.Color dialogHeaderFg = theme.getColor("dialog.header.foreground", theme.getCursorColor());
+
+        // Highlights Theming Keys
+        com.jediterm.core.Color hlSideBg = theme.getColor("highlights.sidebar.toggle.background", theme.getBackgroundColor());
+        com.jediterm.core.Color hlSideActiveBg = theme.getColor("highlights.sidebar.toggle.active.background", theme.getSelectionColor());
+        com.jediterm.core.Color hlSideActiveBorder = theme.getColor("highlights.sidebar.toggle.active.border", theme.getSelectionColor());
+        com.jediterm.core.Color hlSideFg = theme.getColor("highlights.sidebar.toggle.foreground", theme.getTextColor());
+        com.jediterm.core.Color hlSideActiveFg = theme.getColor("highlights.sidebar.toggle.active.foreground", theme.getCursorColor());
+        com.jediterm.core.Color hlSideHoverBg = theme.getColor("highlights.sidebar.toggle.hover.background", theme.getSelectionColor());
+        com.jediterm.core.Color hlSideHoverBorder = theme.getColor("highlights.sidebar.toggle.hover.border", theme.getCursorColor());
+
+        String hexHlSideFg = toHex(hlSideFg);
+        String hexHlSideActiveFg = toHex(hlSideActiveFg);
 
         // Format to hex/rgba/gradient strings for CSS
         String hexWinBg;
@@ -1360,6 +1532,14 @@ public class MainApp extends Application {
         double btnHoverBgOpacity = 1.0;
         double btnHoverBorderOpacity = 1.0;
 
+        // Highlights custom opacity variables
+        double hlSideBgOpacity = 1.0;
+        double hlSideBorderOpacity = 1.0;
+        double hlSideHoverBgOpacity = 1.0;
+        double hlSideHoverBorderOpacity = 1.0;
+        double hlSideActiveBgOpacity = 1.0;
+        double hlSideActiveBorderOpacity = 1.0;
+
 
         try {
             itemBgOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.background.opacity", "1.0"));
@@ -1429,6 +1609,13 @@ public class MainApp extends Application {
             toolbarBorderOpacity = Double.parseDouble(ThemeManager.getProperty("toolbar.border.opacity", "1.0"));
             sidebarBgOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.background.opacity", "1.0"));
             sidebarBorderOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.border.opacity", "1.0"));
+
+            hlSideBgOpacity = Double.parseDouble(ThemeManager.getProperty("highlights.sidebar.toggle.background.opacity", "1.0"));
+            hlSideBorderOpacity = Double.parseDouble(ThemeManager.getProperty("highlights.sidebar.toggle.border.opacity", "1.0"));
+            hlSideHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("highlights.sidebar.toggle.hover.background.opacity", "1.0"));
+            hlSideHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("highlights.sidebar.toggle.hover.border.opacity", "1.0"));
+            hlSideActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("highlights.sidebar.toggle.active.background.opacity", "1.0"));
+            hlSideActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("highlights.sidebar.toggle.active.border.opacity", "1.0"));
         } catch (Exception ignored) {}
 
         // Format raw colors to RGBA with parsed opacities
@@ -1496,6 +1683,14 @@ public class MainApp extends Application {
         String rgbaScrollThumbHover = toRgba(scrollThumbHover, scrollThumbHoverOpacity);
         String rgbaDropScrollThumb = toRgba(dropScrollThumb, dropScrollThumbOpacity);
         String rgbaDropScrollThumbHover = toRgba(dropScrollThumbHover, dropScrollThumbHoverOpacity);
+
+        // Word Highlight opacity configurations
+        String rgbaHlSideBg = toRgba(hlSideBg, hlSideBgOpacity);
+        String rgbaHlSideBorder = toRgba(sideBorder, hlSideBorderOpacity);
+        String rgbaHlSideHoverBg = toRgba(hlSideHoverBg, hlSideHoverBgOpacity);
+        String rgbaHlSideHoverBorder = toRgba(hlSideHoverBorder, hlSideHoverBorderOpacity);
+        String rgbaHlSideActiveBg = toRgba(hlSideActiveBg, hlSideActiveBgOpacity);
+        String rgbaHlSideActiveBorder = toRgba(hlSideActiveBorder, hlSideActiveBorderOpacity);
         
         String rgbaDialogBg;
         if (gradientsEnabled) {
@@ -1528,6 +1723,25 @@ public class MainApp extends Application {
         String hexComboBg = toHex(comboBg);
         String hexComboBorder = toHex(comboBorder);
         String hexComboFg = toHex(comboFg);
+        String hexColorPickerBg = toHex(colorPickerBg);
+        String hexColorPickerBorder = toHex(colorPickerBorder);
+        String hexColorPickerFg = toHex(colorPickerFg);
+        String hexColorPickerPopupBg = toHex(colorPickerPopupBg);
+        String hexColorPickerPopupBorder = toHex(colorPickerPopupBorder);
+        String hexColorPickerCustomBg = toHex(colorPickerCustomBg);
+        String hexColorPickerCustomControlsBg = toHex(colorPickerCustomControlsBg);
+        String hexColorPickerCustomBtnBg = toHex(colorPickerCustomBtnBg);
+        String hexColorPickerCustomBtnBorder = toHex(colorPickerCustomBtnBorder);
+        String hexColorPickerCustomBtnFg = toHex(colorPickerCustomBtnFg);
+        String hexColorPickerCustomBtnHoverBg = toHex(colorPickerCustomBtnHoverBg);
+        String hexColorPickerCustomBtnHoverBorder = toHex(colorPickerCustomBtnHoverBorder);
+        String hexColorPickerCustomBtnHoverFg = toHex(colorPickerCustomBtnHoverFg);
+        String hexColorPickerCustomToggleBg = toHex(colorPickerCustomToggleBg);
+        String hexColorPickerCustomToggleBorder = toHex(colorPickerCustomToggleBorder);
+        String hexColorPickerCustomToggleFg = toHex(colorPickerCustomToggleFg);
+        String hexColorPickerCustomToggleSelectedBg = toHex(colorPickerCustomToggleSelectedBg);
+        String hexColorPickerCustomToggleSelectedBorder = toHex(colorPickerCustomToggleSelectedBorder);
+        String hexColorPickerCustomToggleSelectedFg = toHex(colorPickerCustomToggleSelectedFg);
         String hexInputBg = toHex(inputBg);
         String hexInputBorder = toHex(inputBorder);
         String hexInputFg = toHex(inputFg);
@@ -1596,7 +1810,9 @@ public class MainApp extends Application {
                             ".button.terminal-btn { -fx-background-color: " + rgbaHomeBg + "; -fx-border-color: " + rgbaHomeBorder + "; -fx-text-fill: " + hexHomeFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
                             ".button.terminal-btn:hover { -fx-background-color: " + rgbaHomeHoverBg + "; -fx-border-color: " + rgbaHomeHoverBorder + "; -fx-text-fill: " + hexHomeHoverFg + "; }\n" +
                             ".button.terminal-btn:pressed { -fx-background-color: " + rgbaHomeActiveBg + "; -fx-border-color: " + rgbaHomeActiveBorder + "; -fx-text-fill: " + hexHomeActiveFg + "; }\n" +
-                            ".combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; }\n" +
+                            ".combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; -fx-background-insets: 0; -fx-background-radius: 4px; -fx-border-radius: 4px; -fx-border-width: 1px; }\n" +
+                            ".combo-box .arrow-button { -fx-background-color: transparent; -fx-background-insets: 0; -fx-background-radius: 0; }\n" +
+                            ".combo-box .arrow-button .arrow { -fx-background-color: " + hexComboFg + "; -fx-background-insets: 0; }\n" +
                             ".combo-box.shell-dropdown { -fx-pref-width: 140px; -fx-max-width: 140px; }\n" +
                             ".combo-box.theme-dropdown { -fx-border-color: transparent; -fx-border-width: 0px; }\n" +
                             ".combo-box .list-cell { -fx-text-fill: " + hexComboFg + "; }\n" +
@@ -1715,7 +1931,37 @@ public class MainApp extends Application {
                             ".split-pane { -fx-background-color: " + hexSplitPaneBg + "; }\n" +
                             ".terminal-split-pane { -fx-background-color: " + hexSplitPaneBg + "; }\n" +
                             ".split-pane *.split-pane-divider { -fx-background-color: " + hexSplitDividerBg + "; }\n" +
-                            ".split-pane *.split-pane-divider:hover { -fx-background-color: " + hexSplitDividerHover + "; }\n";
+                            ".split-pane *.split-pane-divider:hover { -fx-background-color: " + hexSplitDividerHover + "; }\n" +
+                            ".highlight-card { -fx-background-color: " + rgbaCardsItemBg + "; -fx-border-color: " + rgbaCardsItemBorder + "; -fx-border-width: 1px; -fx-border-radius: 6px; -fx-background-radius: 6px; }\n" +
+                            ".highlight-card:hover { -fx-background-color: " + rgbaCardsHoverBg + "; -fx-border-color: " + rgbaCardsHoverBorder + "; }\n" +
+                            ".highlight-badge { -fx-background-color: " + rgbaCardsBadgeBg + "; -fx-background-radius: 16px; }\n" +
+                            ".highlight-sidebar-card { -fx-background-color: " + rgbaHlSideBg + "; -fx-border-color: " + rgbaHlSideBorder + "; -fx-border-width: 1px; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-padding: 6px 10px; -fx-cursor: hand; }\n" +
+                            ".highlight-sidebar-card:hover { -fx-background-color: " + rgbaHlSideHoverBg + "; -fx-border-color: " + rgbaHlSideHoverBorder + "; }\n" +
+                            ".highlight-sidebar-card.active { -fx-background-color: " + rgbaHlSideActiveBg + "; -fx-border-color: " + rgbaHlSideActiveBorder + "; }\n" +
+                            ".highlight-sidebar-card .label { -fx-text-fill: " + hexHlSideFg + "; }\n" +
+                            ".highlight-sidebar-card.active .label { -fx-text-fill: " + hexHlSideActiveFg + "; }\n" +
+                            ".highlight-sidebar-card .toggle-icon { -fx-font-family: 'codicon'; -fx-font-size: 14px; -fx-text-fill: " + hexHlSideFg + "; }\n" +
+                            ".highlight-sidebar-card.active .toggle-icon { -fx-text-fill: " + hexHlSideActiveFg + "; }\n" +
+                            ".color-picker { -fx-background-color: " + hexColorPickerBg + "; -fx-text-fill: " + hexColorPickerFg + "; -fx-border-color: " + hexColorPickerBorder + "; -fx-background-radius: 4px; -fx-border-radius: 4px; -fx-border-width: 1px; -fx-background-insets: 0; }\n" +
+                            ".color-picker:hover { -fx-background-color: " + hexBtnHoverBg + "; }\n" +
+                            ".color-picker:focused { -fx-border-color: " + hexColorPickerBorder + "; }\n" +
+                            ".color-picker .color-picker-label { -fx-text-fill: " + hexColorPickerFg + "; }\n" +
+                            ".color-picker .color-picker-label .text { -fx-fill: " + hexColorPickerFg + "; }\n" +
+                            ".color-picker .arrow-button { -fx-background-color: transparent; -fx-background-insets: 0; -fx-background-radius: 0; }\n" +
+                            ".color-picker .arrow-button .arrow { -fx-background-color: " + hexColorPickerFg + "; -fx-background-insets: 0; }\n" +
+                            ".color-picker-popup { -fx-background-color: " + hexColorPickerPopupBg + "; -fx-border-color: " + hexColorPickerPopupBorder + "; -fx-border-width: 1px; -fx-background-radius: 6px; -fx-border-radius: 6px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 8, 0, 0, 4); -fx-padding: 10px; }\n" +
+                            ".color-picker-popup .color-palette-region { -fx-background-color: transparent; -fx-border-color: transparent; -fx-border-width: 0; -fx-background-insets: 0; -fx-padding: 0; }\n" +
+                            ".color-picker-popup .label { -fx-text-fill: " + hexColorPickerFg + "; }\n" +
+                            ".color-picker-popup .custom-color-link { -fx-text-fill: " + hexColorPickerFg + "; }\n" +
+                            ".color-picker-popup .color-square { -fx-border-color: " + hexColorPickerPopupBorder + "; }\n" +
+                            ".custom-color-dialog { -fx-background-color: " + hexColorPickerPopupBg + "; }\n" +
+                            ".custom-color-dialog .label { -fx-text-fill: " + hexColorPickerFg + "; }\n" +
+                            ".custom-color-dialog .button { -fx-background-color: " + hexColorPickerCustomBtnBg + "; -fx-border-color: " + hexColorPickerCustomBtnBorder + "; -fx-text-fill: " + hexColorPickerCustomBtnFg + "; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
+                            ".custom-color-dialog .button:hover { -fx-background-color: " + hexColorPickerCustomBtnHoverBg + "; -fx-border-color: " + hexColorPickerCustomBtnHoverBorder + "; -fx-text-fill: " + hexColorPickerCustomBtnHoverFg + "; }\n" +
+                            ".custom-color-dialog .toggle-button { -fx-background-color: " + hexColorPickerCustomToggleBg + "; -fx-border-color: " + hexColorPickerCustomToggleBorder + "; -fx-text-fill: " + hexColorPickerCustomToggleFg + "; -fx-border-width: 1px; -fx-background-insets: 0; }\n" +
+                            ".custom-color-dialog .toggle-button:selected { -fx-background-color: " + hexColorPickerCustomToggleSelectedBg + "; -fx-border-color: " + hexColorPickerCustomToggleSelectedBorder + "; -fx-text-fill: " + hexColorPickerCustomToggleSelectedFg + "; }\n" +
+                            ".custom-color-dialog .controls-pane { -fx-background-color: " + hexColorPickerCustomControlsBg + "; -fx-padding: 10px; -fx-border-color: " + hexColorPickerCustomToggleBorder + "; -fx-border-width: 1px; -fx-border-radius: 6px; -fx-background-radius: 6px; }\n" +
+                            ".custom-color-dialog .customcolor-controls-background { -fx-background-color: transparent; }\n";
         
         try {
             File cssFile = File.createTempFile("theme", ".css");
@@ -2123,15 +2369,28 @@ public class MainApp extends Application {
         }
 
         if (query.isEmpty() || !matchingStandalone.isEmpty()) {
-            VBox standaloneContainer = new VBox(8);
-            standaloneContainer.setPadding(new Insets(10, 0, 10, 0));
+            TitledPane pane = new TitledPane();
+            pane.setText("Standalone Snippets");
+            pane.setExpanded(true); // Default open but fully collapsible
+            pane.getStyleClass().add("package-titled-pane");
+
+            VBox standaloneContent = new VBox(8);
+            standaloneContent.setPadding(new Insets(10));
+            standaloneContent.setStyle("-fx-background-color: transparent;");
+
             for (Snippet item : matchingStandalone) {
                 javafx.scene.Node card = createSidebarSnippetCardNode(item);
-                standaloneContainer.getChildren().add(card);
+                standaloneContent.getChildren().add(card);
             }
-            Label standaloneHeader = new Label("Standalone Snippets");
-            standaloneHeader.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #94a3b8; -fx-padding: 10px 0 2px 0;");
-            terminalSnippetsContainer.getChildren().addAll(standaloneHeader, standaloneContainer);
+
+            if (matchingStandalone.isEmpty()) {
+                Label emptyLabel = new Label("No standalone snippets");
+                emptyLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic; -fx-font-size: 11px;");
+                standaloneContent.getChildren().add(emptyLabel);
+            }
+
+            pane.setContent(standaloneContent);
+            terminalSnippetsContainer.getChildren().add(pane);
         }
     }
 
@@ -2407,6 +2666,239 @@ public class MainApp extends Application {
             com.sun.jna.ptr.IntByReference pvAttribute, 
             int cbAttribute
         );
+    }
+
+    private void rebuildHighlightsGrid() {
+        if (highlightsGrid == null) return;
+        highlightsGrid.getChildren().clear();
+        for (WordHighlight wh : highlights) {
+            HBox card = new HBox(12);
+            card.setPadding(new Insets(12));
+            card.setAlignment(Pos.CENTER_LEFT);
+            card.getStyleClass().add("highlight-card");
+            card.setPrefWidth(220);
+            card.setMaxWidth(220);
+            card.setCursor(javafx.scene.Cursor.HAND);
+
+            Label colorBox = new Label();
+            colorBox.setPrefSize(20, 20);
+            colorBox.setMinSize(20, 20);
+            colorBox.setMaxSize(20, 20);
+            colorBox.setStyle("-fx-background-color: " + wh.getColorHex() + "; -fx-background-radius: 10px;");
+
+            VBox details = new VBox(2);
+            Label wordLabel = new Label(wh.getWord());
+            wordLabel.getStyleClass().add("host-name");
+            wordLabel.setStyle("-fx-font-weight: bold;");
+
+            Label colorLabel = new Label(wh.getColorHex());
+            colorLabel.getStyleClass().add("host-username");
+            details.getChildren().addAll(wordLabel, colorLabel);
+
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            Button deleteBtn = new Button("\uEA81");
+            deleteBtn.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px; -fx-padding: 3px 6px;");
+            deleteBtn.getStyleClass().add("button");
+            deleteBtn.setOnAction(e -> {
+                e.consume();
+                highlights.remove(wh);
+                StorageManager.saveHighlights(new ArrayList<>(highlights));
+                rebuildHighlightsGrid();
+                repaintAllTerminals();
+            });
+
+            card.getChildren().addAll(colorBox, details, spacer, deleteBtn);
+            highlightsGrid.getChildren().add(card);
+        }
+    }
+
+    public void rebuildSidebarHighlights() {
+        if (terminalHighlightsContainer == null) return;
+        terminalHighlightsContainer.getChildren().clear();
+
+        Tab activeTab = workspace.getTabPane().getSelectionModel().getSelectedItem();
+        if (activeTab == null) return;
+
+        com.tinsider.ui.components.terminal.split.TerminalSplitPane splitPane = tabSplitPaneMap.get(activeTab);
+        if (splitPane == null) return;
+
+        com.tinsider.ui.components.terminal.split.TerminalPane activePane = splitPane.getActiveTerminalPane();
+        if (activePane == null) return;
+
+        Set<String> activeIds = activePane.getActiveHighlightIds();
+
+        for (WordHighlight wh : highlights) {
+            boolean active = activeIds.contains(wh.getId());
+
+            HBox card = new HBox(8);
+            card.setAlignment(Pos.CENTER_LEFT);
+            card.getStyleClass().add("highlight-sidebar-card");
+            if (active) {
+                card.getStyleClass().add("active");
+            }
+
+            Label indicator = new Label();
+            indicator.setPrefSize(8, 8);
+            indicator.setMinSize(8, 8);
+            indicator.setMaxSize(8, 8);
+            indicator.setStyle("-fx-background-color: " + wh.getColorHex() + "; -fx-background-radius: 4px;");
+
+            Label wordLabel = new Label(wh.getWord());
+            wordLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
+
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            Label eyeIcon = new Label(active ? "\uEB79" : "\uEB7A");
+            eyeIcon.getStyleClass().add("toggle-icon");
+
+            Button caseIcon = new Button("\uEAB1");
+            caseIcon.getStyleClass().add("snippet-hover-btn");
+            caseIcon.setMinWidth(22);
+            caseIcon.setPrefWidth(22);
+            caseIcon.setMaxWidth(22);
+            caseIcon.setMinHeight(22);
+            caseIcon.setPrefHeight(22);
+            caseIcon.setMaxHeight(22);
+            
+            // Toggle style dynamically depending on state
+            Runnable updateCaseIconStyle = () -> {
+                boolean isInsensitive = wh.isCaseInsensitive();
+                TerminalTheme currentTheme = splitPane.getCurrentTheme();
+                com.jediterm.core.Color accentColor = currentTheme.getCursorColor();
+                com.jediterm.core.Color btnBg = currentTheme.getColor("controls.snippet.hover.btn.background", currentTheme.getBackgroundColor());
+                com.jediterm.core.Color btnBorder = currentTheme.getColor("controls.snippet.hover.btn.border", currentTheme.getSelectionColor());
+                com.jediterm.core.Color btnHoverBg = currentTheme.getColor("controls.snippet.hover.btn.hover.background", currentTheme.getSelectionColor());
+                com.jediterm.core.Color btnHoverBorder = currentTheme.getColor("controls.snippet.hover.btn.hover.border", currentTheme.getCursorColor());
+
+                String hexAccent = toHex(accentColor);
+                String hexBtnBg = toHex(btnBg);
+                String hexBtnBorder = toHex(btnBorder);
+                String hexBtnHoverBg = toHex(btnHoverBg);
+                String hexBtnHoverBorder = toHex(btnHoverBorder);
+
+                if (isInsensitive) {
+                    caseIcon.setStyle(
+                        "-fx-font-family: 'codicon'; " +
+                        "-fx-font-size: 11px; " +
+                        "-fx-text-fill: " + hexAccent + "; " +
+                        "-fx-background-color: " + hexBtnHoverBg + "; " +
+                        "-fx-border-color: " + hexBtnHoverBorder + "; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-background-radius: 3px; " +
+                        "-fx-border-radius: 3px; " +
+                        "-fx-opacity: 1.0; " +
+                        "-fx-cursor: hand;"
+                    );
+                } else {
+                    caseIcon.setStyle(
+                        "-fx-font-family: 'codicon'; " +
+                        "-fx-font-size: 11px; " +
+                        "-fx-text-fill: #94a3b8; " +
+                        "-fx-background-color: " + hexBtnBg + "; " +
+                        "-fx-border-color: " + hexBtnBorder + "; " +
+                        "-fx-border-width: 1px; " +
+                        "-fx-background-radius: 3px; " +
+                        "-fx-border-radius: 3px; " +
+                        "-fx-opacity: 0.5; " +
+                        "-fx-cursor: hand;"
+                    );
+                }
+            };
+            updateCaseIconStyle.run();
+
+            caseIcon.setTooltip(new javafx.scene.control.Tooltip("Toggle Case Insensitive Match"));
+
+            caseIcon.setOnAction(e -> e.consume());
+            caseIcon.setOnMouseClicked(e -> {
+                e.consume(); // Prevent toggling the card's active state
+                boolean nextState = !wh.isCaseInsensitive();
+                wh.setCaseInsensitive(nextState);
+                StorageManager.saveHighlights(new ArrayList<>(highlights));
+                updateCaseIconStyle.run();
+                activePane.applyHighlights();
+                repaintAllTerminals();
+            });
+
+            card.getChildren().addAll(indicator, wordLabel, spacer, caseIcon, eyeIcon);
+
+            card.setOnMouseClicked(e -> {
+                boolean currentlyActive = activePane.getActiveHighlightIds().contains(wh.getId());
+                boolean nextState = !currentlyActive;
+                activePane.toggleHighlight(wh.getId(), nextState);
+                
+                // Update UI state immediately
+                if (nextState) {
+                    if (!card.getStyleClass().contains("active")) {
+                        card.getStyleClass().add("active");
+                    }
+                    eyeIcon.setText("\uEB79");
+                } else {
+                    card.getStyleClass().remove("active");
+                    eyeIcon.setText("\uEB7A");
+                }
+            });
+
+            terminalHighlightsContainer.getChildren().add(card);
+        }
+    }
+
+    private void styleNewWindow(javafx.stage.Window win) {
+        if (win.getScene() != null) {
+            applyStylesToScene(win.getScene());
+        }
+        win.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                applyStylesToScene(newScene);
+            }
+        });
+        applyDwmToWindow(win);
+    }
+
+    private void applyStylesToScene(javafx.scene.Scene scene) {
+        if (root != null && root.getScene() != null) {
+            scene.getStylesheets().clear();
+            scene.getStylesheets().addAll(root.getScene().getStylesheets());
+        }
+    }
+
+    private void applyDwmToWindow(javafx.stage.Window win) {
+        if (win instanceof Stage) {
+            Stage stage = (Stage) win;
+            stage.showingProperty().addListener((obs, wasShowing, isShowing) -> {
+                if (isShowing) {
+                    Platform.runLater(() -> {
+                        applyNativeDwm(stage);
+                    });
+                }
+            });
+            if (stage.isShowing()) {
+                Platform.runLater(() -> {
+                    applyNativeDwm(stage);
+                });
+            }
+        }
+    }
+
+    private void applyNativeDwm(Stage stage) {
+        try {
+            String title = stage.getTitle();
+            if (title == null || title.isEmpty()) {
+                title = "Custom Color";
+                stage.setTitle(title);
+            }
+            com.sun.jna.platform.win32.WinDef.HWND hwnd = com.sun.jna.platform.win32.User32.INSTANCE.FindWindow(null, title);
+            if (hwnd != null && currentTheme != null) {
+                com.jediterm.core.Color titleBg = currentTheme.getColor("titlebar.background", currentTheme.getBackgroundColor());
+                com.jediterm.core.Color labelFg = currentTheme.getColor("global.label.foreground", currentTheme.getTextColor());
+                int colorref = ((titleBg.getBlue() & 0xFF) << 16) | ((titleBg.getGreen() & 0xFF) << 8) | (titleBg.getRed() & 0xFF);
+                int textColor = ((labelFg.getBlue() & 0xFF) << 16) | ((labelFg.getGreen() & 0xFF) << 8) | (labelFg.getRed() & 0xFF);
+                MyDwmAPI.INSTANCE.DwmSetWindowAttribute(hwnd, 35, new com.sun.jna.ptr.IntByReference(colorref), 4);
+                MyDwmAPI.INSTANCE.DwmSetWindowAttribute(hwnd, 36, new com.sun.jna.ptr.IntByReference(textColor), 4);
+            }
+        } catch (Throwable ignored) {}
     }
 
     public static void main(String[] args) {

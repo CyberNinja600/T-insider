@@ -3,6 +3,8 @@ package com.tinsider.ui.components.terminal.split;
 import com.jediterm.terminal.ui.JediTermWidget;
 import com.tinsider.config.TerminalTheme;
 import com.tinsider.model.HostProfile;
+import com.tinsider.model.WordHighlight;
+import com.tinsider.storage.StorageManager;
 import com.tinsider.terminal.TerminalTabFactory;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
@@ -41,6 +43,9 @@ public class TerminalPane extends StackPane {
     private SplitLeafNode leafNode;
     private JediTermWidget widget;
     private SwingNode swingNode;
+
+    private javax.swing.Timer highlightTimer;
+    private final java.util.Set<String> activeHighlightIds = new java.util.HashSet<>();
 
     private BorderPane mainLayout;
     private HBox headerBar;
@@ -451,6 +456,12 @@ public class TerminalPane extends StackPane {
 
         mainLayout.setCenter(new SwingNodeWrapper(swingNode));
         
+        // Start highlights timer
+        highlightTimer = new javax.swing.Timer(150, e -> {
+            applyHighlights();
+        });
+        highlightTimer.start();
+        
         Platform.runLater(() -> {
             updateThemeStyles(splitPane.getCurrentTheme());
             requestFocus();
@@ -610,6 +621,9 @@ public class TerminalPane extends StackPane {
     }
 
     public void close() {
+        if (highlightTimer != null) {
+            highlightTimer.stop();
+        }
         if (widget != null) {
             SwingUtilities.invokeLater(() -> {
                 try {
@@ -627,6 +641,99 @@ public class TerminalPane extends StackPane {
         }
         if (swingNode != null) {
             swingNode.setContent(null);
+        }
+    }
+
+    public java.util.Set<String> getActiveHighlightIds() {
+        return activeHighlightIds;
+    }
+
+    public void toggleHighlight(String id, boolean active) {
+        if (active) {
+            activeHighlightIds.add(id);
+        } else {
+            activeHighlightIds.remove(id);
+        }
+        applyHighlights();
+    }
+
+    public void applyHighlights() {
+        if (widget == null) return;
+        java.util.List<WordHighlight> allHighlights = StorageManager.loadHighlights();
+        if (allHighlights.isEmpty()) return;
+
+        SwingUtilities.invokeLater(() -> {
+            try {
+                com.jediterm.terminal.model.TerminalTextBuffer textBuffer = widget.getTerminalTextBuffer();
+                if (textBuffer == null) return;
+
+                textBuffer.lock();
+                try {
+                    int lineCount = textBuffer.getHeight();
+                    for (int i = 0; i < lineCount; i++) {
+                        com.jediterm.terminal.model.TerminalLine line = textBuffer.getLine(i);
+                        if (line == null) continue;
+
+                        String text = line.getText();
+                        if (text == null || text.trim().isEmpty()) continue;
+
+                        for (WordHighlight wh : allHighlights) {
+                            String word = wh.getWord();
+                            if (word == null || word.isEmpty()) continue;
+
+                            boolean isInsensitive = wh.isCaseInsensitive();
+                            String searchWord = isInsensitive ? word.toLowerCase() : word;
+                            String searchText = isInsensitive ? text.toLowerCase() : text;
+
+                            int idx = searchText.indexOf(searchWord);
+                            while (idx != -1) {
+                                com.jediterm.terminal.TextStyle textStyle;
+                                if (activeHighlightIds.contains(wh.getId())) {
+                                    com.jediterm.core.Color bg = parseHexColor(wh.getColorHex());
+                                    double luminance = (0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue()) / 255.0;
+                                    com.jediterm.core.Color fg = (luminance > 0.5) ? new com.jediterm.core.Color(0, 0, 0) : new com.jediterm.core.Color(255, 255, 255);
+                                    textStyle = new com.jediterm.terminal.TextStyle(
+                                        com.jediterm.terminal.TerminalColor.fromColor(fg),
+                                        com.jediterm.terminal.TerminalColor.fromColor(bg)
+                                    );
+                                } else {
+                                    textStyle = com.jediterm.terminal.TextStyle.EMPTY;
+                                }
+
+                                // Get original text on terminal screen to preserve casing
+                                String screenWord = text.substring(idx, Math.min(idx + word.length(), text.length()));
+                                line.writeString(idx, new com.jediterm.terminal.model.CharBuffer(screenWord), textStyle);
+                                idx = searchText.indexOf(searchWord, idx + word.length());
+                            }
+                        }
+                    }
+
+                    if (widget.getTerminalPanel() != null) {
+                        widget.getTerminalPanel().repaint();
+                    }
+                } finally {
+                    textBuffer.unlock();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private com.jediterm.core.Color parseHexColor(String hex) {
+        if (hex == null || hex.isEmpty()) {
+            return new com.jediterm.core.Color(255, 255, 255);
+        }
+        if (hex.startsWith("#")) {
+            hex = hex.substring(1);
+        }
+        try {
+            int r = Integer.parseInt(hex.substring(0, 2), 16);
+            int g = Integer.parseInt(hex.substring(2, 4), 16);
+            int b = Integer.parseInt(hex.substring(4, 6), 16);
+            return new com.jediterm.core.Color(r, g, b);
+        } catch (Exception e) {
+            return new com.jediterm.core.Color(255, 255, 255);
         }
     }
 
