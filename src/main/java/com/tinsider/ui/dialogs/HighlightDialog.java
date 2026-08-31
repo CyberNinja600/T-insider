@@ -20,14 +20,6 @@ public class HighlightDialog extends Dialog<WordHighlight> {
         ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
         getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
 
-        Button saveBtn = (Button) getDialogPane().lookupButton(saveButtonType);
-        if (saveBtn != null) {
-            Label saveIcon = new Label("\uEB4B");
-            saveIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
-            saveIcon.getStyleClass().add("button-icon");
-            saveBtn.setGraphic(saveIcon);
-        }
-
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
@@ -114,6 +106,21 @@ public class HighlightDialog extends Dialog<WordHighlight> {
         }
         grid.add(regexCheckBox, 1, 4);
 
+        Button saveBtn = (Button) getDialogPane().lookupButton(saveButtonType);
+        if (saveBtn != null) {
+            Label saveIcon = new Label("\uEB4B");
+            saveIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+            saveIcon.getStyleClass().add("button-icon");
+            saveBtn.setGraphic(saveIcon);
+
+            saveBtn.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+                if (wordField.getText() == null || wordField.getText().trim().isEmpty()) {
+                    AlertHelper.showErrorAlert("Required Field", "Please enter a word or pattern to highlight.");
+                    event.consume();
+                }
+            });
+        }
+
         getDialogPane().setContent(grid);
         AlertHelper.themeDialog(this);
 
@@ -128,9 +135,11 @@ public class HighlightDialog extends Dialog<WordHighlight> {
                     (int)(color.getGreen() * 255),
                     (int)(color.getBlue() * 255)
                 );
-                WordHighlight wh = new WordHighlight(wordField.getText().trim(), hexColor);
+                String wordStr = wordField.getText() == null ? "" : wordField.getText().trim();
+                String nameStr = nameField.getText() == null ? "" : nameField.getText().trim();
+                WordHighlight wh = new WordHighlight(wordStr, hexColor);
                 wh.setId(id);
-                wh.setName(nameField.getText().trim());
+                wh.setName(nameStr);
                 wh.setRegex(regexCheckBox.isSelected());
                 if (existing != null) {
                     wh.setCaseInsensitive(existing.isCaseInsensitive());

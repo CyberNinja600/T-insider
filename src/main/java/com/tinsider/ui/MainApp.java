@@ -2787,6 +2787,7 @@ public class MainApp extends Application {
             if (existing != null) {
                 com.tinsider.util.ActivityLogger.logUserAction("EDIT_HIGHLIGHT", "User edited highlight: " + wh.getWord());
                 highlights.remove(existing);
+                selectedHighlight.set(wh);
             } else {
                 com.tinsider.util.ActivityLogger.logUserAction("ADD_HIGHLIGHT", "User added highlight: " + wh.getWord());
             }
