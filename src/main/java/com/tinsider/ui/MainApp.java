@@ -2765,7 +2765,7 @@ public class MainApp extends Application {
             
             // Toggle style dynamically depending on state
             Runnable updateCaseIconStyle = () -> {
-                boolean isInsensitive = wh.isCaseInsensitive();
+                boolean isInsensitive = activePane.getCaseInsensitiveHighlightIds().contains(wh.getId());
                 TerminalTheme currentTheme = splitPane.getCurrentTheme();
                 com.jediterm.core.Color accentColor = currentTheme.getCursorColor();
                 com.jediterm.core.Color btnBg = currentTheme.getColor("controls.snippet.hover.btn.background", currentTheme.getBackgroundColor());
@@ -2814,12 +2814,15 @@ public class MainApp extends Application {
             caseIcon.setOnAction(e -> e.consume());
             caseIcon.setOnMouseClicked(e -> {
                 e.consume(); // Prevent toggling the card's active state
-                boolean nextState = !wh.isCaseInsensitive();
+                boolean nextState = !activePane.getCaseInsensitiveHighlightIds().contains(wh.getId());
+                activePane.toggleCaseInsensitive(wh.getId(), nextState);
+                
+                // Also update the global WordHighlight object and save it,
+                // so that this preference is persisted in highlights.json for future terminals / sessions!
                 wh.setCaseInsensitive(nextState);
                 StorageManager.saveHighlights(new ArrayList<>(highlights));
+                
                 updateCaseIconStyle.run();
-                activePane.applyHighlights();
-                repaintAllTerminals();
             });
 
             card.getChildren().addAll(indicator, wordLabel, spacer, caseIcon, eyeIcon);

@@ -46,6 +46,7 @@ public class TerminalPane extends StackPane {
 
     private javax.swing.Timer highlightTimer;
     private final java.util.Set<String> activeHighlightIds = new java.util.HashSet<>();
+    private final java.util.Set<String> caseInsensitiveHighlightIds = new java.util.HashSet<>();
 
     private BorderPane mainLayout;
     private HBox headerBar;
@@ -202,6 +203,20 @@ public class TerminalPane extends StackPane {
 
         // 4. Setup Drag & Drop handlers on Header
         setupDragAndDrop();
+
+        // Initialize caseInsensitiveHighlightIds from saved highlights
+        try {
+            java.util.List<WordHighlight> saved = StorageManager.loadHighlights();
+            if (saved != null) {
+                for (WordHighlight wh : saved) {
+                    if (wh.isCaseInsensitive()) {
+                        caseInsensitiveHighlightIds.add(wh.getId());
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         if ("EMPTY".equals(sessionType)) {
             showEmptyPlaceholderState();
@@ -657,6 +672,19 @@ public class TerminalPane extends StackPane {
         applyHighlights();
     }
 
+    public java.util.Set<String> getCaseInsensitiveHighlightIds() {
+        return caseInsensitiveHighlightIds;
+    }
+
+    public void toggleCaseInsensitive(String id, boolean insensitive) {
+        if (insensitive) {
+            caseInsensitiveHighlightIds.add(id);
+        } else {
+            caseInsensitiveHighlightIds.remove(id);
+        }
+        applyHighlights();
+    }
+
     public void applyHighlights() {
         if (widget == null) return;
         java.util.List<WordHighlight> allHighlights = StorageManager.loadHighlights();
@@ -681,7 +709,7 @@ public class TerminalPane extends StackPane {
                             String word = wh.getWord();
                             if (word == null || word.isEmpty()) continue;
 
-                            boolean isInsensitive = wh.isCaseInsensitive();
+                            boolean isInsensitive = caseInsensitiveHighlightIds.contains(wh.getId());
                             String searchWord = isInsensitive ? word.toLowerCase() : word;
                             String searchText = isInsensitive ? text.toLowerCase() : text;
 
