@@ -35,10 +35,15 @@ public class HighlightDialog extends Dialog<WordHighlight> {
 
         TextField wordField = new TextField();
         wordField.setPromptText("Enter word to highlight...");
+        
+        TextField nameField = new TextField();
+        nameField.setPromptText("Friendly name (optional)...");
+        
         ColorPicker colorPicker = new ColorPicker(javafx.scene.paint.Color.YELLOW);
 
         if (existing != null) {
             wordField.setText(existing.getWord());
+            nameField.setText(existing.getName());
             try {
                 colorPicker.setValue(javafx.scene.paint.Color.web(existing.getColorHex()));
             } catch (Exception ex) {
@@ -48,8 +53,12 @@ public class HighlightDialog extends Dialog<WordHighlight> {
 
         grid.add(new Label("Word:"), 0, 0);
         grid.add(wordField, 1, 0);
-        grid.add(new Label("Color:"), 0, 1);
-        grid.add(colorPicker, 1, 1);
+        
+        grid.add(new Label("Friendly Name:"), 0, 1);
+        grid.add(nameField, 1, 1);
+        
+        grid.add(new Label("Color:"), 0, 2);
+        grid.add(colorPicker, 1, 2);
 
         // Package selection
         HighlightPackage nonePackage = new HighlightPackage("(None)");
@@ -96,8 +105,14 @@ public class HighlightDialog extends Dialog<WordHighlight> {
         HBox packageBox = new HBox(5);
         packageBox.getChildren().addAll(packageCombo, newPackageBtn);
 
-        grid.add(new Label("Package:"), 0, 2);
-        grid.add(packageBox, 1, 2);
+        grid.add(new Label("Package:"), 0, 3);
+        grid.add(packageBox, 1, 3);
+
+        CheckBox regexCheckBox = new CheckBox("Regex Highlight");
+        if (existing != null) {
+            regexCheckBox.setSelected(existing.isRegex());
+        }
+        grid.add(regexCheckBox, 1, 4);
 
         getDialogPane().setContent(grid);
         AlertHelper.themeDialog(this);
@@ -115,6 +130,8 @@ public class HighlightDialog extends Dialog<WordHighlight> {
                 );
                 WordHighlight wh = new WordHighlight(wordField.getText().trim(), hexColor);
                 wh.setId(id);
+                wh.setName(nameField.getText().trim());
+                wh.setRegex(regexCheckBox.isSelected());
                 if (existing != null) {
                     wh.setCaseInsensitive(existing.isCaseInsensitive());
                 }

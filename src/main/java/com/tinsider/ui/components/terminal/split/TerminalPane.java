@@ -710,28 +710,60 @@ public class TerminalPane extends StackPane {
                             if (word == null || word.isEmpty()) continue;
 
                             boolean isInsensitive = caseInsensitiveHighlightIds.contains(wh.getId());
-                            String searchWord = isInsensitive ? word.toLowerCase() : word;
-                            String searchText = isInsensitive ? text.toLowerCase() : text;
 
-                            int idx = searchText.indexOf(searchWord);
-                            while (idx != -1) {
-                                com.jediterm.terminal.TextStyle textStyle;
-                                if (activeHighlightIds.contains(wh.getId())) {
-                                    com.jediterm.core.Color bg = parseHexColor(wh.getColorHex());
-                                    double luminance = (0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue()) / 255.0;
-                                    com.jediterm.core.Color fg = (luminance > 0.5) ? new com.jediterm.core.Color(0, 0, 0) : new com.jediterm.core.Color(255, 255, 255);
-                                    textStyle = new com.jediterm.terminal.TextStyle(
-                                        com.jediterm.terminal.TerminalColor.fromColor(fg),
-                                        com.jediterm.terminal.TerminalColor.fromColor(bg)
-                                    );
-                                } else {
-                                    textStyle = com.jediterm.terminal.TextStyle.EMPTY;
+                            if (wh.isRegex()) {
+                                try {
+                                    int flags = isInsensitive ? java.util.regex.Pattern.CASE_INSENSITIVE : 0;
+                                    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(word, flags);
+                                    java.util.regex.Matcher matcher = pattern.matcher(text);
+                                    while (matcher.find()) {
+                                        int start = matcher.start();
+                                        int end = matcher.end();
+                                        if (start >= end) continue; // safety check
+                                        
+                                        com.jediterm.terminal.TextStyle textStyle;
+                                        if (activeHighlightIds.contains(wh.getId())) {
+                                            com.jediterm.core.Color bg = parseHexColor(wh.getColorHex());
+                                            double luminance = (0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue()) / 255.0;
+                                            com.jediterm.core.Color fg = (luminance > 0.5) ? new com.jediterm.core.Color(0, 0, 0) : new com.jediterm.core.Color(255, 255, 255);
+                                            textStyle = new com.jediterm.terminal.TextStyle(
+                                                com.jediterm.terminal.TerminalColor.fromColor(fg),
+                                                com.jediterm.terminal.TerminalColor.fromColor(bg)
+                                            );
+                                        } else {
+                                            textStyle = com.jediterm.terminal.TextStyle.EMPTY;
+                                        }
+                                        
+                                        String screenWord = text.substring(start, end);
+                                        line.writeString(start, new com.jediterm.terminal.model.CharBuffer(screenWord), textStyle);
+                                    }
+                                } catch (Exception e) {
+                                    // Ignored or logged (e.g. invalid pattern)
                                 }
+                            } else {
+                                String searchWord = isInsensitive ? word.toLowerCase() : word;
+                                String searchText = isInsensitive ? text.toLowerCase() : text;
 
-                                // Get original text on terminal screen to preserve casing
-                                String screenWord = text.substring(idx, Math.min(idx + word.length(), text.length()));
-                                line.writeString(idx, new com.jediterm.terminal.model.CharBuffer(screenWord), textStyle);
-                                idx = searchText.indexOf(searchWord, idx + word.length());
+                                int idx = searchText.indexOf(searchWord);
+                                while (idx != -1) {
+                                    com.jediterm.terminal.TextStyle textStyle;
+                                    if (activeHighlightIds.contains(wh.getId())) {
+                                        com.jediterm.core.Color bg = parseHexColor(wh.getColorHex());
+                                        double luminance = (0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue()) / 255.0;
+                                        com.jediterm.core.Color fg = (luminance > 0.5) ? new com.jediterm.core.Color(0, 0, 0) : new com.jediterm.core.Color(255, 255, 255);
+                                        textStyle = new com.jediterm.terminal.TextStyle(
+                                            com.jediterm.terminal.TerminalColor.fromColor(fg),
+                                            com.jediterm.terminal.TerminalColor.fromColor(bg)
+                                        );
+                                    } else {
+                                        textStyle = com.jediterm.terminal.TextStyle.EMPTY;
+                                    }
+
+                                    // Get original text on terminal screen to preserve casing
+                                    String screenWord = text.substring(idx, Math.min(idx + word.length(), text.length()));
+                                    line.writeString(idx, new com.jediterm.terminal.model.CharBuffer(screenWord), textStyle);
+                                    idx = searchText.indexOf(searchWord, idx + word.length());
+                                }
                             }
                         }
                     }

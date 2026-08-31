@@ -2830,13 +2830,25 @@ public class MainApp extends Application {
         colorBox.setStyle("-fx-background-color: " + wh.getColorHex() + "; -fx-background-radius: 10px;");
 
         VBox details = new VBox(2);
-        Label wordLabel = new Label(wh.getWord());
+        String displayName = wh.getName() != null && !wh.getName().isEmpty() ? wh.getName() : wh.getWord();
+        Label wordLabel = new Label(displayName);
         wordLabel.getStyleClass().add("host-name");
         wordLabel.setStyle("-fx-font-weight: bold;");
 
+        Label patternLabel = null;
+        if (wh.getName() != null && !wh.getName().isEmpty()) {
+            patternLabel = new Label(wh.getWord());
+            patternLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #94a3b8; -fx-font-style: italic;");
+        }
+
         Label colorLabel = new Label(wh.getColorHex());
         colorLabel.getStyleClass().add("host-username");
-        details.getChildren().addAll(wordLabel, colorLabel);
+        
+        if (patternLabel != null) {
+            details.getChildren().addAll(wordLabel, patternLabel, colorLabel);
+        } else {
+            details.getChildren().addAll(wordLabel, colorLabel);
+        }
 
         card.getChildren().addAll(colorBox, details);
 
@@ -2961,8 +2973,12 @@ public class MainApp extends Application {
         indicator.setMaxSize(8, 8);
         indicator.setStyle("-fx-background-color: " + wh.getColorHex() + "; -fx-background-radius: 4px;");
 
-        Label wordLabel = new Label(wh.getWord());
+        String displayName = wh.getName() != null && !wh.getName().isEmpty() ? wh.getName() : wh.getWord();
+        Label wordLabel = new Label(displayName);
         wordLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
+        
+        Tooltip patternTooltip = new Tooltip(wh.getWord());
+        wordLabel.setTooltip(patternTooltip);
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
