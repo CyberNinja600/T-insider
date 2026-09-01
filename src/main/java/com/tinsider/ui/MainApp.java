@@ -67,6 +67,7 @@ public class MainApp extends Application {
     private final ObservableList<SnippetPackage> packages = FXCollections.observableArrayList();
     private final ObservableList<WordHighlight> highlights = FXCollections.observableArrayList();
     private final ObservableList<HighlightPackage> highlightPackages = FXCollections.observableArrayList();
+    private final Set<String> expandedPackageIds = new java.util.HashSet<>();
 
     private final Map<Tab, com.tinsider.ui.components.terminal.split.TerminalSplitPane> tabSplitPaneMap = new HashMap<>();
     
@@ -676,8 +677,20 @@ public class MainApp extends Application {
             com.tinsider.ui.dialogs.AlertHelper.themeDialog(dialog);
             Optional<String> result = dialog.showAndWait();
             result.ifPresent(name -> {
-                if (!name.trim().isEmpty()) {
-                    HighlightPackage pkg = new HighlightPackage(name.trim());
+                String trimmedName = name.trim();
+                if (!trimmedName.isEmpty()) {
+                    boolean duplicate = false;
+                    for (HighlightPackage pkg : highlightPackages) {
+                        if (pkg.getName() != null && pkg.getName().trim().equalsIgnoreCase(trimmedName)) {
+                            duplicate = true;
+                            break;
+                        }
+                    }
+                    if (duplicate) {
+                        com.tinsider.ui.dialogs.AlertHelper.showErrorAlert("Duplicate Package", "A highlight package with this name already exists.");
+                        return;
+                    }
+                    HighlightPackage pkg = new HighlightPackage(trimmedName);
                     highlightPackages.add(pkg);
                     StorageManager.saveHighlightPackages(new ArrayList<>(highlightPackages));
                 }
@@ -1511,11 +1524,36 @@ public class MainApp extends Application {
         com.jediterm.core.Color hlSideActiveBorder = theme.getColor("highlights.sidebar.toggle.active.border", theme.getSelectionColor());
         com.jediterm.core.Color hlSideFg = theme.getColor("highlights.sidebar.toggle.foreground", theme.getTextColor());
         com.jediterm.core.Color hlSideActiveFg = theme.getColor("highlights.sidebar.toggle.active.foreground", theme.getCursorColor());
+        com.jediterm.core.Color hlSideEyeInactive = theme.getColor("highlights.sidebar.toggle.eye.inactive", theme.getTextColor());
+        com.jediterm.core.Color hlSideEyeActive = theme.getColor("highlights.sidebar.toggle.eye.active", theme.getCursorColor());
         com.jediterm.core.Color hlSideHoverBg = theme.getColor("highlights.sidebar.toggle.hover.background", theme.getSelectionColor());
         com.jediterm.core.Color hlSideHoverBorder = theme.getColor("highlights.sidebar.toggle.hover.border", theme.getCursorColor());
 
+        // Highlight Package Sidebar configurations
+        com.jediterm.core.Color pkgBgActive = theme.getColor("sidebar.package.background.active", theme.getSelectionColor());
+        com.jediterm.core.Color pkgBgInactive = theme.getColor("sidebar.package.background.inactive", theme.getBackgroundColor());
+        com.jediterm.core.Color pkgIconColor = theme.getColor("highlights.sidebar.package.icon", theme.getCursorColor());
+        com.jediterm.core.Color pkgIconHoverColor = theme.getColor("highlights.sidebar.package.icon.hover", theme.getCursorColor());
+        com.jediterm.core.Color pkgIconActiveColor = theme.getColor("highlights.sidebar.package.icon.active", theme.getCursorColor());
+        com.jediterm.core.Color pkgTitleColor = theme.getColor("highlights.sidebar.package.title", theme.getTextColor());
+        com.jediterm.core.Color pkgTitleHoverColor = theme.getColor("highlights.sidebar.package.title.hover", theme.getTextColor());
+        com.jediterm.core.Color pkgTitleActiveColor = theme.getColor("highlights.sidebar.package.title.active", theme.getTextColor());
+        com.jediterm.core.Color pkgEyeActiveColor = theme.getColor("highlights.sidebar.package.eye.active", theme.getCursorColor());
+        com.jediterm.core.Color pkgEyeInactiveColor = theme.getColor("highlights.sidebar.package.eye.inactive", theme.getSelectionColor());
+
+        String hexPkgIcon = toHex(pkgIconColor);
+        String hexPkgIconHover = toHex(pkgIconHoverColor);
+        String hexPkgIconActive = toHex(pkgIconActiveColor);
+        String hexPkgTitle = toHex(pkgTitleColor);
+        String hexPkgTitleHover = toHex(pkgTitleHoverColor);
+        String hexPkgTitleActive = toHex(pkgTitleActiveColor);
+        String hexPkgEyeActive = toHex(pkgEyeActiveColor);
+        String hexPkgEyeInactive = toHex(pkgEyeInactiveColor);
+
         String hexHlSideFg = toHex(hlSideFg);
         String hexHlSideActiveFg = toHex(hlSideActiveFg);
+        String hexHlSideEyeInactive = toHex(hlSideEyeInactive);
+        String hexHlSideEyeActive = toHex(hlSideEyeActive);
 
         // Format to hex/rgba/gradient strings for CSS
         String hexWinBg;
@@ -1647,6 +1685,8 @@ public class MainApp extends Application {
         double hlSideHoverBorderOpacity = 1.0;
         double hlSideActiveBgOpacity = 1.0;
         double hlSideActiveBorderOpacity = 1.0;
+        double pkgBgActiveOpacity = 0.15;
+        double pkgBgInactiveOpacity = 0.30;
 
 
         try {
@@ -1663,6 +1703,8 @@ public class MainApp extends Application {
             pkgBgOpacity = Double.parseDouble(ThemeManager.getProperty("dashboard.package.background.opacity", "0.3"));
             pkgBorderOpacity = Double.parseDouble(ThemeManager.getProperty("dashboard.package.border.opacity", "1.0"));
             sidebarPkgContentBgOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.package.content.background.opacity", "1.0"));
+            pkgBgActiveOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.package.background.active.opacity", "0.15"));
+            pkgBgInactiveOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.package.background.inactive.opacity", "0.30"));
             scrollThumbOpacity = Double.parseDouble(ThemeManager.getProperty("scrollbar.thumb.opacity", "0.3"));
             scrollThumbHoverOpacity = Double.parseDouble(ThemeManager.getProperty("scrollbar.thumb.hover.opacity", "0.6"));
             dropScrollThumbOpacity = Double.parseDouble(ThemeManager.getProperty("dropdown.scrollbar.thumb.opacity", "0.4"));
@@ -1787,6 +1829,8 @@ public class MainApp extends Application {
         String rgbaPkgBg = toRgba(pkgBg, pkgBgOpacity);
         String rgbaPkgBorder = toRgba(pkgBorder, pkgBorderOpacity);
         String rgbaSidebarPkgContentBg = toRgba(sidebarPkgContentBg, sidebarPkgContentBgOpacity);
+        String rgbaPkgBgActive = toRgba(pkgBgActive, pkgBgActiveOpacity);
+        String rgbaPkgBgInactive = toRgba(pkgBgInactive, pkgBgInactiveOpacity);
         String rgbaScrollThumb = toRgba(scrollThumb, scrollThumbOpacity);
         String rgbaScrollThumbHover = toRgba(scrollThumbHover, scrollThumbHoverOpacity);
         String rgbaDropScrollThumb = toRgba(dropScrollThumb, dropScrollThumbOpacity);
@@ -2005,8 +2049,18 @@ public class MainApp extends Application {
                             ".label { -fx-text-fill: " + hexLabelFg + "; }\n" +
                             ".dashboard-package-section { -fx-background-color: " + rgbaPkgBg + "; -fx-border-color: " + rgbaPkgBorder + "; -fx-border-width: 1px; -fx-background-radius: 8px; -fx-border-radius: 8px; -fx-padding: 15px; }\n" +
                             ".package-titled-pane { -fx-text-fill: " + hexCardsItemTitle + "; -fx-font-weight: bold; -fx-font-size: 12px; }\n" +
-                            ".package-titled-pane > .title { -fx-background-color: " + rgbaCardsItemBg + "; -fx-border-color: " + rgbaCardsItemBorder + "; -fx-border-width: 1px; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-padding: 8px 12px; }\n" +
+                            ".package-titled-pane > .title { -fx-background-color: " + rgbaPkgBgInactive + "; -fx-border-color: " + rgbaCardsItemBorder + "; -fx-border-width: 1px; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-padding: 8px 12px; }\n" +
+                            ".package-titled-pane:expanded > .title { -fx-background-color: " + rgbaPkgBgActive + "; }\n" +
                             ".package-titled-pane > .title:hover { -fx-background-color: " + rgbaCardsHoverBg + "; -fx-border-color: " + rgbaCardsHoverBorder + "; }\n" +
+                            ".package-folder-icon { -fx-text-fill: " + hexPkgIcon + "; }\n" +
+                            ".package-titled-pane > .title:hover .package-folder-icon { -fx-text-fill: " + hexPkgIconHover + "; }\n" +
+                            ".package-titled-pane:expanded > .title .package-folder-icon { -fx-text-fill: " + hexPkgIconActive + "; }\n" +
+                            ".package-title-label { -fx-text-fill: " + hexPkgTitle + "; }\n" +
+                            ".package-titled-pane > .title:hover .package-title-label { -fx-text-fill: " + hexPkgTitleHover + "; }\n" +
+                            ".package-titled-pane:expanded > .title .package-title-label { -fx-text-fill: " + hexPkgTitleActive + "; }\n" +
+                            ".package-eye-icon { -fx-font-family: 'codicon'; -fx-font-size: 14px; -fx-cursor: hand; }\n" +
+                            ".package-eye-icon.active { -fx-text-fill: " + hexPkgEyeActive + "; }\n" +
+                            ".package-eye-icon.inactive { -fx-text-fill: " + hexPkgEyeInactive + "; }\n" +
                             ".package-titled-pane > .title > .arrow-button .arrow { -fx-background-color: " + hexTermCursor + "; }\n" +
                             ".package-titled-pane > .content { -fx-background-color: " + rgbaSidebarPkgContentBg + "; -fx-border-color: " + hexSideBorder + "; -fx-border-width: 0 1px 1px 1px; -fx-border-radius: 0 0 4px 4px; -fx-background-radius: 0 0 4px 4px; -fx-padding: 8px; }\n" +
                             ".dashboard-package-title { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: " + hexCardsItemTitle + "; }\n" +
@@ -2049,8 +2103,8 @@ public class MainApp extends Application {
                             ".highlight-sidebar-card.active { -fx-background-color: " + rgbaHlSideActiveBg + "; -fx-border-color: " + rgbaHlSideActiveBorder + "; }\n" +
                             ".highlight-sidebar-card .label { -fx-text-fill: " + hexHlSideFg + "; }\n" +
                             ".highlight-sidebar-card.active .label { -fx-text-fill: " + hexHlSideActiveFg + "; }\n" +
-                            ".highlight-sidebar-card .toggle-icon { -fx-font-family: 'codicon'; -fx-font-size: 14px; -fx-text-fill: " + hexHlSideFg + "; }\n" +
-                            ".highlight-sidebar-card.active .toggle-icon { -fx-text-fill: " + hexHlSideActiveFg + "; }\n" +
+                            ".highlight-sidebar-card .toggle-icon { -fx-font-family: 'codicon'; -fx-font-size: 14px; -fx-text-fill: " + hexHlSideEyeInactive + "; }\n" +
+                            ".highlight-sidebar-card.active .toggle-icon { -fx-text-fill: " + hexHlSideEyeActive + "; }\n" +
                             ".color-picker { -fx-background-color: " + hexColorPickerBg + "; -fx-text-fill: " + hexColorPickerFg + "; -fx-border-color: " + hexColorPickerBorder + "; -fx-background-radius: 4px; -fx-border-radius: 4px; -fx-border-width: 1px; -fx-background-insets: 0; }\n" +
                             ".color-picker:hover { -fx-background-color: " + hexBtnHoverBg + "; }\n" +
                             ".color-picker:focused { -fx-border-color: " + hexColorPickerBorder + "; }\n" +
@@ -3114,7 +3168,15 @@ public class MainApp extends Application {
             if (!packageHighlights.isEmpty()) {
                 TitledPane pane = new TitledPane();
                 pane.getStyleClass().add("package-titled-pane");
-                pane.setExpanded(true); // default open
+                pane.setExpanded(!query.isEmpty() || expandedPackageIds.contains(pkg.getId()));
+
+                pane.expandedProperty().addListener((obs, oldVal, newVal) -> {
+                    if (newVal) {
+                        expandedPackageIds.add(pkg.getId());
+                    } else {
+                        expandedPackageIds.remove(pkg.getId());
+                    }
+                });
 
                 // Calculate package active state
                 int activeCount = 0;
@@ -3126,25 +3188,35 @@ public class MainApp extends Application {
                 boolean pkgAllActive = (activeCount == packageHighlights.size());
                 boolean pkgAnyActive = (activeCount > 0);
 
+                if (pkgAnyActive) {
+                    pane.getStyleClass().add("active-package");
+                } else {
+                    pane.getStyleClass().add("inactive-package");
+                }
+
                 // Build custom header with title and eye icon for package activation
                 HBox header = new HBox(8);
                 header.setAlignment(Pos.CENTER_LEFT);
-                HBox.setHgrow(header, Priority.ALWAYS);
                 header.setMaxWidth(Double.MAX_VALUE);
+                header.prefWidthProperty().bind(pane.widthProperty().subtract(45));
 
                 Label folderIcon = new Label("\uEA83");
-                folderIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px; -fx-text-fill: #94a3b8;");
+                folderIcon.getStyleClass().add("package-folder-icon");
+                folderIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px;");
 
                 Label titleLabel = new Label(pkg.getName());
-                titleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #cbd5e1;");
+                titleLabel.getStyleClass().add("package-title-label");
+                titleLabel.setStyle("-fx-font-weight: bold;");
                 titleLabel.setMinWidth(0);
                 titleLabel.setMaxWidth(Double.MAX_VALUE);
                 HBox.setHgrow(titleLabel, Priority.ALWAYS);
 
                 Label pkgEyeIcon = new Label(pkgAnyActive ? "\uEB79" : "\uEB7A");
-                pkgEyeIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px; -fx-text-fill: " + (pkgAnyActive ? "#00adb5" : "#94a3b8") + "; -fx-cursor: hand;");
+                pkgEyeIcon.getStyleClass().addAll("package-eye-icon", pkgAnyActive ? "active" : "inactive");
                 pkgEyeIcon.setTooltip(new Tooltip(pkgAnyActive ? "Deactivate Package" : "Activate Package"));
 
+                pkgEyeIcon.setOnMousePressed(ev -> ev.consume());
+                pkgEyeIcon.setOnMouseReleased(ev -> ev.consume());
                 pkgEyeIcon.setOnMouseClicked(ev -> {
                     ev.consume(); // Prevent expanding/collapsing the TitledPane
                     boolean nextState = !pkgAnyActive; // if any active, turn off; otherwise turn on
@@ -3185,7 +3257,15 @@ public class MainApp extends Application {
         if (!standaloneHighlights.isEmpty()) {
             TitledPane pane = new TitledPane();
             pane.getStyleClass().add("package-titled-pane");
-            pane.setExpanded(true); // default open
+            pane.setExpanded(!query.isEmpty() || expandedPackageIds.contains("standalone"));
+
+            pane.expandedProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal) {
+                    expandedPackageIds.add("standalone");
+                } else {
+                    expandedPackageIds.remove("standalone");
+                }
+            });
 
             int activeCount = 0;
             for (WordHighlight wh : standaloneHighlights) {
@@ -3195,24 +3275,34 @@ public class MainApp extends Application {
             }
             boolean pkgAnyActive = (activeCount > 0);
 
+            if (pkgAnyActive) {
+                pane.getStyleClass().add("active-package");
+            } else {
+                pane.getStyleClass().add("inactive-package");
+            }
+
             HBox header = new HBox(8);
             header.setAlignment(Pos.CENTER_LEFT);
-            HBox.setHgrow(header, Priority.ALWAYS);
             header.setMaxWidth(Double.MAX_VALUE);
+            header.prefWidthProperty().bind(pane.widthProperty().subtract(45));
 
             Label standaloneIcon = new Label("\uEAE9");
-            standaloneIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px; -fx-text-fill: #94a3b8;");
+            standaloneIcon.getStyleClass().add("package-folder-icon");
+            standaloneIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px;");
 
             Label titleLabel = new Label("Standalone Highlights");
-            titleLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #cbd5e1;");
+            titleLabel.getStyleClass().add("package-title-label");
+            titleLabel.setStyle("-fx-font-weight: bold;");
             titleLabel.setMinWidth(0);
             titleLabel.setMaxWidth(Double.MAX_VALUE);
             HBox.setHgrow(titleLabel, Priority.ALWAYS);
 
             Label pkgEyeIcon = new Label(pkgAnyActive ? "\uEB79" : "\uEB7A");
-            pkgEyeIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px; -fx-text-fill: " + (pkgAnyActive ? "#00adb5" : "#94a3b8") + "; -fx-cursor: hand;");
+            pkgEyeIcon.getStyleClass().addAll("package-eye-icon", pkgAnyActive ? "active" : "inactive");
             pkgEyeIcon.setTooltip(new Tooltip(pkgAnyActive ? "Deactivate Standalone" : "Activate Standalone"));
 
+            pkgEyeIcon.setOnMousePressed(ev -> ev.consume());
+            pkgEyeIcon.setOnMouseReleased(ev -> ev.consume());
             pkgEyeIcon.setOnMouseClicked(ev -> {
                 ev.consume();
                 boolean nextState = !pkgAnyActive;

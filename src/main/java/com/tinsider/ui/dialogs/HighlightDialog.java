@@ -43,7 +43,7 @@ public class HighlightDialog extends Dialog<WordHighlight> {
             }
         }
 
-        grid.add(new Label("Word:"), 0, 0);
+        grid.add(new Label("Word/Regex:"), 0, 0);
         grid.add(wordField, 1, 0);
         
         grid.add(new Label("Friendly Name:"), 0, 1);
@@ -80,8 +80,22 @@ public class HighlightDialog extends Dialog<WordHighlight> {
             AlertHelper.themeDialog(inputDlg);
             Optional<String> result = inputDlg.showAndWait();
             result.ifPresent(name -> {
-                if (!name.trim().isEmpty()) {
-                    HighlightPackage newPkg = new HighlightPackage(name.trim());
+                String trimmedName = name.trim();
+                if (!trimmedName.isEmpty()) {
+                    boolean duplicate = false;
+                    if (packages != null) {
+                        for (HighlightPackage pkg : packages) {
+                            if (pkg.getName() != null && pkg.getName().trim().equalsIgnoreCase(trimmedName)) {
+                                duplicate = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (duplicate) {
+                        AlertHelper.showErrorAlert("Duplicate Package", "A highlight package with this name already exists.");
+                        return;
+                    }
+                    HighlightPackage newPkg = new HighlightPackage(trimmedName);
                     if (packages instanceof ObservableList) {
                         ((ObservableList<HighlightPackage>) packages).add(newPkg);
                     } else if (packages != null) {
