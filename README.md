@@ -50,11 +50,20 @@ This is the curated list of T-insider features, ranked by engineering complexity
     *   *Direct Run:* Safely passes the raw command block into the active JediTerm session with an appended carriage return (`\r`) for immediate execution.
     *   *Paste Only:* Injects the raw string directly into the shell buffer without running it immediately.
 
-### 7. SSH Host Connection Profile Management
+### 7. Real-Time Word Highlighting & Package Management
+*   **Description:** Highlight custom keywords, search queries, or regular expressions across all active terminal views in real-time, grouped and customized via packages.
+*   **Under the Hood:** 
+    *   *Highlight Models & Serialization:* Managed using `WordHighlight` and `HighlightPackage` models, serialized as standard JSON configurations (`highlights.json` and `packages.json`) through the unified `StorageManager` (utilizing Google Gson).
+    *   *Terminal Hooks & Regex Engine:* Intercepts terminal text streams during rendering using JetBrains JediTerm's drawing pipeline. Supports standard string matching, case-insensitive keyword matches, and full Regex-based pattern highlighting, drawn using custom color hex codes.
+    *   *Stateful Collapsible Sidebar:* Implements custom accordion components using JavaFX `TitledPane` widgets with state-aware class names (`.active-package`, `.inactive-package`). Manages manual folder expansion state persistence using a dynamic `expandedPackageIds` set, and consumes mouse click/press/release events on package eyes to prevent unwanted accordion toggle side effects.
+    *   *Validation & Uniqueness:* Validates package name creations inside `MainApp` and `HighlightDialog` to prevent duplicate packages, raising styled warning dialogs.
+    *   *Cohesive Theming:* Fully supports dynamic custom properties inside `theme.config.properties` for active/inactive title background colors, opacities, folder icons, titles, and toggle buttons (incorporating dedicated hover and active colors), hot-swapped dynamically when changing themes.
+
+### 8. SSH Host Connection Profile Management
 *   **Description:** Quick-connect host profile database supporting customizable SSH targets, credentials, custom ports, and key files.
 *   **Under the Hood:** Leverages a unified JSON storage backend via `StorageManager` to handle host configuration CRUD operations. Provides parsing support for the standard `ssh://` URI scheme to immediately extract hostname, port, and username details.
 
-### 8. Dynamic UI Customization & Live CSS Hot-Reloading
+### 9. Dynamic UI Customization & Live CSS Hot-Reloading
 *   **Description:** Real-time hot-swappable custom themes and styling.
 *   **Under the Hood:** Custom terminal themes are parsed dynamically from macOS Terminal XML `.plist` files, decoding Base64 floating-point colors and maps them via a decoupled configuration properties mapping (`theme.config.properties`). Includes `LiveReloader` — a background daemon utilizing Java's `WatchService` with a 500ms debounce to automatically hot-reload UI stylesheets during development when CSS or properties are modified.
 
