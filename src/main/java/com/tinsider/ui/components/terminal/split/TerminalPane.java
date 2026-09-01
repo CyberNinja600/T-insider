@@ -46,6 +46,7 @@ public class TerminalPane extends StackPane {
 
     private javax.swing.Timer highlightTimer;
     private final java.util.Set<String> activeHighlightIds = new java.util.HashSet<>();
+    private final java.util.Set<String> caseInsensitiveHighlightIds = new java.util.HashSet<>();
 
     private BorderPane mainLayout;
     private HBox headerBar;
@@ -202,6 +203,20 @@ public class TerminalPane extends StackPane {
 
         // 4. Setup Drag & Drop handlers on Header
         setupDragAndDrop();
+
+        // Initialize caseInsensitiveHighlightIds from saved highlights
+        try {
+            java.util.List<WordHighlight> saved = StorageManager.loadHighlights();
+            if (saved != null) {
+                for (WordHighlight wh : saved) {
+                    if (wh.isCaseInsensitive()) {
+                        caseInsensitiveHighlightIds.add(wh.getId());
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         if ("EMPTY".equals(sessionType)) {
             showEmptyPlaceholderState();
@@ -657,6 +672,19 @@ public class TerminalPane extends StackPane {
         applyHighlights();
     }
 
+    public java.util.Set<String> getCaseInsensitiveHighlightIds() {
+        return caseInsensitiveHighlightIds;
+    }
+
+    public void toggleCaseInsensitive(String id, boolean insensitive) {
+        if (insensitive) {
+            caseInsensitiveHighlightIds.add(id);
+        } else {
+            caseInsensitiveHighlightIds.remove(id);
+        }
+        applyHighlights();
+    }
+
     public void applyHighlights() {
         if (widget == null) return;
         java.util.List<WordHighlight> allHighlights = StorageManager.loadHighlights();
@@ -681,29 +709,61 @@ public class TerminalPane extends StackPane {
                             String word = wh.getWord();
                             if (word == null || word.isEmpty()) continue;
 
-                            boolean isInsensitive = wh.isCaseInsensitive();
-                            String searchWord = isInsensitive ? word.toLowerCase() : word;
-                            String searchText = isInsensitive ? text.toLowerCase() : text;
+                            boolean isInsensitive = caseInsensitiveHighlightIds.contains(wh.getId());
 
-                            int idx = searchText.indexOf(searchWord);
-                            while (idx != -1) {
-                                com.jediterm.terminal.TextStyle textStyle;
-                                if (activeHighlightIds.contains(wh.getId())) {
-                                    com.jediterm.core.Color bg = parseHexColor(wh.getColorHex());
-                                    double luminance = (0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue()) / 255.0;
-                                    com.jediterm.core.Color fg = (luminance > 0.5) ? new com.jediterm.core.Color(0, 0, 0) : new com.jediterm.core.Color(255, 255, 255);
-                                    textStyle = new com.jediterm.terminal.TextStyle(
-                                        com.jediterm.terminal.TerminalColor.fromColor(fg),
-                                        com.jediterm.terminal.TerminalColor.fromColor(bg)
-                                    );
-                                } else {
-                                    textStyle = com.jediterm.terminal.TextStyle.EMPTY;
+                            if (wh.isRegex()) {
+                                try {
+                                    int flags = isInsensitive ? java.util.regex.Pattern.CASE_INSENSITIVE : 0;
+                                    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(word, flags);
+                                    java.util.regex.Matcher matcher = pattern.matcher(text);
+                                    while (matcher.find()) {
+                                        int start = matcher.start();
+                                        int end = matcher.end();
+                                        if (start >= end) continue; // safety check
+                                        
+                                        com.jediterm.terminal.TextStyle textStyle;
+                                        if (activeHighlightIds.contains(wh.getId())) {
+                                            com.jediterm.core.Color bg = parseHexColor(wh.getColorHex());
+                                            double luminance = (0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue()) / 255.0;
+                                            com.jediterm.core.Color fg = (luminance > 0.5) ? new com.jediterm.core.Color(0, 0, 0) : new com.jediterm.core.Color(255, 255, 255);
+                                            textStyle = new com.jediterm.terminal.TextStyle(
+                                                com.jediterm.terminal.TerminalColor.fromColor(fg),
+                                                com.jediterm.terminal.TerminalColor.fromColor(bg)
+                                            );
+                                        } else {
+                                            textStyle = com.jediterm.terminal.TextStyle.EMPTY;
+                                        }
+                                        
+                                        String screenWord = text.substring(start, end);
+                                        line.writeString(start, new com.jediterm.terminal.model.CharBuffer(screenWord), textStyle);
+                                    }
+                                } catch (Exception e) {
+                                    // Ignored or logged (e.g. invalid pattern)
                                 }
+                            } else {
+                                String searchWord = isInsensitive ? word.toLowerCase() : word;
+                                String searchText = isInsensitive ? text.toLowerCase() : text;
 
-                                // Get original text on terminal screen to preserve casing
-                                String screenWord = text.substring(idx, Math.min(idx + word.length(), text.length()));
-                                line.writeString(idx, new com.jediterm.terminal.model.CharBuffer(screenWord), textStyle);
-                                idx = searchText.indexOf(searchWord, idx + word.length());
+                                int idx = searchText.indexOf(searchWord);
+                                while (idx != -1) {
+                                    com.jediterm.terminal.TextStyle textStyle;
+                                    if (activeHighlightIds.contains(wh.getId())) {
+                                        com.jediterm.core.Color bg = parseHexColor(wh.getColorHex());
+                                        double luminance = (0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue()) / 255.0;
+                                        com.jediterm.core.Color fg = (luminance > 0.5) ? new com.jediterm.core.Color(0, 0, 0) : new com.jediterm.core.Color(255, 255, 255);
+                                        textStyle = new com.jediterm.terminal.TextStyle(
+                                            com.jediterm.terminal.TerminalColor.fromColor(fg),
+                                            com.jediterm.terminal.TerminalColor.fromColor(bg)
+                                        );
+                                    } else {
+                                        textStyle = com.jediterm.terminal.TextStyle.EMPTY;
+                                    }
+
+                                    // Get original text on terminal screen to preserve casing
+                                    String screenWord = text.substring(idx, Math.min(idx + word.length(), text.length()));
+                                    line.writeString(idx, new com.jediterm.terminal.model.CharBuffer(screenWord), textStyle);
+                                    idx = searchText.indexOf(searchWord, idx + word.length());
+                                }
                             }
                         }
                     }

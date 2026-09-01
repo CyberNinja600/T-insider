@@ -60,6 +60,12 @@ public class ThemeManager {
         setDefaultIfMissing("sidebar.nav.hover.foreground", "CursorColor");
         setDefaultIfMissing("sidebar.nav.selected.background", "SelectionColor");
         setDefaultIfMissing("sidebar.nav.selected.border", "CursorColor");
+        setDefaultIfMissing("sidebar.package.content.background", "SelectionColor");
+        setDefaultIfMissing("sidebar.package.content.background.opacity", "0.15");
+        setDefaultIfMissing("sidebar.package.background.active", "SelectionColor");
+        setDefaultIfMissing("sidebar.package.background.active.opacity", "0.15");
+        setDefaultIfMissing("sidebar.package.background.inactive", "BackgroundColor");
+        setDefaultIfMissing("sidebar.package.background.inactive.opacity", "0.30");
         setDefaultIfMissing("global.label.foreground", "TextColor");
         setDefaultIfMissing("snippetLauncher.label", "CursorColor");
 
@@ -257,6 +263,18 @@ public class ThemeManager {
         setDefaultIfMissing("highlights.sidebar.toggle.active.border.opacity", "1.0");
         setDefaultIfMissing("highlights.sidebar.toggle.foreground", "TextColor");
         setDefaultIfMissing("highlights.sidebar.toggle.active.foreground", "CursorColor");
+        setDefaultIfMissing("highlights.sidebar.toggle.eye.inactive", "TextColor");
+        setDefaultIfMissing("highlights.sidebar.toggle.eye.active", "CursorColor");
+
+        // 13. Word Highlight Package Sidebar Configurations
+        setDefaultIfMissing("highlights.sidebar.package.icon", "CursorColor");
+        setDefaultIfMissing("highlights.sidebar.package.icon.hover", "CursorColor");
+        setDefaultIfMissing("highlights.sidebar.package.icon.active", "CursorColor");
+        setDefaultIfMissing("highlights.sidebar.package.title", "TextColor");
+        setDefaultIfMissing("highlights.sidebar.package.title.hover", "TextColor");
+        setDefaultIfMissing("highlights.sidebar.package.title.active", "TextColor");
+        setDefaultIfMissing("highlights.sidebar.package.eye.active", "CursorColor");
+        setDefaultIfMissing("highlights.sidebar.package.eye.inactive", "SelectionColor");
     }
 
     private static void setDefaultIfMissing(String key, String plistValue) {

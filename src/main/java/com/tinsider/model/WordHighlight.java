@@ -7,6 +7,9 @@ public class WordHighlight {
     private String word;
     private String colorHex;
     private boolean caseInsensitive;
+    private String packageId;
+    private boolean regex;
+    private String name;
 
     public WordHighlight() {
         this.id = UUID.randomUUID().toString();
@@ -58,8 +61,32 @@ public class WordHighlight {
         this.caseInsensitive = caseInsensitive;
     }
 
+    public String getPackageId() {
+        return packageId;
+    }
+
+    public void setPackageId(String packageId) {
+        this.packageId = packageId;
+    }
+
+    public boolean isRegex() {
+        return regex;
+    }
+
+    public void setRegex(boolean regex) {
+        this.regex = regex;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @Override
     public String toString() {
-        return word + " (" + colorHex + ")";
+        return (name != null && !name.isEmpty() ? name : word) + " (" + colorHex + ")";
     }
 }
