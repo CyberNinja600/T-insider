@@ -659,11 +659,21 @@ public class MainApp extends Application {
         addHighlightBtn.setOnAction(e -> showAddHighlightDialog(highlights, null));
         editHighlightBtn.setOnAction(e -> {
             WordHighlight selected = selectedHighlight.get();
-            if (selected != null) showAddHighlightDialog(highlights, selected);
+            if (selected != null) {
+                if (StorageManager.isDefaultHighlight(selected.getId())) {
+                    com.tinsider.ui.dialogs.AlertHelper.showErrorAlert("Built-in Highlight", "Cannot edit built-in highlights.");
+                    return;
+                }
+                showAddHighlightDialog(highlights, selected);
+            }
         });
         deleteHighlightBtn.setOnAction(e -> {
             WordHighlight selected = selectedHighlight.get();
             if (selected != null) {
+                if (StorageManager.isDefaultHighlight(selected.getId())) {
+                    com.tinsider.ui.dialogs.AlertHelper.showErrorAlert("Built-in Highlight", "Cannot delete built-in highlights.");
+                    return;
+                }
                 highlights.remove(selected);
                 StorageManager.saveHighlights(new ArrayList<>(highlights));
                 selectedHighlight.set(null);
