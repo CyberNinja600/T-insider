@@ -15,7 +15,6 @@ config/hosts.json
 config/packages.json
 config/snippets.json
 config/settings.json
-config/highlights.json
 
 # Setup configuration file
 setup.properties
