@@ -99,7 +99,7 @@ public class MainApp extends Application {
         new com.jediterm.core.Color(9, 15, 34),     // bg: #090F22
         new com.jediterm.core.Color(226, 232, 240), // text: #e2e8f0
         new com.jediterm.core.Color(0, 173, 181),   // cursor: #00adb5
-        new com.jediterm.core.Color(226, 27, 48)     // selection: #161B30
+        new com.jediterm.core.Color(22, 27, 48)      // selection: #161B30
     );
 
     // Modular subsystems
