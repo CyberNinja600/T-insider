@@ -1,21 +1,143 @@
-# T-insider
+# T-insider: Framework & Developer Learning Guide
 
-T-insider is a highly polished, multi-pane terminal emulation and SSH client application designed for modern software development. It features a robust, split-pane layout model, advanced visual tab manipulation, high-performance terminal rendering, and dynamic run-time styling.
-
----
-
-## 🛠️ Core Language & Build Tools
-
-The application leverages a modern, robust, and platform-integrated stack:
-
-*   **Core Language:** **Java 21 (LTS)** — Utilizes modern language features (pattern matching, enhanced switch expressions, and virtual threads ready) for clean and efficient execution.
-*   **Build System:** **Apache Maven 3.9+** — Standardized build orchestration and dependency management. Includes standard Maven wrappers (`mvnw` / `mvnw.cmd`) for absolute zero-setup bootstrapping.
-*   **UI & Graphics Framework:** **JavaFX 21.0.2** — Delivers high-performance, hardware-accelerated user interfaces styled dynamically via CSS.
-*   **Native Platform Integration:** **Java Native Access (JNA) 5.13.0** — Interacts with operating system APIs for premium native effects like Windows Aero glass integration, custom frame decorations, and glass drag-and-drop.
+T-insider is a multi-pane terminal emulation and SSH client application designed for modern software development. It features a robust, split-pane layout model, advanced visual tab manipulation, high-performance terminal rendering, and dynamic run-time styling.
 
 ---
 
-## 🚀 Key Features (Prioritized)
+This document provides a comprehensive overview of the technology stack, frameworks, internal architecture, and the recommended learning roadmap to develop and contribute to **T-insider**.
+
+---
+
+## 1. Technology Stack & Frameworks Used
+
+T-insider is built on **Java 21 (LTS)**, primarily utilizing **JavaFX** for its modern desktop GUI alongside an embedded **Swing/AWT** layer to host JetBrains' terminal engine.
+
+### Core Stack Overview
+
+| Category / Layer              | Technology               | Version      | Purpose in this Project                                                                                                                                                | Key Project References                                                                                                                                                     |
+|:------------------------------|:-------------------------|:-------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Language & Runtime**        | Java (LTS)               | 21           | Core programming language leveraging modern syntax (pattern matching, switch expressions, modern standard library).                                                    | [`Launcher.java`](src/main/java/com/tinsider/Launcher.java)                                                                                                                |
+| **Build System**              | Apache Maven             | 3.9+         | Build lifecycle, dependency resolution, execution via `javafx-maven-plugin`.                                                                                           | [`pom.xml`](pom.xml), [`mvnw.cmd`](mvnw.cmd), [`mvnw`](mvnw)                                                                                                               |
+| **Primary UI Framework**      | JavaFX                   | 21.0.2       | Controls, layout nodes, scene graph, dialogs, drag animations, custom title bar, and CSS styling.                                                                      | [`MainApp.java`](src/main/java/com/tinsider/ui/MainApp.java), [`TopToolBar.java`](src/main/java/com/tinsider/ui/components/toolbar/TopToolBar.java)                        |
+| **Terminal Rendering Engine** | JetBrains JediTerm       | 3.43         | High-performance Swing-based terminal emulation engine (used in JetBrains IDEs like IntelliJ IDEA) for ANSI rendering, text buffer management, and viewport rendering. | [`TerminalTabFactory.java`](src/main/java/com/tinsider/terminal/TerminalTabFactory.java)                                                                                   |
+| **JavaFX / Swing Interop**    | JavaFX `SwingNode`       | 21.0.2       | Bridges JediTerm's Swing AWT widget into the JavaFX Scene Graph.                                                                                                       | Embedded within [`TerminalPane.java`](src/main/java/com/tinsider/ui/components/terminal/split/TerminalPane.java)                                                           |
+| **Local PTY Spawning**        | JetBrains Pty4J          | 0.12.13      | Pseudo-terminal layer for spawning native local shells (PowerShell, CMD, WSL, Git Bash on Windows; `/bin/bash` or `/bin/zsh` on Unix/macOS).                           | [`PtyTtyConnector.java`](src/main/java/com/tinsider/terminal/PtyTtyConnector.java)                                                                                         |
+| **SSH Client Core**           | Apache MINA SSHD         | 2.13.0       | Remote terminal protocol engine handling SSH handshakes, authentication, shell channels, and 15-second heartbeat intervals.                                            | [`SshTtyConnector.java`](src/main/java/com/tinsider/terminal/SshTtyConnector.java), [`ConnectionManager.java`](src/main/java/com/tinsider/terminal/ConnectionManager.java) |
+| **Cryptography Providers**    | BouncyCastle & I2P EdDSA | 1.78 / 0.3.0 | Modern cryptographic algorithms for modern OpenSSH keys, PEM format parsing, and Ed25519 host key authentication.                                                      | [`pom.xml`](pom.xml)                                                                                                                                                       |
+| **OS / Window Integration**   | JNA (Java Native Access) | 5.13.0       | Native Windows DWM API interop for Windows Aero snapping, dark mode window captioning, and custom framing.                                                             | [`DwmUtil.java`](src/main/java/com/tinsider/ui/theme/DwmUtil.java)                                                                                                         |
+| **Configuration & Storage**   | Google Gson              | 2.10.1       | JSON serialization and deserialization for host profiles, snippets, word highlight packages, and app configuration.                                                    | [`StorageManager.java`](src/main/java/com/tinsider/storage/StorageManager.java)                                                                                            |
+| **Logging**                   | SLF4J (Simple)           | 2.0.7        | Clean application and SSH session logging.                                                                                                                             | [`pom.xml`](pom.xml)                                                                                                                                                       |
+
+---
+
+## 2. Key Architecture Components
+
+To work on this codebase effectively, familiarize yourself with these core subsystems:
+
+```
+src/main/java/com/tinsider/
+├── Launcher.java                  # Bootstrap & font anti-aliasing initialization
+├── config/                        # Theme parsing (macOS .plist color maps, properties)
+├── model/                         # Data models (HostProfile, Snippet, WordHighlight, etc.)
+├── storage/                       # JSON persistence layer via Gson
+├── terminal/                      # JediTerm, Pty4J, and Apache MINA SSHD connector layers
+├── ui/
+│   ├── MainApp.java               # Primary JavaFX stage and scene assembly
+│   ├── components/
+│   │   ├── navigation/            # Slim navigation rail
+│   │   ├── sidebar/               # Collapsible accordion views (Snippets, Highlights)
+│   │   ├── terminal/
+│   │   │   ├── dnd/               # Tab drag-and-drop animation engine & ghost renderer
+│   │   │   └── split/             # Binary Space Partitioning (BSP) tree split-pane engine
+│   │   └── toolbar/               # Global toolbar (zoom controls, quick actions)
+│   ├── dashboard/                 # Full dashboard views for hosts, snippets, sessions
+│   ├── dialogs/                   # Custom modal dialogs (HostDialog, SnippetDialog, etc.)
+│   └── theme/                     # CSS loading, DWM integration, and live hot-reloader
+└── util/                          # Live file watcher, activity logging
+```
+
+### Notable Architectural Patterns in the Codebase
+
+1. **Binary Space Partitioning (BSP) Split Tree**:
+    - Files: [`TerminalSplitPane.java`](src/main/java/com/tinsider/ui/components/terminal/split/TerminalSplitPane.java), [`SplitParentNode.java`](src/main/java/com/tinsider/ui/components/terminal/split/SplitParentNode.java), [`SplitLeafNode.java`](src/main/java/com/tinsider/ui/components/terminal/split/SplitLeafNode.java).
+    - Enables arbitrary horizontal and vertical terminal splitting while maintaining automatic sibling collapse, recursive resizing, and focus preservation.
+
+2. **Advanced Tab Drag-and-Drop with Physics/Animations**:
+    - Files: [`TabDragManager.java`](src/main/java/com/tinsider/ui/components/terminal/dnd/TabDragManager.java), [`TabGhost.java`](src/main/java/com/tinsider/ui/components/terminal/dnd/TabGhost.java), [`TabAnimationManager.java`](src/main/java/com/tinsider/ui/components/terminal/dnd/TabAnimationManager.java).
+    - Generates an animated floating snapshot of the tab during dragging, dynamically slides adjacent tabs out of the way, and uses DPI-aware scene coordinate math for drop targeting.
+
+3. **Hybrid JavaFX & Swing Rendering**:
+    - Files: [`TerminalTabFactory.java`](src/main/java/com/tinsider/terminal/TerminalTabFactory.java), [`TerminalPane.java`](src/main/java/com/tinsider/ui/components/terminal/split/TerminalPane.java).
+    - Integrates JediTerm (`JediTermWidget`) inside a JavaFX `SwingNode`, filtering events to prevent keyboard shortcuts (e.g., `Ctrl+C`) from colliding between JavaFX and the terminal shell.
+
+4. **Live CSS Hot-Reloading**:
+    - Files: [`LiveReloader.java`](src/main/java/com/tinsider/util/LiveReloader.java).
+    - Uses Java's `WatchService` with a 500ms debounce to automatically reload stylesheets during development whenever `.css` files change.
+
+---
+
+## 3. What You Need to Learn to Develop This Project
+
+Here is a recommended learning roadmap broken down by priority:
+
+### Phase 1: Core Java 21 & Foundations
+* **Modern Java Syntax**:
+    - Pattern matching for `switch` and `instanceof`.
+    - Records and text blocks.
+* **Concurrency & Thread Safety**:
+    - Thread pools and background executors.
+    - Ensuring background tasks (like SSH connections or process I/O) never block the UI thread.
+* **Java Reflection**:
+    - Understanding runtime reflection (used in `TerminalTabFactory` to dynamically adjust JediTerm's font buffers).
+
+### Phase 2: JavaFX Desktop UI Development
+* **Layout Management**:
+    - Deep understanding of `BorderPane`, `SplitPane`, `StackPane`, `VBox`, `HBox`.
+    - Custom sizing policies, layout constraints, and min/pref/max dimensions.
+* **Reactive UI**:
+    - `ObservableList`, `SimpleBooleanProperty`, `SimpleStringProperty`, and change listeners.
+* **Event Handling**:
+    - Mouse event phases (capturing vs. bubbling, `consume()`).
+    - Drag-and-drop mechanics (`DragEvent`, drag-boards, screen-to-local coordinate transformations).
+* **JavaFX CSS Styling**:
+    - How JavaFX CSS works (`-fx-*` properties, selectors, pseudo-classes like `:hover`, `:focused`).
+    - Modular CSS file structures (see `src/main/resources/css/`).
+
+### Phase 3: Swing / AWT & `SwingNode` Interoperability
+* **Dual Event Loops**:
+    - JavaFX has the **JavaFX Application Thread** (`Platform.runLater`).
+    - Swing/AWT has the **Event Dispatch Thread (EDT)** (`SwingUtilities.invokeLater`).
+    - Knowing which thread must execute code interacting with Swing widgets vs. JavaFX nodes is critical to avoid deadlocks.
+* **Event Filtering**:
+    - Intercepting and filtering keys on `SwingNode` to route terminal-specific keystrokes smoothly.
+
+### Phase 4: Terminal Emulation & System Processes (PTY)
+* **Terminal Protocol Basics**:
+    - How VT100 / ANSI escape sequences work (colors, cursor positioning, clear screen).
+    - TTY/PTY concept: pseudo-terminals providing a bidirectional bridge between a shell process and a graphical UI.
+* **JetBrains JediTerm**:
+    - Implementing `TtyConnector` for stream I/O (`PtyTtyConnector` and `SshTtyConnector`).
+    - Text filtering, regex highlighting pipelines, and custom font scaling.
+* **JetBrains Pty4J**:
+    - Spawning Windows (`cmd.exe`, `powershell.exe`, Git Bash, WSL) and Unix shells.
+    - Updating terminal window dimensions (`setPtyDataSize`) when the split pane is resized.
+
+### Phase 5: Remote Networking & SSH Protocols
+* **Apache MINA SSHD**:
+    - Creating SSH clients (`SshClient`), establishing sessions, and handling client authentication.
+    - Opening `ChannelShell`, setting environment variables (`TERM=xterm-256color`), and handling terminal signals.
+    - Keep-alive heartbeat mechanisms to prevent timeout disconnects.
+* **Public Key Cryptography**:
+    - OpenSSH keys, RSA, ECDSA, and modern Ed25519 host keys using BouncyCastle.
+
+### Phase 6: Native OS Integration (Optional / Advanced)
+* **Java Native Access (JNA)**:
+    - Invoking native C/Windows APIs from Java without writing C JNI glue code.
+    - Interacting with `dwmapi.dll` to achieve dark mode window title bars and borderless window snapping on Windows 10/11.
+
+---
+
+## 4. Key Features (Prioritized)
 
 This is the curated list of T-insider features, ranked by engineering complexity, user-facing importance, and architectural centrality:
 
@@ -69,7 +191,7 @@ This is the curated list of T-insider features, ranked by engineering complexity
 
 ---
 
-## ⚙️ How to Run
+## 5. How to Run
 
 This application is completely self-contained and cross-platform. It requires zero manual configuration or pre-setup!
 
@@ -88,7 +210,7 @@ This application is completely self-contained and cross-platform. It requires ze
 
 ---
 
-## 💻 Local Shell Requirements (Windows)
+## 6. Local Shell Requirements (Windows)
 
 For **Bash** to be detected and available as a local shell option on Windows, it must be installed in one of the following locations (otherwise, the application dynamically hides the option to prevent PTY creation failures):
 
