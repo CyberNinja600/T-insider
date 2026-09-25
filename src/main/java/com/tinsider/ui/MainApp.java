@@ -82,7 +82,6 @@ public class MainApp extends Application {
     private AppMode currentMode = AppMode.DASHBOARD;
     private boolean sidebarVisible = true;
     private boolean autoEnterSnippet = true;
-    private boolean fullScreen = true;
 
     // Observable data lists
     private final ObservableList<HostProfile> hosts = FXCollections.observableArrayList();
@@ -122,7 +121,7 @@ public class MainApp extends Application {
         loadApplicationResources(primaryStage);
 
         // 2. Load themes and settings
-        loadThemesAndSettings();
+        loadThemesAndSettings(primaryStage);
 
         // 3. Load persistent data
         hosts.addAll(StorageManager.loadHosts());
@@ -229,6 +228,7 @@ public class MainApp extends Application {
             this::toggleFullScreen
         );
         topToolBar.setShellSelectionVisible(false);
+        topToolBar.setFullScreenIcon(primaryStage.isFullScreen());
 
         // 8. Build Root Layout
         root = new BorderPane();
@@ -260,6 +260,16 @@ public class MainApp extends Application {
 
         // 11. Live reloader for theme files
         setupLiveReloader();
+
+        // 12. Fullscreen state synchronization (handles Esc key, toolbar button, and OS shortcuts)
+        primaryStage.fullScreenProperty().addListener((obs, wasFullScreen, isNowFullScreen) -> {
+            Map<String, String> innerSettings = StorageManager.loadSettings();
+            innerSettings.put("fullscreen", String.valueOf(isNowFullScreen));
+            StorageManager.saveSettings(innerSettings);
+            if (topToolBar != null) {
+                topToolBar.setFullScreenIcon(isNowFullScreen);
+            }
+        });
 
         primaryStage.show();
         applyTheme(currentTheme);
@@ -304,7 +314,7 @@ public class MainApp extends Application {
         }
     }
 
-    private void loadThemesAndSettings() {
+    private void loadThemesAndSettings(Stage stage) {
         availableThemes.add(DEFAULT_THEME);
         currentTheme = DEFAULT_THEME;
 
@@ -335,6 +345,9 @@ public class MainApp extends Application {
                 }
             }
         }
+
+        String fullScreen = settings.get("fullscreen");
+        stage.setFullScreen(Boolean.parseBoolean(fullScreen));
 
         for (TerminalTheme theme : availableThemes) {
             if (theme.getName().equalsIgnoreCase(savedThemeName)) {

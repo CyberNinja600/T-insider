@@ -139,14 +139,6 @@ public class TopToolBar extends HBox {
             if (onFullScreen != null) {
                 onFullScreen.run();
             }
-
-            Stage stage = (Stage) fullScreenBtn.getScene().getWindow();
-
-            if (stage.isFullScreen()) {
-                fullScreenBtn.setText("\uEB4D");
-            } else {
-                fullScreenBtn.setText("\uEB4C");
-            }
         });
 
         zoomLabel = new Label("Zoom:");
@@ -353,6 +345,12 @@ public class TopToolBar extends HBox {
         int percent = Math.round((fontSize / 13.0f) * 100);
         if (zoomResetBtn != null) {
             zoomResetBtn.setText(percent + "%");
+        }
+    }
+
+    public void setFullScreenIcon(boolean isFullScreen) {
+        if (fullScreenBtn != null) {
+            fullScreenBtn.setText(isFullScreen ? "\uEB4D" : "\uEB4C");
         }
     }
 }
