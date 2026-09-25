@@ -8,6 +8,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
+import javafx.stage.Stage;
 
 import java.util.function.Consumer;
 
@@ -79,8 +80,8 @@ public class TopToolBar extends HBox {
     private final Button terminalBtn;
     private final Label zoomLabel;
     private final HBox zoomControls;
-    private Button zoomResetBtn;
-    private final Button settingsBtn;
+    private final Button zoomResetBtn;
+    private final Button fullScreenBtn;
 
     public TopToolBar(
             String initialShell,
@@ -92,8 +93,10 @@ public class TopToolBar extends HBox {
             Runnable onToggleSidebar,
             Runnable onHome,
             Runnable onTerminal,
-            Runnable onSettings) {
-        
+            Runnable onSettings,
+            Runnable onFullScreen
+    ) {
+
         super(10);
         setPadding(new Insets(10));
         setAlignment(Pos.CENTER_LEFT);
@@ -120,16 +123,30 @@ public class TopToolBar extends HBox {
             }
         });
 
-        hosts.addListener((javafx.collections.ListChangeListener<HostProfile>) change -> {
-            rebuildItems(hosts, initialShell);
-        });
+        hosts.addListener((javafx.collections.ListChangeListener<HostProfile>) change -> rebuildItems(hosts, initialShell));
 
         // Create the settings button on far right
-        settingsBtn = new Button("\uEAF8");
+        Button settingsBtn = new Button("\uEAF8");
         settingsBtn.getStyleClass().add("settings-btn");
-
         settingsBtn.setOnAction(e -> {
             if (onSettings != null) onSettings.run();
+        });
+
+        fullScreenBtn = new Button("\uEB4C");
+        fullScreenBtn.getStyleClass().add("sidebar-toggle-btn");
+
+        fullScreenBtn.setOnAction(e -> {
+            if (onFullScreen != null) {
+                onFullScreen.run();
+            }
+
+            Stage stage = (Stage) fullScreenBtn.getScene().getWindow();
+
+            if (stage.isFullScreen()) {
+                fullScreenBtn.setText("\uEB4D");
+            } else {
+                fullScreenBtn.setText("\uEB4C");
+            }
         });
 
         zoomLabel = new Label("Zoom:");
@@ -192,7 +209,7 @@ public class TopToolBar extends HBox {
         javafx.scene.layout.Pane spacer = new javafx.scene.layout.Pane();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-        getChildren().addAll(selectLabel, shellOptions, spacer, toggleSidebarBtn, zoomLabel, zoomControls, terminalBtn, homeBtn,  settingsBtn);
+        getChildren().addAll(selectLabel, shellOptions, spacer, toggleSidebarBtn, zoomLabel, zoomControls, terminalBtn, homeBtn, settingsBtn, fullScreenBtn);
     }
 
     private void rebuildItems(ObservableList<HostProfile> hosts, String initialShell) {
@@ -265,9 +282,7 @@ public class TopToolBar extends HBox {
         }
 
         // 5. Check if WSL is available
-        if (new java.io.File("C:\\Windows\\System32\\bash.exe").exists()) return true;
-
-        return false;
+        return new java.io.File("C:\\Windows\\System32\\bash.exe").exists();
     }
 
     private void selectDefault(String initialShell) {
