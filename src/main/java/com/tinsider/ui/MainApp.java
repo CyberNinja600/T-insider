@@ -82,7 +82,6 @@ public class MainApp extends Application {
     private AppMode currentMode = AppMode.DASHBOARD;
     private boolean sidebarVisible = true;
     private boolean autoEnterSnippet = true;
-    private boolean fullScreen = true;
 
     // Observable data lists
     private final ObservableList<HostProfile> hosts = FXCollections.observableArrayList();
@@ -229,6 +228,7 @@ public class MainApp extends Application {
             this::toggleFullScreen
         );
         topToolBar.setShellSelectionVisible(false);
+        topToolBar.setFullScreenIcon(primaryStage.isFullScreen());
 
         // 8. Build Root Layout
         root = new BorderPane();
@@ -261,6 +261,16 @@ public class MainApp extends Application {
         // 11. Live reloader for theme files
         setupLiveReloader();
 
+        // 12. Fullscreen state synchronization (handles Esc key, toolbar button, and OS shortcuts)
+        primaryStage.fullScreenProperty().addListener((obs, wasFullScreen, isNowFullScreen) -> {
+            Map<String, String> innerSettings = StorageManager.loadSettings();
+            innerSettings.put("fullscreen", String.valueOf(isNowFullScreen));
+            StorageManager.saveSettings(innerSettings);
+            if (topToolBar != null) {
+                topToolBar.setFullScreenIcon(isNowFullScreen);
+            }
+        });
+
         primaryStage.show();
         applyTheme(currentTheme);
 
@@ -277,10 +287,6 @@ public class MainApp extends Application {
     private void toggleFullScreen() {
         Stage stage = (Stage) topToolBar.getScene().getWindow();
         stage.setFullScreen(!stage.isFullScreen());
-        System.out.println(stage.isFullScreen());
-        Map<String, String> innerSettings = StorageManager.loadSettings();
-        innerSettings.put("fullscreen", String.valueOf(stage.isFullScreen()));
-        StorageManager.saveSettings(innerSettings);
     }
 
     private void loadApplicationResources(Stage primaryStage) {
