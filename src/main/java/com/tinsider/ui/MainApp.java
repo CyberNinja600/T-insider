@@ -82,6 +82,7 @@ public class MainApp extends Application {
     private AppMode currentMode = AppMode.DASHBOARD;
     private boolean sidebarVisible = true;
     private boolean autoEnterSnippet = true;
+    private boolean fullScreen = true;
 
     // Observable data lists
     private final ObservableList<HostProfile> hosts = FXCollections.observableArrayList();
@@ -224,7 +225,8 @@ public class MainApp extends Application {
             this::toggleSidebar,
             () -> switchMode(AppMode.DASHBOARD),
             () -> switchMode(AppMode.TERMINAL),
-            this::showSettingsDialog
+            this::showSettingsDialog,
+            this::toggleFullScreen
         );
         topToolBar.setShellSelectionVisible(false);
 
@@ -244,7 +246,7 @@ public class MainApp extends Application {
         });
 
         // 9. Scene & Accelerators
-        Scene scene = new Scene(root, 1000, 700);
+        Scene scene = new Scene(root, 1280, 720);
         String styleCss = getClass().getResource("/style.css") != null ? getClass().getResource("/style.css").toExternalForm() : "";
         if (!styleCss.isEmpty()) {
             scene.getStylesheets().add(styleCss);
@@ -270,6 +272,11 @@ public class MainApp extends Application {
             Platform.exit();
             System.exit(0);
         });
+    }
+
+    private void toggleFullScreen() {
+        Stage stage = (Stage) topToolBar.getScene().getWindow();
+        stage.setFullScreen(!stage.isFullScreen());
     }
 
     private void loadApplicationResources(Stage primaryStage) {
