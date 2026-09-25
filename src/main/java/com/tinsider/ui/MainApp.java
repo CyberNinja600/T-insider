@@ -122,7 +122,7 @@ public class MainApp extends Application {
         loadApplicationResources(primaryStage);
 
         // 2. Load themes and settings
-        loadThemesAndSettings();
+        loadThemesAndSettings(primaryStage);
 
         // 3. Load persistent data
         hosts.addAll(StorageManager.loadHosts());
@@ -277,6 +277,10 @@ public class MainApp extends Application {
     private void toggleFullScreen() {
         Stage stage = (Stage) topToolBar.getScene().getWindow();
         stage.setFullScreen(!stage.isFullScreen());
+        System.out.println(stage.isFullScreen());
+        Map<String, String> innerSettings = StorageManager.loadSettings();
+        innerSettings.put("fullscreen", String.valueOf(stage.isFullScreen()));
+        StorageManager.saveSettings(innerSettings);
     }
 
     private void loadApplicationResources(Stage primaryStage) {
@@ -304,7 +308,7 @@ public class MainApp extends Application {
         }
     }
 
-    private void loadThemesAndSettings() {
+    private void loadThemesAndSettings(Stage stage) {
         availableThemes.add(DEFAULT_THEME);
         currentTheme = DEFAULT_THEME;
 
@@ -335,6 +339,9 @@ public class MainApp extends Application {
                 }
             }
         }
+
+        String fullScreen = settings.get("fullscreen");
+        stage.setFullScreen(Boolean.parseBoolean(fullScreen));
 
         for (TerminalTheme theme : availableThemes) {
             if (theme.getName().equalsIgnoreCase(savedThemeName)) {
