@@ -165,11 +165,14 @@ public class HighlightsDashboardView extends VBox {
         });
 
         deleteHighlightPackageBtn.setOnAction(e -> {
-            if (highlightPackages.isEmpty()) {
-                AlertHelper.showErrorAlert("No Packages", "There are no packages to delete.");
+            List<HighlightPackage> deletablePackages = highlightPackages.stream().filter(pkg -> pkg.getName() == null || !pkg.getName().equalsIgnoreCase("default")).toList();
+
+            if (deletablePackages.isEmpty()) {
+                AlertHelper.showErrorAlert("No Packages", "There are no packages available to delete.");
                 return;
             }
-            ChoiceDialog<HighlightPackage> dialog = new ChoiceDialog<>(highlightPackages.get(0), highlightPackages);
+
+            ChoiceDialog<HighlightPackage> dialog = new ChoiceDialog<>(deletablePackages.getFirst(), deletablePackages);
             dialog.setTitle("Delete Highlight Package");
             dialog.setContentText("Package:");
             AlertHelper.themeDialog(dialog);
