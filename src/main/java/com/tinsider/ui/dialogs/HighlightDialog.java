@@ -3,7 +3,6 @@ package com.tinsider.ui.dialogs;
 import com.tinsider.model.WordHighlight;
 import com.tinsider.model.HighlightPackage;
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
@@ -80,6 +79,10 @@ public class HighlightDialog extends Dialog<WordHighlight> {
             AlertHelper.themeDialog(inputDlg);
             Optional<String> result = inputDlg.showAndWait();
             result.ifPresent(name -> {
+                if (name.length() > 12) {
+                    AlertHelper.showErrorAlert("Package name too long", "Package name cannot be more than 12 letters.");
+                    return;
+                }
                 String trimmedName = name.trim();
                 if (!trimmedName.isEmpty()) {
                     boolean duplicate = false;
@@ -95,13 +98,12 @@ public class HighlightDialog extends Dialog<WordHighlight> {
                         AlertHelper.showErrorAlert("Duplicate Package", "A highlight package with this name already exists.");
                         return;
                     }
+
                     HighlightPackage newPkg = new HighlightPackage(trimmedName);
-                    if (packages instanceof ObservableList) {
-                        ((ObservableList<HighlightPackage>) packages).add(newPkg);
-                    } else if (packages != null) {
+                    if (packages != null) {
                         packages.add(newPkg);
+                        com.tinsider.storage.StorageManager.saveHighlightPackages(new java.util.ArrayList<>(packages));
                     }
-                    com.tinsider.storage.StorageManager.saveHighlightPackages(new java.util.ArrayList<>(packages));
                     packageCombo.getItems().add(newPkg);
                     packageCombo.setValue(newPkg);
                 }
