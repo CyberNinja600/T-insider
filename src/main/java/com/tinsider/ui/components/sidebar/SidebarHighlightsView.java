@@ -9,6 +9,7 @@ import com.tinsider.ui.components.terminal.split.TerminalSplitPane;
 import com.tinsider.ui.theme.ThemeApplicator;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -220,7 +221,7 @@ public class SidebarHighlightsView extends VBox {
             standaloneIcon.getStyleClass().add("package-folder-icon");
             standaloneIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px;");
 
-            Label titleLabel = new Label("Standalone Highlights");
+            Label titleLabel = new Label("Highlights");
             titleLabel.getStyleClass().add("package-title-label");
             titleLabel.setStyle("-fx-font-weight: bold;");
             titleLabel.setMinWidth(0);
@@ -231,8 +232,8 @@ public class SidebarHighlightsView extends VBox {
             pkgEyeIcon.getStyleClass().addAll("package-eye-icon", pkgAnyActive ? "active" : "inactive");
             pkgEyeIcon.setTooltip(new Tooltip(pkgAnyActive ? "Deactivate Standalone" : "Activate Standalone"));
 
-            pkgEyeIcon.setOnMousePressed(ev -> ev.consume());
-            pkgEyeIcon.setOnMouseReleased(ev -> ev.consume());
+            pkgEyeIcon.setOnMousePressed(Event::consume);
+            pkgEyeIcon.setOnMouseReleased(Event::consume);
             pkgEyeIcon.setOnMouseClicked(ev -> {
                 ev.consume();
                 boolean nextState = !pkgAnyActive;
@@ -292,6 +293,9 @@ public class SidebarHighlightsView extends VBox {
 
         Label eyeIcon = new Label(active ? "\uEB79" : "\uEB7A");
         eyeIcon.getStyleClass().add("toggle-icon");
+        eyeIcon.setMinWidth(14);
+        eyeIcon.setPrefWidth(14);
+        eyeIcon.setMaxWidth(14);
 
         Button caseIcon = new Button("\uEAB1");
         caseIcon.getStyleClass().add("snippet-hover-btn");

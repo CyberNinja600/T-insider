@@ -131,18 +131,24 @@ public class HighlightsDashboardView extends VBox {
 
         addHighlightPackageBtn.setOnAction(e -> {
             TextInputDialog dialog = new TextInputDialog();
-            dialog.setTitle("Add Highlight Package");
+            dialog.setTitle("New Highlight Package");
             dialog.setContentText("Package Name:");
             AlertHelper.themeDialog(dialog);
             Optional<String> result = dialog.showAndWait();
             result.ifPresent(name -> {
+                if (name.length() > 12) {
+                    AlertHelper.showErrorAlert("Package name too long", "Package name cannot be more than 12 letters.");
+                    return;
+                }
                 String trimmedName = name.trim();
                 if (!trimmedName.isEmpty()) {
                     boolean duplicate = false;
-                    for (HighlightPackage pkg : highlightPackages) {
-                        if (pkg.getName() != null && pkg.getName().trim().equalsIgnoreCase(trimmedName)) {
-                            duplicate = true;
-                            break;
+                    if (highlightPackages != null) {
+                        for (HighlightPackage pkg : highlightPackages) {
+                            if (pkg.getName() != null && pkg.getName().trim().equalsIgnoreCase(trimmedName)) {
+                                duplicate = true;
+                                break;
+                            }
                         }
                     }
                     if (duplicate) {
@@ -150,8 +156,10 @@ public class HighlightsDashboardView extends VBox {
                         return;
                     }
                     HighlightPackage pkg = new HighlightPackage(trimmedName);
-                    highlightPackages.add(pkg);
-                    StorageManager.saveHighlightPackages(new ArrayList<>(highlightPackages));
+                    if (highlightPackages != null) {
+                        highlightPackages.add(pkg);
+                        StorageManager.saveHighlightPackages(new ArrayList<>(highlightPackages));
+                    }
                 }
             });
         });
@@ -167,17 +175,15 @@ public class HighlightsDashboardView extends VBox {
             AlertHelper.themeDialog(dialog);
             Optional<HighlightPackage> result = dialog.showAndWait();
             result.ifPresent(pkg -> {
-                if (pkg != null) {
-                    highlightPackages.remove(pkg);
-                    for (WordHighlight wh : highlights) {
-                        if (pkg.getId().equals(wh.getPackageId())) {
-                            wh.setPackageId(null);
-                        }
+                highlightPackages.remove(pkg);
+                for (WordHighlight wh : highlights) {
+                    if (pkg.getId().equals(wh.getPackageId())) {
+                        wh.setPackageId(null);
                     }
-                    StorageManager.saveHighlights(new ArrayList<>(highlights));
-                    StorageManager.saveHighlightPackages(new ArrayList<>(highlightPackages));
-                    notifyHighlightsChanged();
                 }
+                StorageManager.saveHighlights(new ArrayList<>(highlights));
+                StorageManager.saveHighlightPackages(new ArrayList<>(highlightPackages));
+                notifyHighlightsChanged();
             });
         });
 
