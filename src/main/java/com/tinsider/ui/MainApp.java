@@ -511,8 +511,7 @@ public class MainApp extends Application {
     private void setupLiveReloader() {
         Runnable themeReloader = () -> {
             Platform.runLater(() -> {
-                System.out.println("[LiveReloader] Theme or config files changed! Reloading UI colors and styles...");
-                ThemeManager.reloadConfig();
+                System.out.println("[LiveReloader] Theme files changed! Reloading UI colors and styles...");
                 String currentThemeName = currentTheme != null ? currentTheme.getName() : "";
                 TerminalTheme newTheme = null;
                 File watchDir = new File("./themes");

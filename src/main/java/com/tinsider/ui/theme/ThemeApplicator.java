@@ -2,7 +2,6 @@ package com.tinsider.ui.theme;
 
 import com.jediterm.terminal.ui.JediTermWidget;
 import com.tinsider.config.TerminalTheme;
-import com.tinsider.config.ThemeManager;
 import com.tinsider.storage.StorageManager;
 import com.tinsider.ui.components.terminal.split.TerminalSplitPane;
 import javafx.application.Platform;
@@ -287,7 +286,7 @@ public final class ThemeApplicator {
         if (gradientsEnabled) {
             com.jediterm.core.Color winBgStart = theme.getColor("app.window.background.gradient.start", winBg);
             com.jediterm.core.Color winBgEnd = theme.getColor("app.window.background.gradient.end", theme.getBackgroundColor());
-            String winBgRatio = ThemeManager.getProperty("app.window.background.gradient.ratio", "0% 100%");
+            String winBgRatio = "10% 90%";
             hexWinBg = getGradientStyle(winBgStart, appWinBgOpacity, winBgEnd, appWinBgOpacity, "to bottom", winBgRatio);
         } else {
             hexWinBg = toRgba(winBg, appWinBgOpacity);
@@ -303,7 +302,7 @@ public final class ThemeApplicator {
         if (gradientsEnabled) {
             com.jediterm.core.Color sideBgStart = theme.getColor("sidebar.background.gradient.start", sideBg);
             com.jediterm.core.Color sideBgEnd = theme.getColor("sidebar.background.gradient.end", theme.getBackgroundColor());
-            String sideBgRatio = ThemeManager.getProperty("sidebar.background.gradient.ratio", "0% 100%");
+            String sideBgRatio = "20% 80%";
             hexSideBg = getGradientStyle(sideBgStart, sidebarBgOpacity, sideBgEnd, sidebarBgOpacity, "to bottom", sideBgRatio);
         } else {
             hexSideBg = toRgba(sideBg, sidebarBgOpacity);
@@ -334,20 +333,22 @@ public final class ThemeApplicator {
         String hexCardsItemSub = toHex(cardsItemSub);
         String hexSnippetLauncherLabelColor = toHex(snippetLauncherLabelColor);
 
-        // Parse customizable opacities
-        double itemBgOpacity = 1.0;
-        double itemHoverBgOpacity = 1.0;
+        // Standard UI Opacities
+        double itemBgOpacity = 0.5;
+        double itemHoverBgOpacity = 0.15;
         double itemSelectedBgOpacity = 1.0;
         double itemBorderOpacity = 1.0;
         double itemHoverBorderOpacity = 1.0;
         double itemSelectedBorderOpacity = 1.0;
         double cardsBadgeOpacity = 0.15;
-        double cardsBadgeHoverOpacity = 0.15;
-        double cardsBadgeSelectedOpacity = 0.15;
-        double sideNavSelectedBgOpacity = 1.0;
+        double cardsBadgeHoverOpacity = 1.0;
+        double cardsBadgeSelectedOpacity = 1.0;
+        double sideNavSelectedBgOpacity = 0.15;
         double pkgBgOpacity = 0.3;
         double pkgBorderOpacity = 1.0;
-        double sidebarPkgContentBgOpacity = 1.0;
+        double sidebarPkgContentBgOpacity = 0.15;
+        double pkgBgActiveOpacity = 0.15;
+        double pkgBgInactiveOpacity = 0.30;
         double scrollThumbOpacity = 0.3;
         double scrollThumbHoverOpacity = 0.6;
         double dropScrollThumbOpacity = 0.4;
@@ -355,37 +356,37 @@ public final class ThemeApplicator {
         double dialogBgOpacity = 1.0;
         double dialogBorderOpacity = 1.0;
         double dialogHeaderBgOpacity = 0.5;
-        double searchBarBgOpacity = 1.0;
-        double zoomBgOpacity = 1.0;
-        double zoomBorderOpacity = 1.0;
+        double searchBarBgOpacity = 0.5;
+        double zoomBgOpacity = 0.50;
+        double zoomBorderOpacity = 0.50;
         double zoomHoverBgOpacity = 1.0;
         double zoomHoverBorderOpacity = 1.0;
-        double zoomActiveBgOpacity = 1.0;
-        double zoomActiveBorderOpacity = 1.0;
+        double zoomActiveBgOpacity = 0.50;
+        double zoomActiveBorderOpacity = 0.50;
 
-        double toggleBgOpacity = 1.0;
-        double toggleBorderOpacity = 1.0;
+        double toggleBgOpacity = 0.50;
+        double toggleBorderOpacity = 0.10;
         double toggleHoverBgOpacity = 1.0;
         double toggleHoverBorderOpacity = 1.0;
-        double toggleActiveBgOpacity = 1.0;
-        double toggleActiveBorderOpacity = 1.0;
+        double toggleActiveBgOpacity = 0.50;
+        double toggleActiveBorderOpacity = 0.50;
 
-        double homeBgOpacity = 1.0;
-        double homeBorderOpacity = 1.0;
+        double homeBgOpacity = 0.50;
+        double homeBorderOpacity = 0.10;
         double homeHoverBgOpacity = 1.0;
         double homeHoverBorderOpacity = 1.0;
-        double homeActiveBgOpacity = 1.0;
-        double homeActiveBorderOpacity = 1.0;
+        double homeActiveBgOpacity = 0.50;
+        double homeActiveBorderOpacity = 0.50;
 
-        double settingsBgOpacity = 1.0;
-        double settingsBorderOpacity = 1.0;
+        double settingsBgOpacity = 0.50;
+        double settingsBorderOpacity = 0.10;
         double settingsHoverBgOpacity = 1.0;
         double settingsHoverBorderOpacity = 1.0;
-        double settingsActiveBgOpacity = 1.0;
-        double settingsActiveBorderOpacity = 1.0;
+        double settingsActiveBgOpacity = 0.50;
+        double settingsActiveBorderOpacity = 0.50;
 
         double snippetHoverBtnBgOpacity = 1.0;
-        double snippetHoverBtnBorderOpacity = 1.0;
+        double snippetHoverBtnBorderOpacity = 0.30;
         double snippetHoverBtnHoverBgOpacity = 1.0;
         double snippetHoverBtnHoverBorderOpacity = 1.0;
 
@@ -394,93 +395,12 @@ public final class ThemeApplicator {
         double btnHoverBgOpacity = 1.0;
         double btnHoverBorderOpacity = 1.0;
 
-        double hlSideBgOpacity = 1.0;
-        double hlSideBorderOpacity = 1.0;
-        double hlSideHoverBgOpacity = 1.0;
+        double hlSideBgOpacity = 0.50;
+        double hlSideBorderOpacity = 0.50;
+        double hlSideHoverBgOpacity = 0.15;
         double hlSideHoverBorderOpacity = 1.0;
-        double hlSideActiveBgOpacity = 1.0;
-        double hlSideActiveBorderOpacity = 1.0;
-        double pkgBgActiveOpacity = 0.15;
-        double pkgBgInactiveOpacity = 0.30;
-
-        try {
-            itemBgOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.background.opacity", "1.0"));
-            itemHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.hover.background.opacity", "1.0"));
-            itemSelectedBgOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.selected.background.opacity", "1.0"));
-            itemBorderOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.border.opacity", "1.0"));
-            itemHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.hover.border.opacity", "1.0"));
-            itemSelectedBorderOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.selected.border.opacity", "1.0"));
-            cardsBadgeOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.badge.opacity", "0.15"));
-            cardsBadgeHoverOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.badge.hover.opacity", "0.15"));
-            cardsBadgeSelectedOpacity = Double.parseDouble(ThemeManager.getProperty("cards.item.badge.selected.opacity", "0.15"));
-            sideNavSelectedBgOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.nav.selected.background.opacity", "1.0"));
-            pkgBgOpacity = Double.parseDouble(ThemeManager.getProperty("dashboard.package.background.opacity", "0.3"));
-            pkgBorderOpacity = Double.parseDouble(ThemeManager.getProperty("dashboard.package.border.opacity", "1.0"));
-            sidebarPkgContentBgOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.package.content.background.opacity", "1.0"));
-            pkgBgActiveOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.package.background.active.opacity", "0.15"));
-            pkgBgInactiveOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.package.background.inactive.opacity", "0.30"));
-            scrollThumbOpacity = Double.parseDouble(ThemeManager.getProperty("scrollbar.thumb.opacity", "0.3"));
-            scrollThumbHoverOpacity = Double.parseDouble(ThemeManager.getProperty("scrollbar.thumb.hover.opacity", "0.6"));
-            dropScrollThumbOpacity = Double.parseDouble(ThemeManager.getProperty("dropdown.scrollbar.thumb.opacity", "0.4"));
-            dropScrollThumbHoverOpacity = Double.parseDouble(ThemeManager.getProperty("dropdown.scrollbar.thumb.hover.opacity", "0.7"));
-            dialogBgOpacity = Double.parseDouble(ThemeManager.getProperty("dialog.background.opacity", "1.0"));
-            dialogBorderOpacity = Double.parseDouble(ThemeManager.getProperty("dialog.border.opacity", "1.0"));
-            dialogHeaderBgOpacity = Double.parseDouble(ThemeManager.getProperty("dialog.header.background.opacity", "0.5"));
-            searchBarBgOpacity = Double.parseDouble(ThemeManager.getProperty("search.bar.background.opacity", "1.0"));
-            zoomBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.background.opacity", "1.0"));
-            zoomBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.border.opacity", "1.0"));
-            zoomHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.hover.background.opacity", "1.0"));
-            zoomHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.hover.border.opacity", "1.0"));
-            zoomActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.active.background.opacity", "1.0"));
-            zoomActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.zoom.active.border.opacity", "1.0"));
-
-            toggleBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.background.opacity", "1.0"));
-            toggleBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.border.opacity", "1.0"));
-            toggleHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.hover.background.opacity", "1.0"));
-            toggleHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.hover.border.opacity", "1.0"));
-            toggleActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.active.background.opacity", "1.0"));
-            toggleActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.sidebar.toggle.active.border.opacity", "1.0"));
-
-            homeBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.background.opacity", "1.0"));
-            homeBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.border.opacity", "1.0"));
-            homeHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.hover.background.opacity", "1.0"));
-            homeHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.hover.border.opacity", "1.0"));
-            homeActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.active.background.opacity", "1.0"));
-            homeActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.home.active.border.opacity", "1.0"));
-
-            settingsBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.background.opacity", "1.0"));
-            settingsBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.border.opacity", "1.0"));
-            settingsHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.hover.background.opacity", "1.0"));
-            settingsHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.hover.border.opacity", "1.0"));
-            settingsActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.active.background.opacity", "1.0"));
-            settingsActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.settings.active.border.opacity", "1.0"));
-
-            snippetHoverBtnBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.snippet.hover.btn.background.opacity", "1.0"));
-            snippetHoverBtnBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.snippet.hover.btn.border.opacity", "0.3"));
-            snippetHoverBtnHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.snippet.hover.btn.hover.background.opacity", "1.0"));
-            snippetHoverBtnHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.snippet.hover.btn.hover.border.opacity", "1.0"));
-
-            btnBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.button.background.opacity", "1.0"));
-            btnBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.button.border.opacity", "1.0"));
-            btnHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("controls.button.hover.background.opacity", "1.0"));
-            btnHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("controls.button.hover.border.opacity", "1.0"));
-
-            appWinBgOpacity = Double.parseDouble(ThemeManager.getProperty("app.window.background.opacity", "1.0"));
-            appWinBorderOpacity = Double.parseDouble(ThemeManager.getProperty("app.window.border.opacity", "1.0"));
-            titleBgOpacity = Double.parseDouble(ThemeManager.getProperty("titlebar.background.opacity", "1.0"));
-            titleBorderOpacity = Double.parseDouble(ThemeManager.getProperty("titlebar.border.opacity", "1.0"));
-            toolbarBgOpacity = Double.parseDouble(ThemeManager.getProperty("toolbar.background.opacity", "1.0"));
-            toolbarBorderOpacity = Double.parseDouble(ThemeManager.getProperty("toolbar.border.opacity", "1.0"));
-            sidebarBgOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.background.opacity", "1.0"));
-            sidebarBorderOpacity = Double.parseDouble(ThemeManager.getProperty("sidebar.border.opacity", "1.0"));
-
-            hlSideBgOpacity = Double.parseDouble(ThemeManager.getProperty("highlights.sidebar.toggle.background.opacity", "1.0"));
-            hlSideBorderOpacity = Double.parseDouble(ThemeManager.getProperty("highlights.sidebar.toggle.border.opacity", "1.0"));
-            hlSideHoverBgOpacity = Double.parseDouble(ThemeManager.getProperty("highlights.sidebar.toggle.hover.background.opacity", "1.0"));
-            hlSideHoverBorderOpacity = Double.parseDouble(ThemeManager.getProperty("highlights.sidebar.toggle.hover.border.opacity", "1.0"));
-            hlSideActiveBgOpacity = Double.parseDouble(ThemeManager.getProperty("highlights.sidebar.toggle.active.background.opacity", "1.0"));
-            hlSideActiveBorderOpacity = Double.parseDouble(ThemeManager.getProperty("highlights.sidebar.toggle.active.border.opacity", "1.0"));
-        } catch (Exception ignored) {}
+        double hlSideActiveBgOpacity = 0.25;
+        double hlSideActiveBorderOpacity = 0.75;
 
         String rgbaZoomBg = toRgba(zoomBg, zoomBgOpacity);
         String rgbaZoomBorder = toRgba(zoomBorder, zoomBorderOpacity);
@@ -559,7 +479,7 @@ public final class ThemeApplicator {
         if (gradientsEnabled) {
             com.jediterm.core.Color dialogBgStart = theme.getColor("dialog.background.gradient.start", dialogBg);
             com.jediterm.core.Color dialogBgEnd = theme.getColor("dialog.background.gradient.end", theme.getBackgroundColor());
-            String dialogBgRatio = ThemeManager.getProperty("dialog.background.gradient.ratio", "0% 100%");
+            String dialogBgRatio = "100% 0%";
             rgbaDialogBg = getGradientStyle(dialogBgStart, dialogBgOpacity, dialogBgEnd, dialogBgOpacity, "to bottom", dialogBgRatio);
         } else {
             rgbaDialogBg = toRgba(dialogBg, dialogBgOpacity);

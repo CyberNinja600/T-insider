@@ -19,15 +19,10 @@ public class TerminalTheme {
     public TerminalTheme(String name, Color bg, Color text, Color cursor, Color selection) {
         this(name);
         
-        // 1. Populate standard hardcoded keys matching theme.config.properties
+        // 1. Populate standard hardcoded UI theme keys
         populateDefaultColors(bg, text, cursor, selection);
 
-        // 2. Dynamically synchronize with ThemeManager if config is loaded
-        try {
-            ThemeManager.populateThemeColors(this, bg, text, cursor, selection);
-        } catch (Throwable ignored) {}
-
-        // 3. Ensure core terminal keys are explicitly set
+        // 2. Ensure core terminal keys are explicitly set
         colors.put("terminal.background", bg);
         colors.put("terminal.foreground", text);
         colors.put("terminal.cursor", cursor);
