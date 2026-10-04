@@ -24,6 +24,8 @@ import com.tinsider.ui.dashboard.HighlightsDashboardView;
 import com.tinsider.ui.dashboard.HostsDashboardView;
 import com.tinsider.ui.dashboard.SessionsDashboardView;
 import com.tinsider.ui.dashboard.SnippetsDashboardView;
+import com.tinsider.ui.dialogs.AlertHelper;
+import com.tinsider.ui.dialogs.ModalOverlayManager;
 import com.tinsider.ui.dialogs.SettingsDialog;
 import com.tinsider.ui.session.TerminalSessionManager;
 import com.tinsider.ui.theme.DwmUtil;
@@ -42,6 +44,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
@@ -246,7 +249,15 @@ public class MainApp extends Application {
         });
 
         // 9. Scene & Accelerators
-        Scene scene = new Scene(root, 1280, 720);
+        StackPane appRoot = new StackPane();
+        StackPane modalOverlay = new StackPane();
+        modalOverlay.setPickOnBounds(true);
+        modalOverlay.setVisible(false);
+        appRoot.getChildren().addAll(root, modalOverlay);
+
+        ModalOverlayManager.init(modalOverlay, root);
+
+        Scene scene = new Scene(appRoot, 1280, 720);
         String styleCss = getClass().getResource("/style.css") != null ? getClass().getResource("/style.css").toExternalForm() : "";
         if (!styleCss.isEmpty()) {
             scene.getStylesheets().add(styleCss);
@@ -478,7 +489,7 @@ public class MainApp extends Application {
                 applyTheme(currentTheme);
             }
         );
-        dialog.showAndWait();
+        AlertHelper.showModal(dialog);
     }
 
     private void registerZoomAccelerators(Scene scene) {

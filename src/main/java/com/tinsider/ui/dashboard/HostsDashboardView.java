@@ -2,6 +2,7 @@ package com.tinsider.ui.dashboard;
 
 import com.tinsider.model.HostProfile;
 import com.tinsider.storage.StorageManager;
+import com.tinsider.ui.dialogs.AlertHelper;
 import com.tinsider.ui.dialogs.HostDialog;
 import com.tinsider.util.ActivityLogger;
 import javafx.beans.property.ObjectProperty;
@@ -175,7 +176,7 @@ public class HostsDashboardView extends VBox {
 
     private void showAddHostDialog(HostProfile existing) {
         HostDialog dialog = new HostDialog(existing);
-        Optional<HostProfile> result = dialog.showAndWait();
+        Optional<HostProfile> result = AlertHelper.showModal(dialog);
         result.ifPresent(profile -> {
             if (existing != null) {
                 ActivityLogger.logUserAction("EDIT_HOST", "User edited host profile: " + profile.getName() + " (" + profile.getIp() + ")");

@@ -4,6 +4,7 @@ import com.jediterm.terminal.ui.JediTermWidget;
 import com.tinsider.config.TerminalTheme;
 import com.tinsider.storage.StorageManager;
 import com.tinsider.ui.components.terminal.split.TerminalSplitPane;
+import com.tinsider.ui.dialogs.ModalOverlayManager;
 import javafx.application.Platform;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -776,6 +777,9 @@ public final class ThemeApplicator {
                     scene.getStylesheets().add(styleCssUri);
                 }
                 scene.getStylesheets().add(dynamicCssUri);
+
+                // Update all active embedded in-scene modals so that they get themed instantly without closing
+                ModalOverlayManager.applyThemeToActiveModals(styleCssUri, dynamicCssUri);
 
                 // Update all active dialogs/stages so that they get themed instantly without closing
                 for (Window window : Window.getWindows()) {

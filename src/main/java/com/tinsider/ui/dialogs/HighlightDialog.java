@@ -76,8 +76,7 @@ public class HighlightDialog extends Dialog<WordHighlight> {
             TextInputDialog inputDlg = new TextInputDialog();
             inputDlg.setTitle("New Highlight Package");
             inputDlg.setContentText("Package Name:");
-            AlertHelper.themeDialog(inputDlg);
-            Optional<String> result = inputDlg.showAndWait();
+            Optional<String> result = AlertHelper.showModal(inputDlg);
             result.ifPresent(name -> {
                 if (name.length() > 12) {
                     AlertHelper.showErrorAlert("Package name too long", "Package name cannot be more than 12 letters.");
