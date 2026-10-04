@@ -133,8 +133,7 @@ public class HighlightsDashboardView extends VBox {
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("New Highlight Package");
             dialog.setContentText("Package Name:");
-            AlertHelper.themeDialog(dialog);
-            Optional<String> result = dialog.showAndWait();
+            Optional<String> result = AlertHelper.showModal(dialog);
             result.ifPresent(name -> {
                 if (name.length() > 12) {
                     AlertHelper.showErrorAlert("Package name too long", "Package name cannot be more than 12 letters.");
@@ -175,8 +174,7 @@ public class HighlightsDashboardView extends VBox {
             ChoiceDialog<HighlightPackage> dialog = new ChoiceDialog<>(deletablePackages.getFirst(), deletablePackages);
             dialog.setTitle("Delete Highlight Package");
             dialog.setContentText("Package:");
-            AlertHelper.themeDialog(dialog);
-            Optional<HighlightPackage> result = dialog.showAndWait();
+            Optional<HighlightPackage> result = AlertHelper.showModal(dialog);
             result.ifPresent(pkg -> {
                 highlightPackages.remove(pkg);
                 for (WordHighlight wh : highlights) {
@@ -359,7 +357,7 @@ public class HighlightsDashboardView extends VBox {
 
     private void showAddHighlightDialog(WordHighlight existing) {
         HighlightDialog dialog = new HighlightDialog(existing, highlightPackages);
-        Optional<WordHighlight> result = dialog.showAndWait();
+        Optional<WordHighlight> result = AlertHelper.showModal(dialog);
         result.ifPresent(wh -> {
             if (existing != null) {
                 ActivityLogger.logUserAction("EDIT_HIGHLIGHT", "User edited highlight: " + wh.getWord());

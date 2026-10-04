@@ -74,13 +74,12 @@ public class SnippetDialog extends Dialog<Snippet> {
             TextInputDialog inputDlg = new TextInputDialog();
             inputDlg.setTitle("New Package");
             inputDlg.setContentText("Package Name:");
-            AlertHelper.themeDialog(inputDlg);
-            Optional<String> result = inputDlg.showAndWait();
+            Optional<String> result = AlertHelper.showModal(inputDlg);
             result.ifPresent(name -> {
                 if (!name.trim().isEmpty()) {
                     SnippetPackage newPkg = new SnippetPackage(name.trim());
                     if (packages instanceof ObservableList) {
-                        ((ObservableList<SnippetPackage>) packages).add(newPkg);
+                        packages.add(newPkg);
                     } else if (packages != null) {
                         packages.add(newPkg);
                     }

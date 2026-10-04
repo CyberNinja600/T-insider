@@ -116,8 +116,7 @@ public class SnippetsDashboardView extends VBox {
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Add Package");
             dialog.setContentText("Package Name:");
-            AlertHelper.themeDialog(dialog);
-            Optional<String> result = dialog.showAndWait();
+            Optional<String> result = AlertHelper.showModal(dialog);
             result.ifPresent(name -> {
                 if (!name.trim().isEmpty()) {
                     SnippetPackage pkg = new SnippetPackage(name.trim());
@@ -136,20 +135,17 @@ public class SnippetsDashboardView extends VBox {
             ChoiceDialog<SnippetPackage> dialog = new ChoiceDialog<>(packages.get(0), packages);
             dialog.setTitle("Delete Package");
             dialog.setContentText("Package:");
-            AlertHelper.themeDialog(dialog);
-            Optional<SnippetPackage> result = dialog.showAndWait();
+            Optional<SnippetPackage> result = AlertHelper.showModal(dialog);
             result.ifPresent(pkg -> {
-                if (pkg != null) {
-                    packages.remove(pkg);
-                    for (Snippet s : snippets) {
-                        if (pkg.getId().equals(s.getPackageId())) {
-                            s.setPackageId(null);
-                        }
+                packages.remove(pkg);
+                for (Snippet s : snippets) {
+                    if (pkg.getId().equals(s.getPackageId())) {
+                        s.setPackageId(null);
                     }
-                    StorageManager.saveSnippets(new ArrayList<>(snippets));
-                    StorageManager.savePackages(new ArrayList<>(packages));
-                    rebuild();
                 }
+                StorageManager.saveSnippets(new ArrayList<>(snippets));
+                StorageManager.savePackages(new ArrayList<>(packages));
+                rebuild();
             });
         });
 
@@ -315,7 +311,7 @@ public class SnippetsDashboardView extends VBox {
 
     public void showAddSnippetDialog(Snippet existing) {
         SnippetDialog dialog = new SnippetDialog(existing, packages);
-        Optional<Snippet> result = dialog.showAndWait();
+        Optional<Snippet> result = AlertHelper.showModal(dialog);
         result.ifPresent(snippet -> {
             if (existing != null) {
                 ActivityLogger.logUserAction("EDIT_SNIPPET", "User edited snippet: " + snippet.getTitle());
