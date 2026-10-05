@@ -1,6 +1,7 @@
 package com.tinsider;
 
 import com.tinsider.ui.MainApp;
+import com.tinsider.util.StartupSignal;
 
 public class Launcher {
     public static void main(String[] args) {
@@ -12,7 +13,8 @@ public class Launcher {
         System.setProperty("org.slf4j.simpleLogger.log.org.apache.sshd", "error");
         System.setProperty("org.slf4j.simpleLogger.log.org.apache.sshd.client.keyverifier.AcceptAllServerKeyVerifier", "error");
         System.setProperty("javafx.embed.singleThread", "true");
-        
+
+        StartupSignal.signalApplicationStarting();
         MainApp.main(args);
     }
 }
