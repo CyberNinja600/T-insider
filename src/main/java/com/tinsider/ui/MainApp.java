@@ -113,9 +113,12 @@ public class MainApp extends Application {
     private DashboardContainer dashboardContainer;
     private TerminalSidebar terminalSidebar;
     private BorderPane root;
+    private Stage primaryStage;
+    private boolean initialFullScreen = false;
 
     @Override
     public void start(Stage primaryStage) {
+        this.primaryStage = primaryStage;
         ActivityLogger.logSystemEvent("APP_STARTUP", "T-Insider application started successfully.");
         instance = this;
         sessionManager = new TerminalSessionManager();
@@ -231,7 +234,7 @@ public class MainApp extends Application {
             this::toggleFullScreen
         );
         topToolBar.setShellSelectionVisible(false);
-        topToolBar.setFullScreenIcon(primaryStage.isFullScreen());
+        topToolBar.setFullScreenIcon(initialFullScreen);
 
         // 8. Build Root Layout
         root = new BorderPane();
@@ -263,7 +266,7 @@ public class MainApp extends Application {
             scene.getStylesheets().add(styleCss);
         }
 
-        registerZoomAccelerators(scene);
+        registerKeyboardAccelerators(scene);
         primaryStage.setScene(scene);
 
         // 10. Listen for newly opened dialogs/windows to apply theme and DWM styling
@@ -272,18 +275,18 @@ public class MainApp extends Application {
         // 11. Live reloader for theme files
         setupLiveReloader();
 
-        // 12. Fullscreen state synchronization (handles Esc key, toolbar button, and OS shortcuts)
-        primaryStage.fullScreenProperty().addListener((obs, wasFullScreen, isNowFullScreen) -> {
-            Map<String, String> innerSettings = StorageManager.loadSettings();
-            innerSettings.put("fullscreen", String.valueOf(isNowFullScreen));
-            StorageManager.saveSettings(innerSettings);
-            if (topToolBar != null) {
-                topToolBar.setFullScreenIcon(isNowFullScreen);
-            }
-        });
-
         primaryStage.show();
         applyTheme(currentTheme);
+
+        // 12. Safely restore borderless fullscreen after stage is shown and HWND is active
+        if (initialFullScreen) {
+            Platform.runLater(() -> {
+                DwmUtil.setBorderlessFullScreen(primaryStage, true);
+                if (topToolBar != null) {
+                    topToolBar.setFullScreenIcon(true);
+                }
+            });
+        }
 
         primaryStage.setOnCloseRequest(e -> {
             ActivityLogger.logSystemEvent("APP_SHUTDOWN", "T-Insider application shutting down.");
@@ -296,8 +299,24 @@ public class MainApp extends Application {
     }
 
     private void toggleFullScreen() {
-        Stage stage = (Stage) topToolBar.getScene().getWindow();
-        stage.setFullScreen(!stage.isFullScreen());
+        Stage stage = (primaryStage != null) ? primaryStage : (Stage) topToolBar.getScene().getWindow();
+        boolean isNowFullScreen = DwmUtil.toggleBorderlessFullScreen(stage);
+        if (topToolBar != null) {
+            topToolBar.setFullScreenIcon(isNowFullScreen);
+        }
+        Map<String, String> innerSettings = StorageManager.loadSettings();
+        innerSettings.put("fullscreen", String.valueOf(isNowFullScreen));
+        StorageManager.saveSettings(innerSettings);
+    }
+
+    private void registerKeyboardAccelerators(Scene scene) {
+        registerZoomAccelerators(scene);
+        scene.getAccelerators().put(new KeyCodeCombination(KeyCode.F11), this::toggleFullScreen);
+        scene.getAccelerators().put(new KeyCodeCombination(KeyCode.ESCAPE), () -> {
+            if (DwmUtil.isBorderlessFullScreen()) {
+                toggleFullScreen();
+            }
+        });
     }
 
     private void loadApplicationResources(Stage primaryStage) {
@@ -358,7 +377,7 @@ public class MainApp extends Application {
         }
 
         String fullScreen = settings.get("fullscreen");
-        stage.setFullScreen(Boolean.parseBoolean(fullScreen));
+        initialFullScreen = Boolean.parseBoolean(fullScreen);
 
         for (TerminalTheme theme : availableThemes) {
             if (theme.getName().equalsIgnoreCase(savedThemeName)) {
