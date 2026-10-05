@@ -32,6 +32,7 @@ import com.tinsider.ui.theme.DwmUtil;
 import com.tinsider.ui.theme.ThemeApplicator;
 import com.tinsider.util.ActivityLogger;
 import com.tinsider.util.LiveReloader;
+import com.tinsider.util.StartupSignal;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -260,7 +261,7 @@ public class MainApp extends Application {
 
         ModalOverlayManager.init(modalOverlay, root);
 
-        Scene scene = new Scene(appRoot, 1280, 720);
+        Scene scene = new Scene(appRoot, 1600 , 900 );
         String styleCss = getClass().getResource("/style.css") != null ? getClass().getResource("/style.css").toExternalForm() : "";
         if (!styleCss.isEmpty()) {
             scene.getStylesheets().add(styleCss);
@@ -276,6 +277,7 @@ public class MainApp extends Application {
         setupLiveReloader();
 
         primaryStage.show();
+        StartupSignal.signalApplicationShown();
         applyTheme(currentTheme);
 
         // 12. Safely restore borderless fullscreen after stage is shown and HWND is active

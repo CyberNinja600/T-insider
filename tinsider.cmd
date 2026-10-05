@@ -1,8 +1,12 @@
 @echo off
 setlocal enabledelayedexpansion
 
+if "%1"=="-preloader" goto :START_APP
 if "%1"=="-show" goto :START_APP
 if "%1"=="-hidden" goto :START_APP
+
+start "" powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "%~dp0splash\T-Insider-Preloader.ps1"
+exit /b 0
 
 set "PORTABLE_JDK_DIR=%~dp0.jdks"
 set "LOCAL_JDK_HOME=%PORTABLE_JDK_DIR%\jdk-21"
@@ -80,22 +84,17 @@ echo.
 
 if not exist "%PORTABLE_JDK_DIR%" mkdir "%PORTABLE_JDK_DIR%"
 
-:: Execute PowerShell inline to download, extract, and rename
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13;" ^
-    "$arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' } else { 'x64' };" ^
-    "$url = \"https://api.adoptium.net/v3/binary/latest/21/ga/windows/$arch/jdk/hotspot/normal/eclipse\";" ^
-    "Write-Host '[INFO] Fetching JDK from Adoptium...';" ^
-    "Invoke-WebRequest -Uri $url -OutFile '%PORTABLE_JDK_DIR%\jdk.zip' -MaximumRedirection 5;" ^
-    "Write-Host '[INFO] Extracting files...';" ^
-    "Expand-Archive -Path '%PORTABLE_JDK_DIR%\jdk.zip' -DestinationPath '%PORTABLE_JDK_DIR%' -Force;" ^
-    "Remove-Item -Path '%PORTABLE_JDK_DIR%\jdk.zip' -Force;" ^
-    "$extractedDir = Get-ChildItem -Path '%PORTABLE_JDK_DIR%' -Directory | Where-Object { $_.Name -ne 'jdk-21' } | Select-Object -First 1;" ^
-    "if ($extractedDir) { Rename-Item -Path $extractedDir.FullName -NewName 'jdk-21' } else { throw 'Could not find extracted JDK directory' }"
+if not exist "%~dp0logs" mkdir "%~dp0logs"
+if defined TINSIDER_LOADER_PROGRESS_FILE (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0splash\Download-Jdk.ps1" -DestinationRoot "%PORTABLE_JDK_DIR%" > "%~dp0logs\start.log" 2>&1
+) else (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0splash\Download-Jdk.ps1" -DestinationRoot "%PORTABLE_JDK_DIR%"
+)
 
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Failed to download or configure portable JDK.
     echo Please make sure you have internet access and try again.
+    if "%1"=="-preloader" exit /b 1
     pause
     exit /b 1
 )
@@ -104,23 +103,29 @@ echo [INFO] Portable JDK 21 installed successfully!
 set "JAVA_HOME=%LOCAL_JDK_HOME%"
 set "PATH=%LOCAL_JDK_HOME%\bin;%PATH%"
 
-if not "%1"=="-show" (
+if not "%1"=="-show" if not "%1"=="-preloader" (
     echo [INFO] Hiding console and launching application...
     powershell -NoProfile -WindowStyle Hidden -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\" -hidden' -WindowStyle Hidden"
     exit /b
 )
 
 :RUN_APP
+if defined TINSIDER_LOADER_PROGRESS_FILE powershell -NoProfile -Command "[System.IO.File]::WriteAllText($env:TINSIDER_LOADER_PROGRESS_FILE, '85|Starting application')"
 echo [INFO] Executing application via Maven Wrapper...
 if not exist "%~dp0logs" mkdir "%~dp0logs"
-if "%1"=="-hidden" (
-    call "%~dp0mvnw.cmd" clean compile javafx:run > "%~dp0logs\start.log" 2>&1
-) else (
-    call "%~dp0mvnw.cmd" clean compile javafx:run 2>&1 | powershell -NoProfile -Command "$writer = [System.IO.StreamWriter]::new('%~dp0logs\start.log', $false); $writer.AutoFlush = $true; $input | ForEach-Object { $_; $writer.WriteLine($_) }; $writer.Close()"
-)
+if "%1"=="-hidden" goto :RUN_APP_HIDDEN
+if "%1"=="-preloader" goto :RUN_APP_HIDDEN
+call "%~dp0mvnw.cmd" clean compile javafx:run 2>&1 | powershell -NoProfile -Command "$writer = [System.IO.StreamWriter]::new('%~dp0logs\start.log', $false); $writer.AutoFlush = $true; $input | ForEach-Object { $_; $writer.WriteLine($_) }; $writer.Close()"
+goto :RUN_APP_COMPLETE
+
+:RUN_APP_HIDDEN
+call "%~dp0mvnw.cmd" clean compile javafx:run > "%~dp0logs\start.log" 2>&1
+
+:RUN_APP_COMPLETE
 if %ERRORLEVEL% neq 0 (
     echo.
     echo [ERROR] Application execution failed!
+    if "%1"=="-preloader" exit /b 1
     pause
 )
 
