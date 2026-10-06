@@ -261,7 +261,7 @@ public class MainApp extends Application {
 
         ModalOverlayManager.init(modalOverlay, root);
 
-        Scene scene = new Scene(appRoot, 1600 , 900 );
+        Scene scene = new Scene(appRoot, 1280 , 720 );
         String styleCss = getClass().getResource("/style.css") != null ? getClass().getResource("/style.css").toExternalForm() : "";
         if (!styleCss.isEmpty()) {
             scene.getStylesheets().add(styleCss);
