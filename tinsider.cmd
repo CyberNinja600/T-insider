@@ -47,6 +47,14 @@ echo.
 
 cd /d "%~dp0"
 
+:: Check for auto-update before environment preparation and execution
+if not exist "%~dp0logs" mkdir "%~dp0logs"
+if defined TINSIDER_LOADER_PROGRESS_FILE (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0splash\splash-update.ps1" >> "%~dp0logs\start.log" 2>&1
+) else (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0splash\splash-update.ps1"
+)
+
 set "PORTABLE_JDK_DIR=%~dp0.jdks"
 set "LOCAL_JDK_HOME=%PORTABLE_JDK_DIR%\jdk-21"
 

@@ -7,6 +7,35 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PORTABLE_JDK_DIR="${SCRIPT_DIR}/.jdks"
 LOCAL_JDK_HOME="${PORTABLE_JDK_DIR}/jdk-21"
 
+# Check for auto-update before environment preparation and execution
+check_auto_update() {
+    if ! command -v git >/dev/null 2>&1; then
+        return 0
+    fi
+    if [ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" != "true" ]; then
+        return 0
+    fi
+    local current_branch
+    current_branch=$(git branch --show-current 2>/dev/null || echo "")
+    if [ "$current_branch" != "main" ]; then
+        echo "[INFO] Current branch is '$current_branch' (not 'main'). Skipping auto-update."
+        return 0
+    fi
+    local status_output
+    status_output=$(git status --porcelain 2>/dev/null || echo "")
+    if [ -n "$status_output" ]; then
+        echo "[INFO] Uncommitted changes detected. Skipping auto-update to protect local work."
+        return 0
+    fi
+    echo "[INFO] Checking remote updates for branch 'main'..."
+    GIT_TERMINAL_PROMPT=0 git -c http.timeout=5 -c connect.timeout=5 pull --ff-only 2>&1 || {
+        echo "[WARN] Auto-update skipped or failed. Continuing with local version."
+    }
+}
+
+check_auto_update
+
+
 # On macOS, the actual JAVA_HOME is inside Contents/Home of the extracted bundle
 OS_TYPE=$(uname -s)
 if [ "$OS_TYPE" = "Darwin" ]; then
