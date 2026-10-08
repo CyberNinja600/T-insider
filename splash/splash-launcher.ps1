@@ -48,6 +48,31 @@ function Get-PropertiesConfig([string]$FilePath) {
 $LauncherConfigPath = Join-Path $ScriptDirectory "launcher.config.properties"
 $LauncherConfig = Get-PropertiesConfig $LauncherConfigPath
 
+$LocalConfigPath = Join-Path $ScriptDirectory "launcher.config.local.properties"
+if (Test-Path -LiteralPath $LocalConfigPath) {
+    $LocalConfig = Get-PropertiesConfig $LocalConfigPath
+    foreach ($k in $LocalConfig.Keys) {
+        $LauncherConfig[$k] = $LocalConfig[$k]
+    }
+}
+
+$AutoUpdateEnabled = $false
+if ($LauncherConfig.ContainsKey("auto.update.enabled")) {
+    $AutoUpdateEnabled = ($LauncherConfig["auto.update.enabled"].Trim() -eq "true")
+} elseif ($LauncherConfig.ContainsKey("auto.update")) {
+    $AutoUpdateEnabled = ($LauncherConfig["auto.update"].Trim() -eq "true")
+}
+
+$TargetBranch = if ($LauncherConfig.ContainsKey("target.branch")) {
+    $LauncherConfig["target.branch"].Trim()
+} elseif ($LauncherConfig.ContainsKey("production.branch")) {
+    $LauncherConfig["production.branch"].Trim()
+} else {
+    "feature/app-auto-update-test-branch"
+}
+
+$UpdateScriptPath = Join-Path $ProjectDirectory "update\auto-update.ps1"
+
 $Version = if ($LauncherConfig.ContainsKey("version")) {
     $LauncherConfig["version"]
 } elseif ($LauncherConfig.ContainsKey("app.version")) {
@@ -71,8 +96,11 @@ $SplashMessage = if ($LauncherConfig.ContainsKey("splash.message")) {
 
 $ProgressFile = Join-Path ([System.IO.Path]::GetTempPath()) ("tinsider-loader-{0}.progress" -f [guid]::NewGuid())
 $ReadyFile = "$ProgressFile.ready"
+$UpdateResultFile = "$ProgressFile.update.json"
 $script:CurrentProgress = 0
 $script:Process = $null
+$script:UpdateProcess = $null
+$script:Phase = "Init"
 
 [System.IO.File]::WriteAllText($ProgressFile, "0|$SplashMessage", [System.Text.Encoding]::ASCII)
 $env:TINSIDER_LOADER_PROGRESS_FILE = $ProgressFile
@@ -187,6 +215,24 @@ $Grid.Children.Add($ProgressStack) | Out-Null
 $Border.Child = $Grid
 $Window.Content = $Border
 
+$script:StartAppRunner = {
+    $script:Phase = "Running"
+    try {
+        $Arguments = '/d /c ""{0}" -preloader"' -f $RunnerPath
+        $script:Process = Start-Process -FilePath $env:ComSpec -ArgumentList $Arguments -WorkingDirectory $ProjectDirectory -WindowStyle Hidden -PassThru
+    }
+    catch {
+        $Timer.Stop()
+        [System.Windows.MessageBox]::Show(
+            "Could not start T-Insider.`n`n$($_.Exception.Message)",
+            "T-Insider",
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Error
+        ) | Out-Null
+        $Window.Close()
+    }
+}
+
 $Timer = New-Object System.Windows.Threading.DispatcherTimer
 $Timer.Interval = [TimeSpan]::FromMilliseconds(50)
 $Timer.Add_Tick({
@@ -204,53 +250,99 @@ $Timer.Add_Tick({
     catch {
     }
 
-    if (Test-Path $ReadyFile) {
-        $Timer.Stop()
-        $Window.Close()
+    if ($script:Phase -eq "Updating") {
+        if ($script:UpdateProcess -and $script:UpdateProcess.HasExited) {
+            $script:Phase = "Transitioning"
+            if (Test-Path -LiteralPath $UpdateResultFile) {
+                try {
+                    $jsonText = [System.IO.File]::ReadAllText($UpdateResultFile, [System.Text.Encoding]::UTF8)
+                    $updateRes = $jsonText | ConvertFrom-Json
+                    if ($updateRes -and $updateRes.Error) {
+                        $Timer.Stop()
+                        $msg = "Auto-update encountered an issue:`n`n$($updateRes.Error)`n`nT-Insider will start without updating."
+                        [System.Windows.MessageBox]::Show(
+                            $msg,
+                            "T-Insider Auto-Update",
+                            [System.Windows.MessageBoxButton]::OK,
+                            [System.Windows.MessageBoxImage]::Warning
+                        ) | Out-Null
+                        $Timer.Start()
+                    }
+                    if ($updateRes -and $updateRes.Updated) {
+                        $RefreshedConfig = Get-PropertiesConfig $LauncherConfigPath
+                        if ($RefreshedConfig.ContainsKey("version")) {
+                            $VersionText.Text = $RefreshedConfig["version"]
+                        }
+                    }
+                }
+                catch {
+                }
+            }
+            elseif ($script:UpdateProcess.ExitCode -ne 0) {
+                $Timer.Stop()
+                $msg = "Auto-update process exited unexpectedly (Exit code: $($script:UpdateProcess.ExitCode)).`nCheck logs\update.log for details.`n`nT-Insider will start without updating."
+                [System.Windows.MessageBox]::Show(
+                    $msg,
+                    "T-Insider Auto-Update",
+                    [System.Windows.MessageBoxButton]::OK,
+                    [System.Windows.MessageBoxImage]::Warning
+                ) | Out-Null
+                $Timer.Start()
+            }
+            & $script:StartAppRunner
+        }
     }
-    elseif ($script:Process -and $script:Process.HasExited) {
-        $Timer.Stop()
-        $LogPath = Join-Path $ProjectDirectory "logs\start.log"
-        $LogTail = ""
-        if (Test-Path $LogPath) {
-            $LogTail = (Get-Content -LiteralPath $LogPath -Tail 12) -join "`n"
+    elseif ($script:Phase -eq "Running") {
+        if (Test-Path $ReadyFile) {
+            $Timer.Stop()
+            $Window.Close()
         }
-        $ErrorMessage = "T-Insider could not start. See logs\start.log for details."
-        if (-not [string]::IsNullOrWhiteSpace($LogTail)) {
-            $ErrorMessage += "`n`n$LogTail"
+        elseif ($script:Process -and $script:Process.HasExited) {
+            $Timer.Stop()
+            $LogPath = Join-Path $ProjectDirectory "logs\start.log"
+            $LogTail = ""
+            if (Test-Path $LogPath) {
+                $LogTail = (Get-Content -LiteralPath $LogPath -Tail 12) -join "`n"
+            }
+            $ErrorMessage = "T-Insider could not start. See logs\start.log for details."
+            if (-not [string]::IsNullOrWhiteSpace($LogTail)) {
+                $ErrorMessage += "`n`n$LogTail"
+            }
+            [System.Windows.MessageBox]::Show(
+                $ErrorMessage,
+                "T-Insider",
+                [System.Windows.MessageBoxButton]::OK,
+                [System.Windows.MessageBoxImage]::Error
+            ) | Out-Null
+            $Window.Close()
         }
-        [System.Windows.MessageBox]::Show(
-            $ErrorMessage,
-            "T-Insider",
-            [System.Windows.MessageBoxButton]::OK,
-            [System.Windows.MessageBoxImage]::Error
-        ) | Out-Null
-        $Window.Close()
     }
 })
 
 $Window.Add_ContentRendered({
     $Timer.Start()
-    try {
-        $Arguments = '/d /c ""{0}" -preloader"' -f $RunnerPath
-        $script:Process = Start-Process -FilePath $env:ComSpec -ArgumentList $Arguments -WorkingDirectory $ProjectDirectory -WindowStyle Hidden -PassThru
+    if ($AutoUpdateEnabled -and (Test-Path -LiteralPath $UpdateScriptPath)) {
+        $script:Phase = "Updating"
+        try {
+            $UpdateArgs = '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "{0}" -ProjectDirectory "{1}" -TargetBranch "{2}" -ProgressFile "{3}" -ResultFile "{4}"' -f $UpdateScriptPath, $ProjectDirectory, $TargetBranch, $ProgressFile, $UpdateResultFile
+            $script:UpdateProcess = Start-Process -FilePath "powershell.exe" -ArgumentList $UpdateArgs -WorkingDirectory $ProjectDirectory -WindowStyle Hidden -PassThru
+        }
+        catch {
+            & $script:StartAppRunner
+        }
     }
-    catch {
-        $Timer.Stop()
-        [System.Windows.MessageBox]::Show(
-            "Could not start T-Insider.`n`n$($_.Exception.Message)",
-            "T-Insider",
-            [System.Windows.MessageBoxButton]::OK,
-            [System.Windows.MessageBoxImage]::Error
-        ) | Out-Null
-        $Window.Close()
+    else {
+        & $script:StartAppRunner
     }
 })
 
 $Window.ShowDialog() | Out-Null
+if ($script:UpdateProcess -and -not $script:UpdateProcess.HasExited) {
+    try { $script:UpdateProcess.WaitForExit(3000) } catch {}
+}
 if ($script:Process -and -not $script:Process.HasExited) {
     $script:Process.WaitForExit()
 }
-Remove-Item $ProgressFile, $ReadyFile -Force -ErrorAction SilentlyContinue
+Remove-Item $ProgressFile, $ReadyFile, $UpdateResultFile -Force -ErrorAction SilentlyContinue
 $script:SingleInstanceMutex.ReleaseMutex()
 $script:SingleInstanceMutex.Dispose()

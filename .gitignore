@@ -20,6 +20,7 @@ config/highlight_packages.json
 
 # Setup configuration file
 setup.properties
+splash/launcher.config.local.properties
 
 # Portable JDK directory
 .jdks/
