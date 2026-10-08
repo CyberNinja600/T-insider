@@ -22,18 +22,59 @@ if (-not $script:OwnsSingleInstanceMutex) {
     exit 0
 }
 
-$ScriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$ScriptDirectory = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
 $ProjectDirectory = Split-Path -Parent $ScriptDirectory
 $RunnerPath = Join-Path $ProjectDirectory "tinsider.cmd"
 $LogoPath = Join-Path $ScriptDirectory "splash-icon.png"
-$VersionPath = Join-Path $ScriptDirectory "version.txt"
-$Version = if (Test-Path $VersionPath) { (Get-Content -LiteralPath $VersionPath -Raw).Trim() } else { "" }
+
+function Get-PropertiesConfig([string]$FilePath) {
+    $config = @{}
+    if (Test-Path -LiteralPath $FilePath) {
+        Get-Content -LiteralPath $FilePath | ForEach-Object {
+            $line = $_.Trim()
+            if ($line -and -not $line.StartsWith("#") -and -not $line.StartsWith("!")) {
+                $parts = $line -split '=', 2
+                if ($parts.Count -ge 1) {
+                    $key = $parts[0].Trim()
+                    $val = if ($parts.Count -gt 1) { $parts[1].Trim() } else { "" }
+                    $config[$key] = $val
+                }
+            }
+        }
+    }
+    return $config
+}
+
+$LauncherConfigPath = Join-Path $ScriptDirectory "launcher.config.properties"
+$LauncherConfig = Get-PropertiesConfig $LauncherConfigPath
+
+$Version = if ($LauncherConfig.ContainsKey("version")) {
+    $LauncherConfig["version"]
+} elseif ($LauncherConfig.ContainsKey("app.version")) {
+    $LauncherConfig["app.version"]
+} else {
+    $LegacyVersionPath = Join-Path $ScriptDirectory "version.txt"
+    if (Test-Path -LiteralPath $LegacyVersionPath) {
+        (Get-Content -LiteralPath $LegacyVersionPath -Raw).Trim()
+    } else {
+        ""
+    }
+}
+
+$SplashMessage = if ($LauncherConfig.ContainsKey("splash.message")) {
+    $LauncherConfig["splash.message"]
+} elseif ($LauncherConfig.ContainsKey("message")) {
+    $LauncherConfig["message"]
+} else {
+    "Preparing to start"
+}
+
 $ProgressFile = Join-Path ([System.IO.Path]::GetTempPath()) ("tinsider-loader-{0}.progress" -f [guid]::NewGuid())
 $ReadyFile = "$ProgressFile.ready"
 $script:CurrentProgress = 0
 $script:Process = $null
 
-[System.IO.File]::WriteAllText($ProgressFile, "0|Preparing to start", [System.Text.Encoding]::ASCII)
+[System.IO.File]::WriteAllText($ProgressFile, "0|$SplashMessage", [System.Text.Encoding]::ASCII)
 $env:TINSIDER_LOADER_PROGRESS_FILE = $ProgressFile
 
 $Window = New-Object System.Windows.Window
@@ -97,7 +138,7 @@ $VersionText.Margin = New-Object System.Windows.Thickness(0, 0, 0, 7)
 $Grid.Children.Add($VersionText) | Out-Null
 
 $LoadingText = New-Object System.Windows.Controls.TextBlock
-$LoadingText.Text = "Preparing to start"
+$LoadingText.Text = $SplashMessage
 $LoadingText.FontFamily = New-Object System.Windows.Media.FontFamily("Segoe UI")
 $LoadingText.FontSize = 15
 $LoadingText.FontWeight = "SemiBold"
