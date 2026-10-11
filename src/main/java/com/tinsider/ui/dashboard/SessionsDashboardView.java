@@ -46,7 +46,8 @@ public class SessionsDashboardView extends VBox {
         terminalsTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
         noActiveSessionsLabel = new Label("No active terminals. Click a host to connect.");
-        noActiveSessionsLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 14px;");
+        noActiveSessionsLabel.setStyle("-fx-font-size: 14px;");
+        noActiveSessionsLabel.getStyleClass().add("global-text");
 
         terminalsGrid = new FlowPane(15, 15);
         terminalsGrid.setPadding(new Insets(10));

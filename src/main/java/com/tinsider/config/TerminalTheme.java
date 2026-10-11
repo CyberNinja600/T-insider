@@ -113,6 +113,7 @@ public class TerminalTheme {
         colors.put("controls.combo.background", bg);
         colors.put("controls.combo.border", selection);
         colors.put("controls.combo.foreground", text);
+        colors.put("controls.combo.hover.foreground", bg);
         colors.put("controls.colorpicker.background", bg);
         colors.put("controls.colorpicker.border", bg);
         colors.put("controls.colorpicker.foreground", text);
@@ -190,7 +191,7 @@ public class TerminalTheme {
         colors.put("dropdown.item.hover.background", bg);
         colors.put("dropdown.item.hover.foreground", cursor);
         colors.put("dropdown.list.background", bg);
-        colors.put("dropdown.list.border", selection);
+        colors.put("dropdown.list.border", bg);
         colors.put("dropdown.scrollbar.thumb", selection);
         colors.put("dropdown.scrollbar.thumb.hover", cursor);
         colors.put("global.label.foreground", text);

@@ -30,7 +30,8 @@
 }
 
 /* ComboBox flat styling */
-.combo-box {
+.combo-box,
+.dialog-pane .combo-box {
     -fx-background-color: #161B30;
     -fx-text-fill: white;
     -fx-border-color: #2a3356;
@@ -38,22 +39,27 @@
     -fx-background-radius: 4px;
     -fx-background-insets: 0;
 }
-.combo-box .arrow-button {
+.combo-box .arrow-button,
+.dialog-pane .combo-box .arrow-button {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
     -fx-background-radius: 0;
 }
-.combo-box .arrow-button .arrow {
+.combo-box .arrow-button .arrow,
+.dialog-pane .combo-box .arrow-button .arrow {
     -fx-background-color: white;
     -fx-background-insets: 0;
 }
-.combo-box:hover {
-    -fx-background-color: #212846;
+.combo-box:hover,
+.dialog-pane .combo-box:hover {
+    -fx-background-color: rgba(33, 40, 70, 0.15);
 }
-.combo-box:focused {
+.combo-box:focused,
+.dialog-pane .combo-box:focused {
     -fx-border-color: #00adb5;
 }
-.combo-box .list-cell {
+.combo-box > .list-cell,
+.dialog-pane .combo-box > .list-cell {
     -fx-text-fill: white;
     -fx-padding: 4px 8px;
 }
@@ -66,19 +72,26 @@
     -fx-control-inner-background: #090F22;
     -fx-border-color: #161B30;
     -fx-border-width: 1px;
+    -fx-translate-y: 2px;
 }
-.combo-box-popup .list-view .list-cell {
+.combo-box-popup .list-view .list-cell,
+.dialog-pane .combo-box-popup .list-view .list-cell {
     -fx-text-fill: white;
     -fx-background-color: #161B30; /* Swapped: background is #161B30 */
     -fx-padding: 6px 12px; /* Beautifully spaced out dropdown items */
+    -fx-background-insets: 1px 0px 1px 0px;
 }
-.combo-box-popup .list-view .list-cell:hover {
-    -fx-background-color: #090F22; /* Swapped: focused is #090F22 */
+.combo-box-popup .list-view .list-cell:hover,
+.dialog-pane .combo-box-popup .list-view .list-cell:hover {
+    -fx-background-color: rgba(9, 15, 34, 0.15); /* Swapped: focused is #090F22 with 0.15 alpha */
     -fx-text-fill: #00adb5;
+    -fx-background-insets: 1px 0px 1px 0px;
 }
-.combo-box-popup .list-view .list-cell:selected {
-    -fx-background-color: #090F22; /* Swapped: focused is #090F22 */
+.combo-box-popup .list-view .list-cell:selected,
+.dialog-pane .combo-box-popup .list-view .list-cell:selected {
+    -fx-background-color: rgba(9, 15, 34, 0.15); /* Swapped: focused is #090F22 with 0.15 alpha */
     -fx-text-fill: #00adb5;
+    -fx-background-insets: 1px 0px 1px 0px;
 }
 
 /* Dropdown popup specific scrollbar */

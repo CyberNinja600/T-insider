@@ -221,7 +221,8 @@ public class HighlightsDashboardView extends VBox {
                 HBox header = new HBox(10);
                 header.setAlignment(Pos.CENTER_LEFT);
                 Label folderIcon = new Label("\uEA83");
-                folderIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; -fx-text-fill: #94a3b8;");
+                folderIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; ");
+                folderIcon.getStyleClass().add("global-text");
                 Label title = new Label(pkg.getName());
                 title.getStyleClass().add("dashboard-package-title");
                 header.getChildren().addAll(folderIcon, title);
@@ -236,7 +237,8 @@ public class HighlightsDashboardView extends VBox {
 
                 if (matchingHighlightsInPkg.isEmpty()) {
                     Label emptyLabel = new Label("No highlights in this package");
-                    emptyLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic; -fx-font-size: 11px; -fx-padding: 5px 0 0 5px;");
+                    emptyLabel.setStyle(" -fx-font-style: italic; -fx-font-size: 11px; -fx-padding: 5px 0 0 5px;");
+                    emptyLabel.getStyleClass().add("global-text");
                     grid.getChildren().add(emptyLabel);
                 }
 
@@ -263,7 +265,8 @@ public class HighlightsDashboardView extends VBox {
             HBox standaloneHeader = new HBox(10);
             standaloneHeader.setAlignment(Pos.CENTER_LEFT);
             Label standaloneIcon = new Label("\uEAE9");
-            standaloneIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; -fx-text-fill: #94a3b8;");
+            standaloneIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; ");
+            standaloneIcon.getStyleClass().add("global-text");
             Label standaloneTitle = new Label("Standalone Highlights (No Package)");
             standaloneTitle.getStyleClass().add("dashboard-standalone-title");
             standaloneHeader.getChildren().addAll(standaloneIcon, standaloneTitle);
@@ -278,7 +281,8 @@ public class HighlightsDashboardView extends VBox {
 
             if (matchingStandalone.isEmpty()) {
                 Label emptyLabel = new Label("No standalone highlights");
-                emptyLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic; -fx-font-size: 11px; -fx-padding: 5px 0 0 5px;");
+                emptyLabel.setStyle(" -fx-font-style: italic; -fx-font-size: 11px; -fx-padding: 5px 0 0 5px;");
+                emptyLabel.getStyleClass().add("global-text");
                 standaloneGrid.getChildren().add(emptyLabel);
             }
 
@@ -311,7 +315,8 @@ public class HighlightsDashboardView extends VBox {
         Label patternLabel = null;
         if (wh.getName() != null && !wh.getName().isEmpty()) {
             patternLabel = new Label(wh.getWord());
-            patternLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #94a3b8; -fx-font-style: italic;");
+            patternLabel.setStyle("-fx-font-size: 10px;  -fx-font-style: italic;");
+            patternLabel.getStyleClass().add("global-text");
         }
 
         Label colorLabel = new Label(wh.getColorHex());
