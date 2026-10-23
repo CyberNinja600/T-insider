@@ -82,10 +82,7 @@ public final class ThemeApplicator {
         com.jediterm.core.Color sideBorder = theme.getColor("sidebar.border", theme.getSelectionColor());
         com.jediterm.core.Color labelFg = theme.getColor("global.label.foreground", theme.getTextColor());
 
-        com.jediterm.core.Color termBg = theme.getColor("terminal.background", theme.getBackgroundColor());
-        com.jediterm.core.Color termFg = theme.getColor("terminal.foreground", theme.getTextColor());
         com.jediterm.core.Color termCursor = theme.getColor("terminal.cursor", theme.getCursorColor());
-        com.jediterm.core.Color termSelection = theme.getColor("terminal.selection", theme.getSelectionColor());
 
         com.jediterm.core.Color headerBg = theme.getColor("tabs.header.background", theme.getBackgroundColor());
         com.jediterm.core.Color tabInactiveBg = theme.getColor("tabs.tab.inactive.background", theme.getBackgroundColor());
@@ -123,17 +120,14 @@ public final class ThemeApplicator {
         com.jediterm.core.Color btnHoverBorder = theme.getColor("controls.button.hover.border", theme.getCursorColor());
         com.jediterm.core.Color btnHoverFg = theme.getColor("controls.button.hover.foreground", theme.getBackgroundColor());
         com.jediterm.core.Color btnIcon = theme.getColor("controls.button.icon", theme.getTextColor());
-        com.jediterm.core.Color btnHoverIcon = theme.getColor("controls.button.hover.icon", theme.getBackgroundColor());
         com.jediterm.core.Color comboBg = theme.getColor("controls.combo.background", theme.getSelectionColor());
         com.jediterm.core.Color comboBorder = theme.getColor("controls.combo.border", theme.getBackgroundColor());
         com.jediterm.core.Color comboFg = theme.getColor("controls.combo.foreground", theme.getTextColor());
-        com.jediterm.core.Color comboHoverFg = theme.getColor("controls.combo.hover.foreground", theme.getBackgroundColor());
         com.jediterm.core.Color colorPickerBg = theme.getColor("controls.colorpicker.background", theme.getBackgroundColor());
         com.jediterm.core.Color colorPickerBorder = theme.getColor("controls.colorpicker.border", theme.getSelectionColor());
         com.jediterm.core.Color colorPickerFg = theme.getColor("controls.colorpicker.foreground", theme.getTextColor());
         com.jediterm.core.Color colorPickerPopupBg = theme.getColor("controls.colorpicker.popup.background", theme.getBackgroundColor());
         com.jediterm.core.Color colorPickerPopupBorder = theme.getColor("controls.colorpicker.popup.border", theme.getSelectionColor());
-        com.jediterm.core.Color colorPickerCustomBg = theme.getColor("controls.colorpicker.custom.background", theme.getBackgroundColor());
         com.jediterm.core.Color colorPickerCustomControlsBg = theme.getColor("controls.colorpicker.custom.controls.background", theme.getSelectionColor());
         com.jediterm.core.Color colorPickerCustomBtnBg = theme.getColor("controls.colorpicker.custom.button.background", theme.getSelectionColor());
         com.jediterm.core.Color colorPickerCustomBtnBorder = theme.getColor("controls.colorpicker.custom.button.border", theme.getBackgroundColor());
@@ -147,7 +141,6 @@ public final class ThemeApplicator {
         com.jediterm.core.Color colorPickerCustomToggleSelectedBg = theme.getColor("controls.colorpicker.custom.toggle.selected.background", theme.getCursorColor());
         com.jediterm.core.Color colorPickerCustomToggleSelectedBorder = theme.getColor("controls.colorpicker.custom.toggle.selected.border", theme.getCursorColor());
         com.jediterm.core.Color colorPickerCustomToggleSelectedFg = theme.getColor("controls.colorpicker.custom.toggle.selected.foreground", theme.getBackgroundColor());
-        com.jediterm.core.Color inputBg = theme.getColor("controls.input.background", theme.getSelectionColor());
         com.jediterm.core.Color inputBorder = theme.getColor("controls.input.border", theme.getBackgroundColor());
         com.jediterm.core.Color inputFg = theme.getColor("controls.input.foreground", theme.getTextColor());
 
@@ -227,7 +220,6 @@ public final class ThemeApplicator {
 
         com.jediterm.core.Color sideNavFg = theme.getColor("sidebar.nav.foreground", theme.getTextColor());
         com.jediterm.core.Color sideNavHoverBg = theme.getColor("sidebar.nav.hover.background", theme.getSelectionColor());
-        com.jediterm.core.Color sideNavHoverFg = theme.getColor("sidebar.nav.hover.foreground", theme.getCursorColor());
         com.jediterm.core.Color sideNavSelectedBg = theme.getColor("sidebar.nav.selected.background", theme.getSelectionColor());
         com.jediterm.core.Color sideNavSelectedBorder = theme.getColor("sidebar.nav.selected.border", theme.getCursorColor());
 
@@ -247,8 +239,6 @@ public final class ThemeApplicator {
 
         // Highlights Theming Keys
         com.jediterm.core.Color hlSideBg = theme.getColor("highlights.sidebar.toggle.background", theme.getBackgroundColor());
-        com.jediterm.core.Color hlSideActiveBg = theme.getColor("highlights.sidebar.toggle.active.background", theme.getSelectionColor());
-        com.jediterm.core.Color hlSideActiveBorder = theme.getColor("highlights.sidebar.toggle.active.border", theme.getSelectionColor());
         com.jediterm.core.Color hlSideFg = theme.getColor("highlights.sidebar.toggle.foreground", theme.getTextColor());
         com.jediterm.core.Color hlSideActiveFg = theme.getColor("highlights.sidebar.toggle.active.foreground", theme.getCursorColor());
         com.jediterm.core.Color hlSideEyeInactive = theme.getColor("highlights.sidebar.toggle.eye.inactive", theme.getTextColor());
@@ -312,11 +302,7 @@ public final class ThemeApplicator {
 
         String hexSideBorder = toRgba(sideBorder, sidebarBorderOpacity);
         String hexLabelFg = toHex(labelFg);
-
-        String hexTermBg = toHex(termBg);
-        String hexTermFg = toHex(termFg);
         String hexTermCursor = toHex(termCursor);
-        String hexTermSelection = toHex(termSelection);
 
         String hexHeaderBg = toHex(headerBg);
         String hexTabInactiveBg = toHex(tabInactiveBg);
@@ -401,7 +387,6 @@ public final class ThemeApplicator {
         double dropItemHoverBgOpacity = 0.50;
 
         double hlSideBgOpacity = 0.50;
-        double hlSideBorderOpacity = 0.50;
         double hlSideHoverBgOpacity = 0.15;
         double hlSideHoverBorderOpacity = 1.0;
         double hlSideActiveBgOpacity = 0.25;
@@ -516,7 +501,6 @@ public final class ThemeApplicator {
         String hexColorPickerFg = toHex(colorPickerFg);
         String hexColorPickerPopupBg = toHex(colorPickerPopupBg);
         String hexColorPickerPopupBorder = toHex(colorPickerPopupBorder);
-        String hexColorPickerCustomBg = toHex(colorPickerCustomBg);
         String hexColorPickerCustomControlsBg = toHex(colorPickerCustomControlsBg);
         String hexColorPickerCustomBtnBg = toHex(colorPickerCustomBtnBg);
         String hexColorPickerCustomBtnBorder = toHex(colorPickerCustomBtnBorder);
@@ -530,7 +514,6 @@ public final class ThemeApplicator {
         String hexColorPickerCustomToggleSelectedBg = toHex(colorPickerCustomToggleSelectedBg);
         String hexColorPickerCustomToggleSelectedBorder = toHex(colorPickerCustomToggleSelectedBorder);
         String hexColorPickerCustomToggleSelectedFg = toHex(colorPickerCustomToggleSelectedFg);
-        String hexInputBg = toHex(inputBg);
         String hexInputBorder = toHex(inputBorder);
         String hexInputFg = toHex(inputFg);
 
