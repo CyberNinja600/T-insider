@@ -54,24 +54,22 @@ public class TerminalSplitPane extends BorderPane {
     }
 
     public void setActiveTerminalPane(TerminalPane pane) {
+        if (pane == null) return;
+
         if (this.activeTerminalPane == pane) {
-            if (pane != null) {
-                pane.requestFocusOnTerminal();
-            }
+            pane.ensureTerminalFocused();
             return;
         }
 
         String oldPaneTitle = (this.activeTerminalPane != null) ? this.activeTerminalPane.getTitle() : "None";
-        String newPaneTitle = (pane != null) ? pane.getTitle() : "None";
+        String newPaneTitle = pane.getTitle();
         com.tinsider.util.ActivityLogger.logTerminalFocusChange(newPaneTitle, "Active terminal sub-pane switched from [" + oldPaneTitle + "] to [" + newPaneTitle + "]");
 
         this.activeTerminalPane = pane;
         updatePaneThemeStyles(rootNode);
 
-        if (pane != null) {
-            pane.requestFocusOnTerminal();
-            com.tinsider.ui.MainApp.onTerminalFocused(pane);
-        }
+        pane.requestFocusOnTerminal();
+        com.tinsider.ui.MainApp.onTerminalFocused(pane);
     }
 
     private void updatePaneThemeStyles(SplitNode node) {
@@ -386,6 +384,8 @@ public class TerminalSplitPane extends BorderPane {
     public void requestFocusOnActive() {
         if (activeTerminalPane != null) {
             activeTerminalPane.requestFocusOnTerminal();
+        } else if (rootNode instanceof SplitLeafNode) {
+            setActiveTerminalPane(((SplitLeafNode) rootNode).getTerminalPane());
         }
     }
 
