@@ -16,6 +16,7 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -159,10 +160,14 @@ public class TerminalPane extends StackPane {
         dragOverlay.setVisible(false);
         getChildren().add(dragOverlay);
 
-        // 3. Setup mouse click on TerminalPane to request focus and set active
-        setOnMousePressed(event -> {
-            if (event.getButton() == MouseButton.PRIMARY) {
-                splitPane.setActiveTerminalPane(this);
+        // 3. Setup mouse click on TerminalPane to request focus and set active (capturing phase)
+        addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+            if (event.getButton() == MouseButton.PRIMARY || event.getButton() == MouseButton.SECONDARY) {
+                if (splitPane.getActiveTerminalPane() != this) {
+                    splitPane.setActiveTerminalPane(this);
+                } else {
+                    requestFocusOnTerminal();
+                }
             }
         });
 
@@ -429,44 +434,15 @@ public class TerminalPane extends StackPane {
                 panel.addMouseListener(new java.awt.event.MouseAdapter() {
                     @Override
                     public void mousePressed(java.awt.event.MouseEvent e) {
+                        panel.requestFocusInWindow();
                         Platform.runLater(() -> {
-                            splitPane.setActiveTerminalPane(TerminalPane.this);
+                            if (splitPane.getActiveTerminalPane() != TerminalPane.this) {
+                                splitPane.setActiveTerminalPane(TerminalPane.this);
+                            }
                         });
                     }
                 });
             }
-        });
-
-        // Dynamic focused listener inside TerminalPane that ONLY forwards focus if this pane is active
-        this.swingNode.focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal) {
-                if (splitPane.getActiveWidget() == widget) {
-                    SwingUtilities.invokeLater(() -> {
-                        if (widget.getTerminalPanel() != null && !widget.getTerminalPanel().isFocusOwner()) {
-                            widget.getTerminalPanel().requestFocus();
-                        }
-                        if (!widget.isFocusOwner()) {
-                            widget.requestFocus();
-                        }
-                    });
-                }
-            }
-        });
-
-        // Click focus handler on SwingNode side
-        this.swingNode.setOnMousePressed(event -> {
-            splitPane.setActiveTerminalPane(this);
-            if (!this.swingNode.isFocused()) {
-                this.swingNode.requestFocus();
-            }
-            SwingUtilities.invokeLater(() -> {
-                if (widget.getTerminalPanel() != null && !widget.getTerminalPanel().isFocusOwner()) {
-                    widget.getTerminalPanel().requestFocus();
-                }
-                if (!widget.isFocusOwner()) {
-                    widget.requestFocus();
-                }
-            });
         });
 
         mainLayout.setCenter(new SwingNodeWrapper(swingNode));
@@ -479,7 +455,9 @@ public class TerminalPane extends StackPane {
         
         Platform.runLater(() -> {
             updateThemeStyles(splitPane.getCurrentTheme());
-            requestFocus();
+            if (splitPane.getActiveTerminalPane() == this) {
+                requestFocusOnTerminal();
+            }
             triggerTerminalResize();
         });
     }
@@ -619,20 +597,17 @@ public class TerminalPane extends StackPane {
 
     public void requestFocusOnTerminal() {
         if (swingNode != null) {
-            if (!swingNode.isFocused()) {
-                swingNode.requestFocus();
-            }
+            swingNode.requestFocus();
             SwingUtilities.invokeLater(() -> {
-                if (widget != null) {
-                    if (widget.getTerminalPanel() != null && !widget.getTerminalPanel().isFocusOwner()) {
-                        widget.getTerminalPanel().requestFocus();
-                    }
-                    if (!widget.isFocusOwner()) {
-                        widget.requestFocus();
-                    }
+                if (widget != null && widget.getTerminalPanel() != null) {
+                    widget.getTerminalPanel().requestFocusInWindow();
                 }
             });
         }
+    }
+
+    public void ensureTerminalFocused() {
+        requestFocusOnTerminal();
     }
 
     public void close() {
