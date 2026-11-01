@@ -50,7 +50,7 @@ public class SnippetsDashboardView extends VBox {
         snippetsSearchField = new TextField();
         snippetsSearchField.setPromptText("🔍 Search snippets by title/code or packages by name...");
         snippetsSearchField.getStyleClass().add("text-field");
-        snippetsSearchField.textProperty().addListener((obs, oldVal, newVal) -> rebuild());
+        snippetsSearchField.textProperty().addListener((obs, oldVal, newVal)    -> rebuild());
 
         snippetsDashboardContainer = new VBox(20);
         snippetsDashboardContainer.setPadding(new Insets(10));
@@ -183,7 +183,8 @@ public class SnippetsDashboardView extends VBox {
                 HBox header = new HBox(10);
                 header.setAlignment(Pos.CENTER_LEFT);
                 Label folderIcon = new Label("\uEA83");
-                folderIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; -fx-text-fill: #94a3b8;");
+                folderIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; ");
+                folderIcon.getStyleClass().add("global-text");
                 Label title = new Label(pkg.getName());
                 title.getStyleClass().add("dashboard-package-title");
                 header.getChildren().addAll(folderIcon, title);
@@ -198,7 +199,8 @@ public class SnippetsDashboardView extends VBox {
 
                 if (matchingSnippetsInPkg.isEmpty()) {
                     Label emptyLabel = new Label("No snippets in this package");
-                    emptyLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic; -fx-font-size: 11px; -fx-padding: 5px 0 0 5px;");
+                    emptyLabel.setStyle(" -fx-font-style: italic; -fx-font-size: 11px; -fx-padding: 5px 0 0 5px;");
+                    emptyLabel.getStyleClass().add("global-text");
                     grid.getChildren().add(emptyLabel);
                 }
 
@@ -226,7 +228,8 @@ public class SnippetsDashboardView extends VBox {
             HBox standaloneHeader = new HBox(10);
             standaloneHeader.setAlignment(Pos.CENTER_LEFT);
             Label standaloneIcon = new Label("\uEAE9");
-            standaloneIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; -fx-text-fill: #94a3b8;");
+            standaloneIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 16px; ");
+            standaloneIcon.getStyleClass().add("global-text");
             Label standaloneTitle = new Label("Standalone Snippets (No Package)");
             standaloneTitle.getStyleClass().add("dashboard-standalone-title");
             standaloneHeader.getChildren().addAll(standaloneIcon, standaloneTitle);
@@ -241,7 +244,8 @@ public class SnippetsDashboardView extends VBox {
 
             if (matchingStandalone.isEmpty()) {
                 Label emptyLabel = new Label("No standalone snippets");
-                emptyLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic; -fx-font-size: 11px; -fx-padding: 5px 0 0 5px;");
+                emptyLabel.setStyle(" -fx-font-style: italic; -fx-font-size: 11px; -fx-padding: 5px 0 0 5px;");
+                emptyLabel.getStyleClass().add("global-text");
                 standaloneGrid.getChildren().add(emptyLabel);
             }
 

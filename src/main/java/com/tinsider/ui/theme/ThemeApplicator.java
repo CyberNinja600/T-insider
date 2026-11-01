@@ -82,10 +82,7 @@ public final class ThemeApplicator {
         com.jediterm.core.Color sideBorder = theme.getColor("sidebar.border", theme.getSelectionColor());
         com.jediterm.core.Color labelFg = theme.getColor("global.label.foreground", theme.getTextColor());
 
-        com.jediterm.core.Color termBg = theme.getColor("terminal.background", theme.getBackgroundColor());
-        com.jediterm.core.Color termFg = theme.getColor("terminal.foreground", theme.getTextColor());
         com.jediterm.core.Color termCursor = theme.getColor("terminal.cursor", theme.getCursorColor());
-        com.jediterm.core.Color termSelection = theme.getColor("terminal.selection", theme.getSelectionColor());
 
         com.jediterm.core.Color headerBg = theme.getColor("tabs.header.background", theme.getBackgroundColor());
         com.jediterm.core.Color tabInactiveBg = theme.getColor("tabs.tab.inactive.background", theme.getBackgroundColor());
@@ -123,7 +120,6 @@ public final class ThemeApplicator {
         com.jediterm.core.Color btnHoverBorder = theme.getColor("controls.button.hover.border", theme.getCursorColor());
         com.jediterm.core.Color btnHoverFg = theme.getColor("controls.button.hover.foreground", theme.getBackgroundColor());
         com.jediterm.core.Color btnIcon = theme.getColor("controls.button.icon", theme.getTextColor());
-        com.jediterm.core.Color btnHoverIcon = theme.getColor("controls.button.hover.icon", theme.getBackgroundColor());
         com.jediterm.core.Color comboBg = theme.getColor("controls.combo.background", theme.getSelectionColor());
         com.jediterm.core.Color comboBorder = theme.getColor("controls.combo.border", theme.getBackgroundColor());
         com.jediterm.core.Color comboFg = theme.getColor("controls.combo.foreground", theme.getTextColor());
@@ -132,7 +128,6 @@ public final class ThemeApplicator {
         com.jediterm.core.Color colorPickerFg = theme.getColor("controls.colorpicker.foreground", theme.getTextColor());
         com.jediterm.core.Color colorPickerPopupBg = theme.getColor("controls.colorpicker.popup.background", theme.getBackgroundColor());
         com.jediterm.core.Color colorPickerPopupBorder = theme.getColor("controls.colorpicker.popup.border", theme.getSelectionColor());
-        com.jediterm.core.Color colorPickerCustomBg = theme.getColor("controls.colorpicker.custom.background", theme.getBackgroundColor());
         com.jediterm.core.Color colorPickerCustomControlsBg = theme.getColor("controls.colorpicker.custom.controls.background", theme.getSelectionColor());
         com.jediterm.core.Color colorPickerCustomBtnBg = theme.getColor("controls.colorpicker.custom.button.background", theme.getSelectionColor());
         com.jediterm.core.Color colorPickerCustomBtnBorder = theme.getColor("controls.colorpicker.custom.button.border", theme.getBackgroundColor());
@@ -146,7 +141,6 @@ public final class ThemeApplicator {
         com.jediterm.core.Color colorPickerCustomToggleSelectedBg = theme.getColor("controls.colorpicker.custom.toggle.selected.background", theme.getCursorColor());
         com.jediterm.core.Color colorPickerCustomToggleSelectedBorder = theme.getColor("controls.colorpicker.custom.toggle.selected.border", theme.getCursorColor());
         com.jediterm.core.Color colorPickerCustomToggleSelectedFg = theme.getColor("controls.colorpicker.custom.toggle.selected.foreground", theme.getBackgroundColor());
-        com.jediterm.core.Color inputBg = theme.getColor("controls.input.background", theme.getSelectionColor());
         com.jediterm.core.Color inputBorder = theme.getColor("controls.input.border", theme.getBackgroundColor());
         com.jediterm.core.Color inputFg = theme.getColor("controls.input.foreground", theme.getTextColor());
 
@@ -226,7 +220,6 @@ public final class ThemeApplicator {
 
         com.jediterm.core.Color sideNavFg = theme.getColor("sidebar.nav.foreground", theme.getTextColor());
         com.jediterm.core.Color sideNavHoverBg = theme.getColor("sidebar.nav.hover.background", theme.getSelectionColor());
-        com.jediterm.core.Color sideNavHoverFg = theme.getColor("sidebar.nav.hover.foreground", theme.getCursorColor());
         com.jediterm.core.Color sideNavSelectedBg = theme.getColor("sidebar.nav.selected.background", theme.getSelectionColor());
         com.jediterm.core.Color sideNavSelectedBorder = theme.getColor("sidebar.nav.selected.border", theme.getCursorColor());
 
@@ -246,8 +239,6 @@ public final class ThemeApplicator {
 
         // Highlights Theming Keys
         com.jediterm.core.Color hlSideBg = theme.getColor("highlights.sidebar.toggle.background", theme.getBackgroundColor());
-        com.jediterm.core.Color hlSideActiveBg = theme.getColor("highlights.sidebar.toggle.active.background", theme.getSelectionColor());
-        com.jediterm.core.Color hlSideActiveBorder = theme.getColor("highlights.sidebar.toggle.active.border", theme.getSelectionColor());
         com.jediterm.core.Color hlSideFg = theme.getColor("highlights.sidebar.toggle.foreground", theme.getTextColor());
         com.jediterm.core.Color hlSideActiveFg = theme.getColor("highlights.sidebar.toggle.active.foreground", theme.getCursorColor());
         com.jediterm.core.Color hlSideEyeInactive = theme.getColor("highlights.sidebar.toggle.eye.inactive", theme.getTextColor());
@@ -311,11 +302,7 @@ public final class ThemeApplicator {
 
         String hexSideBorder = toRgba(sideBorder, sidebarBorderOpacity);
         String hexLabelFg = toHex(labelFg);
-
-        String hexTermBg = toHex(termBg);
-        String hexTermFg = toHex(termFg);
         String hexTermCursor = toHex(termCursor);
-        String hexTermSelection = toHex(termSelection);
 
         String hexHeaderBg = toHex(headerBg);
         String hexTabInactiveBg = toHex(tabInactiveBg);
@@ -335,6 +322,7 @@ public final class ThemeApplicator {
         String hexSnippetLauncherLabelColor = toHex(snippetLauncherLabelColor);
 
         // Standard UI Opacities
+        double globalButtonHoverOpacity = 0.15;
         double itemBgOpacity = 0.5;
         double itemHoverBgOpacity = 0.15;
         double itemSelectedBgOpacity = 1.0;
@@ -393,11 +381,12 @@ public final class ThemeApplicator {
 
         double btnBgOpacity = 1.0;
         double btnBorderOpacity = 1.0;
-        double btnHoverBgOpacity = 1.0;
+        double btnHoverBgOpacity = .15;
         double btnHoverBorderOpacity = 1.0;
+        double comboHoverBgOpacity = 0.15;
+        double dropItemHoverBgOpacity = 0.50;
 
         double hlSideBgOpacity = 0.50;
-        double hlSideBorderOpacity = 0.50;
         double hlSideHoverBgOpacity = 0.15;
         double hlSideHoverBorderOpacity = 1.0;
         double hlSideActiveBgOpacity = 0.25;
@@ -503,16 +492,15 @@ public final class ThemeApplicator {
         String hexBtnHoverFg = toHex(btnHoverFg);
         String hexBtnHoverBg = toHex(btnHoverBg);
         String hexBtnIcon = toHex(btnIcon);
-        String hexBtnHoverIcon = toHex(btnHoverIcon);
         String hexComboBg = toHex(comboBg);
         String hexComboBorder = toHex(comboBorder);
         String hexComboFg = toHex(comboFg);
+        String rgbaComboHoverBg = toRgba(btnHoverBg, comboHoverBgOpacity);
         String hexColorPickerBg = toHex(colorPickerBg);
         String hexColorPickerBorder = toHex(colorPickerBorder);
         String hexColorPickerFg = toHex(colorPickerFg);
         String hexColorPickerPopupBg = toHex(colorPickerPopupBg);
         String hexColorPickerPopupBorder = toHex(colorPickerPopupBorder);
-        String hexColorPickerCustomBg = toHex(colorPickerCustomBg);
         String hexColorPickerCustomControlsBg = toHex(colorPickerCustomControlsBg);
         String hexColorPickerCustomBtnBg = toHex(colorPickerCustomBtnBg);
         String hexColorPickerCustomBtnBorder = toHex(colorPickerCustomBtnBorder);
@@ -526,7 +514,6 @@ public final class ThemeApplicator {
         String hexColorPickerCustomToggleSelectedBg = toHex(colorPickerCustomToggleSelectedBg);
         String hexColorPickerCustomToggleSelectedBorder = toHex(colorPickerCustomToggleSelectedBorder);
         String hexColorPickerCustomToggleSelectedFg = toHex(colorPickerCustomToggleSelectedFg);
-        String hexInputBg = toHex(inputBg);
         String hexInputBorder = toHex(inputBorder);
         String hexInputFg = toHex(inputFg);
 
@@ -546,10 +533,10 @@ public final class ThemeApplicator {
 
         String hexDropListBg = toHex(dropListBg);
         String hexDropListBorder = toHex(dropListBorder);
-        String hexDropItemBg = toHex(dropItemBg);
         String hexDropItemFg = toHex(dropItemFg);
         String hexDropHoverBg = toHex(dropHoverBg);
         String hexDropHoverFg = toHex(dropHoverFg);
+        String rgbaDropItemHoverBg = toRgba(dropItemBg, dropItemHoverBgOpacity);
 
         String hexTitleBtnFg = toHex(titleBtnFg);
         String hexTitleBtnHoverBg = toHex(titleBtnHoverBg);
@@ -558,9 +545,8 @@ public final class ThemeApplicator {
         String hexTitleCloseHoverFg = toHex(titleCloseHoverFg);
 
         String hexSideNavFg = toHex(sideNavFg);
-        String hexSideNavHoverBg = toHex(sideNavHoverBg);
-        String hexSideNavHoverFg = toHex(sideNavHoverFg);
         String hexSideNavSelectedBorder = toHex(sideNavSelectedBorder);
+        String rgbaHexSideNavHoverBg = toRgba(sideNavHoverBg,globalButtonHoverOpacity);
 
         String dynamicCss = ".root { -fx-background-color: " + hexWinBg + "; -fx-border-color: " + hexWinBorder + "; -fx-border-width: 1px; -fx-background-radius: 0px; -fx-border-radius: 0px; }\n" +
             ".custom-title-bar { -fx-background-color: " + hexTitleBg + "; -fx-border-color: " + hexTitleBorder + "; -fx-border-width: 0 0 1 0; -fx-background-radius: 0px; }\n" +
@@ -571,9 +557,9 @@ public final class ThemeApplicator {
             ".sidebar { -fx-background-color: " + hexSideBg + "; -fx-border-color: " + hexSideBorder + "; }\n" +
             ".top-bar { -fx-background-color: " + hexToolBg + "; -fx-border-color: " + hexToolBorder + "; -fx-pref-height: 46px; -fx-min-height: 46px; -fx-max-height: 46px; }\n" +
             ".button { -fx-background-color: " + rgbaBtnBg + "; -fx-border-color: " + rgbaBtnBorder + "; -fx-text-fill: " + hexBtnFg + "; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
-            ".button:hover { -fx-background-color: " + rgbaBtnHoverBg + "; -fx-border-color: " + rgbaBtnHoverBorder + "; -fx-text-fill: " + hexBtnHoverFg + "; }\n" +
+            ".button:hover { -fx-background-color: " + rgbaBtnHoverBg + "; -fx-border-color: " + rgbaBtnHoverBorder + "; -fx-text-fill: " + hexBtnFg + "; }\n" +
             ".button .button-icon { -fx-text-fill: " + hexBtnIcon + "; }\n" +
-            ".button:hover .button-icon { -fx-text-fill: " + hexBtnHoverIcon + "; }\n" +
+            ".button:hover .button-icon { -fx-text-fill: " + hexBtnIcon + "; }\n" +
             ".button:disabled { -fx-opacity: 0.4; -fx-cursor: default; }\n" +
             ".button.zoom-btn { -fx-background-color: " + rgbaZoomBg + "; -fx-border-color: " + rgbaZoomBorder + "; -fx-text-fill: " + hexZoomFg + "; -fx-padding: 3px 8px; -fx-font-size: 11px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
             ".button.zoom-btn:hover { -fx-background-color: " + rgbaZoomHoverBg + "; -fx-border-color: " + rgbaZoomHoverBorder + "; -fx-text-fill: " + hexZoomHoverFg + "; }\n" +
@@ -594,15 +580,19 @@ public final class ThemeApplicator {
             ".button.terminal-btn { -fx-background-color: " + rgbaHomeBg + "; -fx-border-color: " + rgbaHomeBorder + "; -fx-text-fill: " + hexHomeFg + "; -fx-padding: 3px 8px; -fx-font-family: \"codicon\"; -fx-font-size: 14px; -fx-min-width: 24px; -fx-min-height: 24px; -fx-alignment: center; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; }\n" +
             ".button.terminal-btn:hover { -fx-background-color: " + rgbaHomeHoverBg + "; -fx-border-color: " + rgbaHomeHoverBorder + "; -fx-text-fill: " + hexHomeHoverFg + "; }\n" +
             ".button.terminal-btn:pressed { -fx-background-color: " + rgbaHomeActiveBg + "; -fx-border-color: " + rgbaHomeActiveBorder + "; -fx-text-fill: " + hexHomeActiveFg + "; }\n" +
-            ".combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; -fx-background-insets: 0; -fx-background-radius: 4px; -fx-border-radius: 4px; -fx-border-width: 1px; }\n" +
-            ".combo-box .arrow-button { -fx-background-color: transparent; -fx-background-insets: 0; -fx-background-radius: 0; }\n" +
-            ".combo-box .arrow-button .arrow { -fx-background-color: " + hexComboFg + "; -fx-background-insets: 0; }\n" +
+            ".combo-box, .dialog-pane .combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; -fx-background-insets: 0; -fx-background-radius: 4px; -fx-border-radius: 4px; -fx-border-width: 0px; }\n" +
+            ".combo-box .arrow-button, .dialog-pane .combo-box .arrow-button { -fx-background-color: transparent; -fx-background-insets: 0; -fx-background-radius: 0; }\n" +
+            ".combo-box .arrow-button .arrow, .dialog-pane .combo-box .arrow-button .arrow { -fx-background-color: " + hexComboFg + "; -fx-background-insets: 0; }\n" +
             ".combo-box.shell-dropdown { -fx-pref-width: 140px; -fx-max-width: 140px; }\n" +
             ".combo-box.theme-dropdown { -fx-border-color: transparent; -fx-border-width: 0px; }\n" +
-            ".combo-box .list-cell { -fx-text-fill: " + hexComboFg + "; }\n" +
-            ".combo-box:hover { -fx-background-color: " + hexBtnHoverBg + "; }\n" +
-            ".combo-box:focused { -fx-border-color: " + hexComboBorder + "; }\n" +
-            ".text-field { -fx-background-color: " + rgbaSearchBg + "; -fx-text-fill: " + hexSearchFg + "; -fx-border-color: " + hexSearchBorder + "; }\n" +
+            ".combo-box > .list-cell, .dialog-pane .combo-box > .list-cell { -fx-text-fill: " + hexComboFg + "; -fx-background-radius: 3px; -fx-border-radius: 3px;}\n" +
+            ".combo-box:hover, .dialog-pane .combo-box:hover { -fx-background-color: " + rgbaComboHoverBg + "; }\n" +
+            ".combo-box.theme-dropdown:hover { -fx-background-color: " + rgbaComboHoverBg + "; }\n" +
+            ".combo-box:hover > .list-cell, .dialog-pane .combo-box:hover > .list-cell { -fx-text-fill: " + dropItemFg + "; }\n" +
+            ".combo-box:hover .arrow-button .arrow, .dialog-pane .combo-box:hover .arrow-button .arrow { -fx-background-color: " + dropItemFg + "; }\n" +
+            ".combo-box:focused, .dialog-pane .combo-box:focused { -fx-border-color: " + hexComboBorder + "; }\n" +
+            ".combo-box:disabled, .dialog-pane .combo-box:disabled { -fx-opacity: 0.5; }\n" +
+            ".text-field { -fx-background-color: " + rgbaSearchBg + "; -fx-text-fill: " + hexSearchFg + "; -fx-border-color: " + hexSearchBorder + "; -fx-prompt-text-fill: "+ hexColorPickerFg +";}\n" +
             ".text-field:hover { -fx-background-color: " + hexSearchHoverBg + "; }\n" +
             ".text-field:focused { -fx-background-color: " + hexSearchActiveBg + "; -fx-border-color: " + hexSearchActiveBorder + "; }\n" +
             ".scroll-pane { -fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0; -fx-border-color: transparent; }\n" +
@@ -614,15 +604,15 @@ public final class ThemeApplicator {
             ".session-cell { -fx-text-fill: " + hexCardsItemTitle + "; -fx-padding: 8px; -fx-font-size: 13px; -fx-background-color: " + rgbaCardsItemBg + "; -fx-border-color: " + rgbaCardsItemBorder + "; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-background-insets: 0; -fx-border-width: 1px; }\n" +
             ".session-cell:hover { -fx-background-color: " + rgbaCardsHoverBg + "; -fx-border-color: " + rgbaCardsHoverBorder + "; -fx-border-radius: 6px; -fx-background-radius: 6px; }\n" +
             ".session-cell:selected, .session-cell.selected { -fx-background-color: " + rgbaCardsSelectedBg + "; -fx-border-color: " + rgbaCardsSelectedBorder + "; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-effect: dropshadow(three-pass-box, " + rgbaCardsSelectedGlow + ", 8, 0, 0, 0); }\n" +
-            ".combo-box-popup .list-view { -fx-background-color: " + hexDropListBg + "; -fx-control-inner-background: " + hexDropListBg + "; -fx-border-color: " + hexDropListBorder + "; }\n" +
-            ".combo-box-popup .list-view .list-cell { -fx-text-fill: " + hexDropItemFg + "; -fx-background-color: " + hexDropHoverBg + "; -fx-padding: 6px 12px; }\n" +
-            ".combo-box-popup .list-view .list-cell:hover { -fx-background-color: " + hexDropItemBg + "; -fx-text-fill: " + hexDropHoverFg + "; }\n" +
-            ".combo-box-popup .list-view .list-cell:selected { -fx-background-color: " + hexDropItemBg + "; -fx-text-fill: " + hexDropHoverFg + "; }\n" +
+            ".combo-box-popup .list-view { -fx-background-color: " + hexDropListBg + "; -fx-control-inner-background: " + hexDropListBg + "; -fx-border-color: " + hexDropListBorder + "; -fx-background-radius: 3px; -fx-border-radius: 3px;}\n" +
+                ".combo-box-popup .list-view .list-cell, .dialog-pane .combo-box-popup .list-view .list-cell { -fx-text-fill: " + hexDropItemFg + "; -fx-background-color: " + hexDropHoverBg + "; -fx-padding: 6px 12px; -fx-background-insets: 1px 0px 1px 0px; }\n" +
+                ".combo-box-popup .list-view .list-cell:hover, .dialog-pane .combo-box-popup .list-view .list-cell:hover { -fx-background-color: " + rgbaDropItemHoverBg + "; -fx-text-fill: " + hexDropHoverFg + "; -fx-background-insets: 1px 0px 1px 0px; }\n" +
+                ".combo-box-popup .list-view .list-cell:selected, .dialog-pane .combo-box-popup .list-view .list-cell:selected { -fx-background-color: " + rgbaDropItemHoverBg + "; -fx-text-fill: " + hexDropHoverFg + "; -fx-background-insets: 1px 0px 1px 0px; }\n" +
             ".combo-box-popup .list-view .scroll-bar { -fx-background-color: transparent; }\n" +
             ".combo-box-popup .list-view .scroll-bar:horizontal { -fx-pref-height: 8px; -fx-max-height: 8px; }\n" +
             ".combo-box-popup .list-view .scroll-bar:vertical { -fx-pref-width: 13px; -fx-max-width: 13px; -fx-padding: 0 0 0 5px; }\n" +
             ".combo-box-popup .list-view .scroll-bar .track { -fx-background-color: transparent; -fx-border-color: transparent; -fx-background-insets: 0; }\n" +
-            ".combo-box-popup .list-view .scroll-bar .thumb { -fx-background-color: " + rgbaDropScrollThumb + "; -fx-background-radius: 4px; -fx-border-radius: 4px; -fx-background-insets: 1px; }\n" +
+            ".combo-box-popup .list-view .scroll-bar .thumb { -fx-background-color: " + rgbaDropScrollThumb + "; -fx-background-radius: 3px; -fx-border-radius: 3px; -fx-background-insets: 1px; }\n" +
             ".combo-box-popup .list-view .scroll-bar .thumb:hover { -fx-background-color: " + rgbaDropScrollThumbHover + "; }\n" +
             ".combo-box-popup .list-view .scroll-bar .increment-button, .combo-box-popup .list-view .scroll-bar .decrement-button { -fx-background-color: transparent; -fx-background-radius: 0; -fx-border-color: transparent; -fx-padding: 0px; }\n" +
             ".combo-box-popup .list-view .scroll-bar .increment-arrow, .combo-box-popup .list-view .scroll-bar .decrement-arrow { -fx-shape: \"\"; -fx-padding: 0px; -fx-max-width: 0px; -fx-max-height: 0px; }\n" +
@@ -667,7 +657,7 @@ public final class ThemeApplicator {
             ".tab-pane > .tab-header-area > .control-buttons-tab > .tab-down-button { -fx-padding: 0; visibility: hidden; }\n" +
             ".slim-nav-rail { -fx-background-color: " + hexSideBg + "; -fx-border-color: " + hexSideBorder + "; -fx-border-width: 0 1 0 0; }\n" +
             ".nav-button { -fx-background-color: transparent; -fx-text-fill: " + hexSideNavFg + "; -fx-font-weight: bold; -fx-font-size: 12px; -fx-padding: 10px 5px; -fx-cursor: hand; -fx-background-radius: 4px; }\n" +
-            ".nav-button:hover { -fx-text-fill: " + hexSideNavHoverFg + "; -fx-background-color: " + hexSideNavHoverBg + "; }\n" +
+            ".nav-button:hover { -fx-text-fill: " + hexSideNavFg + "; -fx-background-color: " + rgbaHexSideNavHoverBg + "; }\n" +
             ".nav-button:selected { -fx-text-fill: " + hexSideNavSelectedBorder + "; -fx-background-color: " + rgbaSideNavSelectedBg + "; -fx-border-color: transparent transparent transparent " + hexSideNavSelectedBorder + "; -fx-border-width: 0 0 0 3px; }\n" +
             ".dashboard-view { -fx-background-color: " + hexWinBg + "; }\n" +
             ".back-button { -fx-background-color: " + rgbaCardsSelectedBg + "; -fx-border-color: " + hexWinBg + "; -fx-text-fill: " + hexTermCursor + "; -fx-font-weight: bold; -fx-font-size: 12px; -fx-padding: 8px; -fx-cursor: hand; -fx-background-radius: 4px; }\n" +
@@ -710,9 +700,9 @@ public final class ThemeApplicator {
             ".dialog-pane .dialog-header-title { -fx-text-fill: " + hexDialogHeaderFg + "; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px 0 10px 0; }\n" +
             ".dialog-pane .label { -fx-text-fill: " + hexLabelFg + "; }\n" +
             ".dialog-pane .button-bar { -fx-padding: 10px 15px; }\n" +
-            ".dialog-pane .text-field, .dialog-pane .text-area, .dialog-pane .password-field, .dialog-pane .combo-box { -fx-background-color: " + hexInputBorder + "; -fx-text-fill: " + hexInputFg + "; -fx-border-color: " + hexInputBorder + "; }\n" +
+            ".dialog-pane .text-field, .dialog-pane .text-area, .dialog-pane .password-field { -fx-background-color: " + hexInputBorder + "; -fx-text-fill: " + hexInputFg + "; -fx-border-color: " + hexInputBorder + "; }\n" +
             ".dialog-pane .text-area .content, .dialog-pane .text-area:focused .content { -fx-background-color: transparent; -fx-text-fill: " + hexInputFg + "; }\n" +
-            ".dialog-pane .text-field:disabled, .dialog-pane .text-area:disabled, .dialog-pane .password-field:disabled, .dialog-pane .combo-box:disabled { -fx-opacity: 0.5; }\n" +
+            ".dialog-pane .text-field:disabled, .dialog-pane .text-area:disabled, .dialog-pane .password-field:disabled { -fx-opacity: 0.5; }\n" +
             ".dialog-pane .radio-button { -fx-text-fill: " + hexLabelFg + "; }\n" +
             ".dialog-pane .radio-button .radio { -fx-mark-color: " + hexTermCursor + "; -fx-border-color: transparent; }\n" +
             ".dialog-pane .check-box { -fx-text-fill: " + hexLabelFg + "; }\n" +
@@ -759,7 +749,8 @@ public final class ThemeApplicator {
             ".custom-color-dialog .customcolor-controls-background { -fx-background-color: transparent; }\n" +
             ".sidebar-tab-button { -fx-background-color: " + rgbaBtnBg + "; -fx-border-color: " + rgbaBtnBorder + "; -fx-text-fill: " + hexBtnFg + "; -fx-background-insets: 0; -fx-border-width: 1px; -fx-background-radius: 4px; -fx-border-radius: 4px; -fx-padding: 6px 12px; -fx-cursor: hand; -fx-font-weight: bold; -fx-font-size: 11px; }\n" +
             ".sidebar-tab-button:hover { -fx-background-color: " + rgbaBtnHoverBg + "; -fx-border-color: " + rgbaBtnHoverBorder + "; -fx-text-fill: " + hexBtnHoverFg + "; }\n" +
-            ".sidebar-tab-button:selected { -fx-background-color: " + rgbaCardsSelectedBg + "; -fx-border-color: " + hexSideNavSelectedBorder + "; -fx-text-fill: " + hexSideNavSelectedBorder + "; }\n";
+            ".sidebar-tab-button:selected { -fx-background-color: " + rgbaCardsSelectedBg + "; -fx-border-color: " + hexSideNavSelectedBorder + "; -fx-text-fill: " + hexSideNavSelectedBorder + "; }\n" +
+            ".global-text {-fx-text-fill: "+ hexColorPickerFg +";}";
 
         try {
             File cssFile = File.createTempFile("theme", ".css");

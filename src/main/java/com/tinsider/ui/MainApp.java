@@ -280,6 +280,27 @@ public class MainApp extends Application {
         StartupSignal.signalApplicationShown();
         applyTheme(currentTheme);
 
+        // Restore focus to active terminal when window regains focus from outside,
+        // and clear Scene focus to root when window loses focus so SwingNode properly transitions
+        primaryStage.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                if (currentMode == AppMode.TERMINAL && workspace != null) {
+                    Tab activeTab = workspace.getTabPane().getSelectionModel().getSelectedItem();
+                    if (activeTab != null) {
+                        TerminalSplitPane splitPane = sessionManager.getSplitPaneForTab(activeTab);
+                        if (splitPane != null) {
+                            Platform.runLater(splitPane::requestFocusOnActive);
+                        }
+                    }
+                }
+            } else {
+                if (root != null && root.getScene() != null) {
+                    root.setFocusTraversable(true);
+                    root.requestFocus();
+                }
+            }
+        });
+
         // 12. Safely restore borderless fullscreen after stage is shown and HWND is active
         if (initialFullScreen) {
             Platform.runLater(() -> {

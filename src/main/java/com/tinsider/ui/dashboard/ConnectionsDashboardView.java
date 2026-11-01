@@ -61,9 +61,10 @@ public class ConnectionsDashboardView extends VBox {
         HBox localHeader = new HBox(8);
         localHeader.setAlignment(Pos.CENTER_LEFT);
         Label localIcon = new Label("\uEA85");
-        localIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 15px; -fx-text-fill: #94a3b8;");
+        localIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 15px;");
         Label localText = new Label("Local Terminals");
-        localText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;");
+        localText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        localText.getStyleClass().add("global-text");
         localHeader.getChildren().addAll(localIcon, localText);
 
         localConnectionsGrid = new FlowPane(15, 15);
@@ -75,9 +76,10 @@ public class ConnectionsDashboardView extends VBox {
         HBox remoteHeader = new HBox(8);
         remoteHeader.setAlignment(Pos.CENTER_LEFT);
         Label remoteIcon = new Label("\uEB01");
-        remoteIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 15px; -fx-text-fill: #94a3b8;");
+        remoteIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 15px;");
         Label remoteText = new Label("Remote Connections");
-        remoteText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;");
+        remoteText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        localText.getStyleClass().add("global-text");
         remoteHeader.getChildren().addAll(remoteIcon, remoteText);
 
         remoteConnectionsGrid = new FlowPane(15, 15);
