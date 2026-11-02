@@ -38,6 +38,8 @@ public class TerminalSplitPane extends BorderPane {
         this.themeSupplier = themeSupplier;
         this.closeTabCallback = closeTabCallback;
         getStyleClass().add("terminal-split-pane");
+        setMinWidth(0);
+        setMinHeight(0);
     }
 
     public void setRootNode(SplitNode rootNode) {
@@ -225,6 +227,9 @@ public class TerminalSplitPane extends BorderPane {
 
     public void splitAndAdoptLeaf(TerminalPane targetPane, TerminalPane sourcePane, DropPosition dropPos) {
         if (targetPane == null || sourcePane == null) return;
+
+        // Ensure drag overlay is hidden and cleaned up on targetPane
+        targetPane.hideDragOverlay();
 
         // 1. Create a brand new TerminalPane
         TerminalPane newPane = new TerminalPane(this, sourcePane.getSessionType(), sourcePane.getLocalShellType(), sourcePane.getHostProfile(), sourcePane.getTitle());

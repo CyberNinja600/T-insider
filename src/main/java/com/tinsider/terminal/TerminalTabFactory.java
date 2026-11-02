@@ -57,6 +57,21 @@ public class TerminalTabFactory {
         });
 
         swingNode.setContent(widget);
+
+        // Ensure embedded widget and terminal panel maintain flexible small minimum size so SwingNode can resize freely
+        SwingUtilities.invokeLater(() -> {
+            try {
+                widget.setMinimumSize(new java.awt.Dimension(10, 10));
+                widget.setPreferredSize(new java.awt.Dimension(10, 10));
+                if (widget.getTerminalPanel() != null) {
+                    widget.getTerminalPanel().setMinimumSize(new java.awt.Dimension(10, 10));
+                    widget.getTerminalPanel().setPreferredSize(new java.awt.Dimension(10, 10));
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
         return swingNode;
     }
 
