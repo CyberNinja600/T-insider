@@ -78,6 +78,11 @@ public class TerminalTabFactory {
     public static JediTermWidget createJediTermWidget(
             TtyConnector connector, 
             Supplier<TerminalTheme> themeSupplier) {
+
+        final Supplier<TerminalTheme> safeThemeSupplier = () -> {
+            TerminalTheme t = (themeSupplier != null) ? themeSupplier.get() : null;
+            return t != null ? t : new TerminalTheme("Default", new com.jediterm.core.Color(30, 30, 30), new com.jediterm.core.Color(200, 200, 200), new com.jediterm.core.Color(255, 255, 255), new com.jediterm.core.Color(50, 50, 100));
+        };
         
         JediTermWidget widget = new JediTermWidget(new DefaultSettingsProvider() {
             @Override
@@ -265,7 +270,7 @@ public class TerminalTabFactory {
                 scrollBar.setOpaque(true);
                 scrollBar.setBorder(BorderFactory.createEmptyBorder());
                 
-                com.jediterm.core.Color initialBg = themeSupplier.get().getBackgroundColor();
+                com.jediterm.core.Color initialBg = safeThemeSupplier.get().getBackgroundColor();
                 scrollBar.setBackground(new java.awt.Color(initialBg.getRed(), initialBg.getGreen(), initialBg.getBlue()));
                 
                 scrollBar.updateUI();
@@ -273,9 +278,9 @@ public class TerminalTabFactory {
             }
         };
 
-        com.jediterm.core.Color bgColor = themeSupplier.get().getBackgroundColor();
+        com.jediterm.core.Color bgColor = safeThemeSupplier.get().getBackgroundColor();
         java.awt.Color awtBg = new java.awt.Color(bgColor.getRed(), bgColor.getGreen(), bgColor.getBlue());
-        com.jediterm.core.Color fgColor = themeSupplier.get().getTextColor();
+        com.jediterm.core.Color fgColor = safeThemeSupplier.get().getTextColor();
         java.awt.Color awtFg = new java.awt.Color(fgColor.getRed(), fgColor.getGreen(), fgColor.getBlue());
 
         setAllBackgrounds(widget, awtBg);
@@ -291,9 +296,9 @@ public class TerminalTabFactory {
         SwingUtilities.invokeLater(() -> {
             javax.swing.Timer timer = new javax.swing.Timer(1, e -> {
                 try {
-                    com.jediterm.core.Color bg = themeSupplier.get().getBackgroundColor();
+                    com.jediterm.core.Color bg = safeThemeSupplier.get().getBackgroundColor();
                     java.awt.Color delayedAwtBg = new java.awt.Color(bg.getRed(), bg.getGreen(), bg.getBlue());
-                    com.jediterm.core.Color fg = themeSupplier.get().getTextColor();
+                    com.jediterm.core.Color fg = safeThemeSupplier.get().getTextColor();
                     java.awt.Color delayedAwtFg = new java.awt.Color(fg.getRed(), fg.getGreen(), fg.getBlue());
 
                     setAllBackgrounds(widget, delayedAwtBg);
