@@ -1,5 +1,6 @@
 package com.tinsider;
 
+import com.tinsider.config.TerminalTheme;
 import com.tinsider.model.HostProfile;
 import com.tinsider.ui.components.terminal.split.TerminalPane;
 import com.tinsider.ui.components.terminal.split.TerminalSplitPane;
@@ -18,10 +19,16 @@ public class TerminalPaneTitleTest {
     public static void initJavaFx() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         try {
-            Platform.startup(latch::countDown);
+            Platform.startup(() -> {
+                Platform.setImplicitExit(false);
+                latch.countDown();
+            });
         } catch (IllegalStateException e) {
             // Toolkit already started
-            latch.countDown();
+            Platform.runLater(() -> {
+                Platform.setImplicitExit(false);
+                latch.countDown();
+            });
         }
         assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
@@ -31,7 +38,8 @@ public class TerminalPaneTitleTest {
         CountDownLatch latch = new CountDownLatch(1);
         Platform.runLater(() -> {
             try {
-                TerminalSplitPane splitPane = new TerminalSplitPane(() -> null, () -> {});
+                TerminalTheme defaultTheme = new TerminalTheme("Default");
+                TerminalSplitPane splitPane = new TerminalSplitPane(() -> defaultTheme, () -> {});
 
                 // 1. Create a local shell terminal pane (e.g. CMD)
                 TerminalPane pane = new TerminalPane(splitPane, "LOCAL", "CMD", null, "CMD");
@@ -78,7 +86,8 @@ public class TerminalPaneTitleTest {
         CountDownLatch latch = new CountDownLatch(1);
         Platform.runLater(() -> {
             try {
-                TerminalSplitPane splitPane = new TerminalSplitPane(() -> null, () -> {});
+                TerminalTheme defaultTheme = new TerminalTheme("Default");
+                TerminalSplitPane splitPane = new TerminalSplitPane(() -> defaultTheme, () -> {});
 
                 HostProfile host = new HostProfile("prod-server", "192.168.1.50", 22, "root", "secret");
                 TerminalPane sshPane = new TerminalPane(splitPane, "SSH", null, host, "prod-server");

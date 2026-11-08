@@ -9,9 +9,12 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
+import javafx.stage.PopupWindow;
+import javafx.stage.Window;
 import javafx.util.Callback;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Objects;
 import java.util.Optional;
@@ -110,6 +113,13 @@ public class ModalOverlayManager {
 
         if (!Platform.canStartNestedEventLoop()) {
             throw new IllegalStateException("Cannot start nested event loop in current state");
+        }
+
+        // Dismiss any active popups (like ContextMenus or Tooltips) so they don't linger above the modal overlay
+        for (Window window : new ArrayList<>(Window.getWindows())) {
+            if (window instanceof PopupWindow popupWindow) {
+                popupWindow.hide();
+            }
         }
 
         // Ensure theme and custom title bar styling are applied

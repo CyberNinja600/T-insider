@@ -2,8 +2,10 @@ package com.tinsider.ui.components.sidebar;
 
 import com.tinsider.model.Snippet;
 import com.tinsider.model.SnippetPackage;
+import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -282,22 +284,27 @@ public class SidebarSnippetsView extends VBox {
 
         // Right-click ContextMenu for Editing Snippets
         ContextMenu contextMenu = new ContextMenu();
+        contextMenu.addEventHandler(ActionEvent.ACTION, e -> contextMenu.hide());
+
         MenuItem editItem = new MenuItem("Edit");
         Label editIcon = new Label("\uEC68");
         editIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
         editItem.setGraphic(editIcon);
         editItem.setOnAction(e -> {
+            contextMenu.hide();
             if (onEditSnippet != null) {
-                onEditSnippet.accept(item);
+                Platform.runLater(() -> onEditSnippet.accept(item));
             }
         });
         contextMenu.getItems().add(editItem);
+        card.getProperties().put("contextMenu", contextMenu);
 
         card.setOnContextMenuRequested(event -> {
             clearSidebarSelection();
             currentlySelectedCardNode = card;
             card.getStyleClass().add("selected");
             contextMenu.show(card, event.getScreenX(), event.getScreenY());
+            event.consume();
         });
 
         return card;
