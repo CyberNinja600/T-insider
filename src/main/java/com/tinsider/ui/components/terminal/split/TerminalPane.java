@@ -10,11 +10,17 @@ import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
@@ -37,6 +43,11 @@ public class TerminalPane extends StackPane {
     private String localShellType;  // "CMD", "PowerShell", "Bash"
     private HostProfile hostProfile;// for SSH
     private String title;
+    private String originalTitle;
+    private boolean isEditingTitle = false;
+    private TextField activeEditField;
+    private Button renameBtn;
+    private ContextMenu headerContextMenu;
 
     // Parent/Template details for empty placeholders
     private String parentSessionType;
@@ -87,16 +98,20 @@ public class TerminalPane extends StackPane {
                 this.parentSessionType = parentPane.getSessionType();
                 this.parentLocalShellType = parentPane.getLocalShellType();
                 this.parentHostProfile = parentPane.getHostProfile();
-                this.parentTitle = parentPane.getTitle();
+                this.parentTitle = (parentPane.getOriginalTitle() != null && !parentPane.getOriginalTitle().isEmpty())
+                        ? parentPane.getOriginalTitle()
+                        : parentPane.getTitle();
             }
         }
 
         if ("EMPTY".equals(sessionType)) {
             this.title = "Drop Tab Here";
+            this.originalTitle = "Drop Tab Here";
         } else {
             this.localShellType = localShellType;
             this.hostProfile = hostProfile;
             this.title = title;
+            this.originalTitle = (title != null && !title.isEmpty()) ? title : (hostProfile != null ? hostProfile.getName() : localShellType);
         }
 
         getStyleClass().add("terminal-pane");
@@ -121,6 +136,44 @@ public class TerminalPane extends StackPane {
         titleLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-font-weight: bold;");
         titleLabel.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(titleLabel, Priority.ALWAYS);
+        titleLabel.setCursor(Cursor.HAND);
+        titleLabel.setTooltip(new Tooltip("Double-click to rename title"));
+        titleLabel.setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+                event.consume();
+                startTitleEditing();
+            }
+        });
+
+        // Hover effect for titleLabel
+        titleLabel.setOnMouseEntered(e -> {
+            if (currentTheme != null && !"EMPTY".equals(this.sessionType)) {
+                com.jediterm.core.Color hoverFg = currentTheme.getColor("terminal.pane.header.foreground", currentTheme.getCursorColor());
+                titleLabel.setStyle("-fx-text-fill: " + toHex(hoverFg) + "; -fx-font-size: 11px; -fx-font-weight: bold; -fx-underline: true;");
+            }
+        });
+        titleLabel.setOnMouseExited(e -> {
+            if (currentTheme != null && !"EMPTY".equals(this.sessionType)) {
+                boolean active = (splitPane.getActiveTerminalPane() == this);
+                com.jediterm.core.Color fg = active 
+                    ? currentTheme.getColor("terminal.pane.header.foreground", currentTheme.getCursorColor())
+                    : currentTheme.getColor("terminal.pane.header.foreground", currentTheme.getTextColor());
+                titleLabel.setStyle("-fx-text-fill: " + toHex(fg) + "; -fx-font-size: 11px; -fx-font-weight: bold; -fx-underline: false;");
+            }
+        });
+
+        renameBtn = new Button();
+        Label renameIcon = new Label("\uEA73");
+        renameIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 10px; -fx-text-fill: inherit;");
+        renameBtn.setGraphic(renameIcon);
+        renameBtn.getStyleClass().add("terminal-pane-btn");
+        renameBtn.setTooltip(new Tooltip("Rename Terminal (or double-click title)"));
+        renameBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #94a3b8; -fx-cursor: hand; -fx-font-size: 10px; -fx-padding: 2px 6px;");
+        renameBtn.setOnAction(e -> startTitleEditing());
+        if ("EMPTY".equals(this.sessionType)) {
+            renameBtn.setVisible(false);
+            renameBtn.setManaged(false);
+        }
 
         splitVertBtn = new Button("Split");
         Label splitVertIcon = new Label("\uEB56");
@@ -144,11 +197,36 @@ public class TerminalPane extends StackPane {
         closeBtn.setOnAction(e -> splitPane.removeLeaf(this.leafNode));
 
         // Hover styles programmatically
+        setupButtonHover(renameBtn, false);
         setupButtonHover(splitVertBtn, false);
         setupButtonHover(splitHorizBtn, false);
         setupButtonHover(closeBtn, true);
 
-        headerBar.getChildren().addAll(titleLabel, splitVertBtn, splitHorizBtn, closeBtn);
+        // Header Context Menu
+        headerContextMenu = new ContextMenu();
+        MenuItem renameMenuItem = new MenuItem("Rename");
+        Label renameMenuIcon = new Label("\uEA73");
+        renameMenuIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 11px;");
+        renameMenuItem.setGraphic(renameMenuIcon);
+        renameMenuItem.setOnAction(e -> startTitleEditing());
+
+        MenuItem resetMenuItem = new MenuItem("Reset to Original Name");
+        Label resetMenuIcon = new Label("\uEAE2");
+        resetMenuIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 11px;");
+        resetMenuItem.setGraphic(resetMenuIcon);
+        resetMenuItem.setOnAction(e -> resetTitleToOriginal());
+
+        headerContextMenu.getItems().addAll(renameMenuItem, resetMenuItem);
+
+        headerBar.setOnContextMenuRequested(event -> {
+            if ("EMPTY".equals(this.sessionType) || isEditingTitle) return;
+            boolean isRenamed = (originalTitle != null && !originalTitle.equals(this.title));
+            resetMenuItem.setDisable(!isRenamed);
+            headerContextMenu.show(headerBar, event.getScreenX(), event.getScreenY());
+            event.consume();
+        });
+
+        headerBar.getChildren().addAll(titleLabel, renameBtn, splitVertBtn, splitHorizBtn, closeBtn);
         mainLayout.setTop(headerBar);
 
         getChildren().add(mainLayout);
@@ -175,8 +253,22 @@ public class TerminalPane extends StackPane {
             if (event.getButton() == MouseButton.PRIMARY || event.getButton() == MouseButton.SECONDARY) {
                 if (splitPane.getActiveTerminalPane() != this) {
                     splitPane.setActiveTerminalPane(this);
-                } else {
-                    requestFocusOnTerminal();
+                } else if (!isEditingTitle) {
+                    // Check if click is on headerBar controls
+                    boolean isHeaderClick = false;
+                    if (event.getTarget() instanceof javafx.scene.Node node) {
+                        javafx.scene.Node curr = node;
+                        while (curr != null) {
+                            if (curr == headerBar) {
+                                isHeaderClick = true;
+                                break;
+                            }
+                            curr = curr.getParent();
+                        }
+                    }
+                    if (!isHeaderClick) {
+                        requestFocusOnTerminal();
+                    }
                 }
             }
         });
@@ -185,6 +277,9 @@ public class TerminalPane extends StackPane {
         setOnMouseEntered(event -> {
             if (currentTheme != null) {
                 com.jediterm.core.Color hoverFg = currentTheme.getColor("terminal.pane.header.button.hover.foreground", currentTheme.getCursorColor());
+                if (renameBtn != null && !renameBtn.isHover()) {
+                    renameBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + toHex(hoverFg) + "; -fx-cursor: hand; -fx-font-size: 10px; -fx-padding: 2px 6px;");
+                }
                 if (splitVertBtn != null && !splitVertBtn.isHover()) {
                     splitVertBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + toHex(hoverFg) + "; -fx-cursor: hand; -fx-font-size: 10px; -fx-padding: 2px 6px;");
                 }
@@ -200,6 +295,9 @@ public class TerminalPane extends StackPane {
         setOnMouseExited(event -> {
             if (currentTheme != null) {
                 com.jediterm.core.Color normalFg = currentTheme.getColor("terminal.pane.header.button.foreground", currentTheme.getTextColor());
+                if (renameBtn != null && !renameBtn.isHover()) {
+                    renameBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + toHex(normalFg) + "; -fx-cursor: hand; -fx-font-size: 10px; -fx-padding: 2px 6px;");
+                }
                 if (splitVertBtn != null && !splitVertBtn.isHover()) {
                     splitVertBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + toHex(normalFg) + "; -fx-cursor: hand; -fx-font-size: 10px; -fx-padding: 2px 6px;");
                 }
@@ -259,9 +357,11 @@ public class TerminalPane extends StackPane {
 
         String buttonText = "Or Open Local CMD";
         if ("SSH".equals(parentSessionType) && parentHostProfile != null) {
-            buttonText = "Duplicate Session (" + parentTitle + ")";
+            String orig = (parentTitle != null && !parentTitle.isEmpty()) ? parentTitle : parentHostProfile.getName();
+            buttonText = "Duplicate Session (" + orig + ")";
         } else if ("LOCAL".equals(parentSessionType) && parentLocalShellType != null) {
-            buttonText = "Duplicate Session (" + parentLocalShellType + ")";
+            String orig = (parentTitle != null && !parentTitle.isEmpty()) ? parentTitle : parentLocalShellType;
+            buttonText = "Duplicate Session (" + orig + ")";
         }
 
         emptyLocalShellBtn = new Button(buttonText);
@@ -312,6 +412,7 @@ public class TerminalPane extends StackPane {
 
     private void setupDragAndDrop() {
         headerBar.setOnDragDetected(event -> {
+            if (isEditingTitle) return;
             Dragboard db = startDragAndDrop(TransferMode.MOVE);
             ClipboardContent content = new ClipboardContent();
             content.putString("TERMINAL_PANE_DRAG");
@@ -469,6 +570,11 @@ public class TerminalPane extends StackPane {
 
         mainLayout.setCenter(new SwingNodeWrapper(swingNode));
         
+        if (renameBtn != null) {
+            renameBtn.setVisible(true);
+            renameBtn.setManaged(true);
+        }
+
         // Start highlights timer
         highlightTimer = new javax.swing.Timer(150, e -> {
             applyHighlights();
@@ -489,6 +595,106 @@ public class TerminalPane extends StackPane {
         if (titleLabel != null) {
             titleLabel.setText(title);
         }
+    }
+
+    public void startTitleEditing() {
+        if (isEditingTitle || "EMPTY".equals(sessionType)) {
+            return;
+        }
+        isEditingTitle = true;
+
+        activeEditField = new TextField(this.title != null ? this.title : "");
+        activeEditField.getStyleClass().add("terminal-pane-title-field");
+        activeEditField.setMinWidth(0);
+        activeEditField.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(activeEditField, Priority.ALWAYS);
+        activeEditField.setOnDragDetected(javafx.event.Event::consume);
+
+        applyEditFieldTheme(activeEditField);
+
+        int index = headerBar.getChildren().indexOf(titleLabel);
+        if (index >= 0) {
+            headerBar.getChildren().set(index, activeEditField);
+        }
+
+        activeEditField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                commitTitleEdit(activeEditField.getText());
+                event.consume();
+            } else if (event.getCode() == KeyCode.ESCAPE) {
+                cancelTitleEdit();
+                event.consume();
+            }
+        });
+
+        activeEditField.focusedProperty().addListener((obs, oldVal, isFocused) -> {
+            if (!isFocused && isEditingTitle && activeEditField != null) {
+                commitTitleEdit(activeEditField.getText());
+            }
+        });
+
+        Platform.runLater(() -> {
+            if (activeEditField != null) {
+                activeEditField.requestFocus();
+                activeEditField.selectAll();
+            }
+        });
+    }
+
+    public void commitTitleEdit(String newText) {
+        if (!isEditingTitle) return;
+        isEditingTitle = false;
+
+        String trimmed = (newText != null) ? newText.trim() : "";
+        if (!trimmed.isEmpty()) {
+            setTitle(trimmed);
+            com.tinsider.util.ActivityLogger.logUserAction("RENAME_PANE_TITLE", "User temporarily renamed terminal pane to [" + trimmed + "]");
+        }
+
+        restoreTitleLabel();
+    }
+
+    public void cancelTitleEdit() {
+        if (!isEditingTitle) return;
+        isEditingTitle = false;
+        restoreTitleLabel();
+    }
+
+    public void resetTitleToOriginal() {
+        if (originalTitle != null && !originalTitle.isEmpty()) {
+            setTitle(originalTitle);
+            com.tinsider.util.ActivityLogger.logUserAction("RESET_PANE_TITLE", "User reset terminal pane title back to original [" + originalTitle + "]");
+        }
+    }
+
+    private void restoreTitleLabel() {
+        if (activeEditField != null) {
+            int index = headerBar.getChildren().indexOf(activeEditField);
+            if (index >= 0) {
+                headerBar.getChildren().set(index, titleLabel);
+            }
+            activeEditField = null;
+        }
+        requestFocusOnTerminal();
+    }
+
+    private void applyEditFieldTheme(TextField field) {
+        if (field == null) return;
+        String bgHex = currentTheme != null ? toHex(currentTheme.getColor("terminal.pane.background", currentTheme.getBackgroundColor())) : "#090F22";
+        String borderHex = currentTheme != null ? toHex(currentTheme.getColor("terminal.pane.border", currentTheme.getCursorColor())) : "#00adb5";
+        String fgHex = currentTheme != null ? toHex(currentTheme.getColor("terminal.pane.header.foreground", currentTheme.getTextColor())) : "#f8fafc";
+
+        field.setStyle(
+            "-fx-background-color: " + bgHex + ";" +
+            "-fx-text-fill: " + fgHex + ";" +
+            "-fx-border-color: " + borderHex + ";" +
+            "-fx-border-width: 1px;" +
+            "-fx-border-radius: 3px;" +
+            "-fx-background-radius: 3px;" +
+            "-fx-padding: 1px 5px;" +
+            "-fx-font-size: 11px;" +
+            "-fx-font-weight: bold;"
+        );
     }
 
     public void adoptWidgetAndSettings(TerminalPane sourcePane) {
@@ -513,6 +719,7 @@ public class TerminalPane extends StackPane {
         this.sessionType = sourcePane.getSessionType();
         this.localShellType = sourcePane.getLocalShellType();
         this.hostProfile = sourcePane.getHostProfile();
+        this.originalTitle = sourcePane.getOriginalTitle();
         
         setTitle(sourcePane.getTitle());
         
@@ -601,6 +808,9 @@ public class TerminalPane extends StackPane {
         headerBar.setStyle("-fx-background-color: " + toHex(headerBg) + "; -fx-padding: 4px 8px; -fx-alignment: center-left; -fx-border-color: transparent transparent " + toHex(headerBorderColor) + " transparent; -fx-border-width: 0 0 1px 0; -fx-background-radius: 5px 5px 0 0;");
 
         // 3. Header Buttons (if not hovered, set base styles)
+        if (renameBtn != null && !renameBtn.isHover()) {
+            renameBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + toHex(buttonFg) + "; -fx-cursor: hand; -fx-font-size: 10px; -fx-padding: 2px 6px;");
+        }
         if (splitVertBtn != null && !splitVertBtn.isHover()) {
             splitVertBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + toHex(buttonFg) + "; -fx-cursor: hand; -fx-font-size: 10px; -fx-padding: 2px 6px;");
         }
@@ -611,6 +821,10 @@ public class TerminalPane extends StackPane {
             closeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: " + toHex(buttonFg) + "; -fx-cursor: hand; -fx-font-size: 10px; -fx-padding: 2px 6px;");
         }
 
+        if (activeEditField != null) {
+            applyEditFieldTheme(activeEditField);
+        }
+
         // 4. Update empty state if currently in placeholder state
         if (emptyContainer != null) {
             applyEmptyStateStyles(theme);
@@ -618,6 +832,9 @@ public class TerminalPane extends StackPane {
     }
 
     public void requestFocusOnTerminal() {
+        if (isEditingTitle) {
+            return;
+        }
         if (swingNode != null) {
             swingNode.requestFocus();
             SwingUtilities.invokeLater(() -> {
@@ -840,6 +1057,14 @@ public class TerminalPane extends StackPane {
 
     public String getTitle() {
         return title;
+    }
+
+    public String getOriginalTitle() {
+        return (originalTitle != null && !originalTitle.isEmpty()) ? originalTitle : title;
+    }
+
+    public void setOriginalTitle(String originalTitle) {
+        this.originalTitle = originalTitle;
     }
 
     public SplitLeafNode getLeafNode() {

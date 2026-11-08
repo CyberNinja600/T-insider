@@ -110,6 +110,10 @@ public class TerminalSplitPane extends BorderPane {
 
     public void initiatePaneConnectionForLocalCmd(TerminalPane pane) {
         try {
+            pane.setSessionType("LOCAL");
+            pane.setLocalShellType("CMD");
+            pane.setOriginalTitle("Local CMD");
+            pane.setTitle("Local CMD");
             TtyConnector connector = ConnectionManager.openLocalTerminal("CMD");
             JediTermWidget widget = TerminalTabFactory.createJediTermWidget(connector, themeSupplier);
             pane.setWidget(widget);
@@ -124,17 +128,21 @@ public class TerminalSplitPane extends BorderPane {
             pane.setSessionType("SSH");
             pane.setLocalShellType(null);
             pane.setHostProfile(parentHostProfile);
+            pane.setOriginalTitle(parentTitle);
             pane.setTitle(parentTitle);
         } else if ("LOCAL".equals(parentSessionType) && parentLocalShellType != null) {
             pane.setSessionType("LOCAL");
             pane.setLocalShellType(parentLocalShellType);
             pane.setHostProfile(null);
-            pane.setTitle(parentLocalShellType);
+            String titleToUse = (parentTitle != null && !parentTitle.isEmpty()) ? parentTitle : parentLocalShellType;
+            pane.setOriginalTitle(titleToUse);
+            pane.setTitle(titleToUse);
         } else {
             // Fallback: If parent was EMPTY or invalid, open local CMD!
             pane.setSessionType("LOCAL");
             pane.setLocalShellType("CMD");
             pane.setHostProfile(null);
+            pane.setOriginalTitle("Local CMD");
             pane.setTitle("Local CMD");
         }
 
@@ -233,6 +241,7 @@ public class TerminalSplitPane extends BorderPane {
 
         // 1. Create a brand new TerminalPane
         TerminalPane newPane = new TerminalPane(this, sourcePane.getSessionType(), sourcePane.getLocalShellType(), sourcePane.getHostProfile(), sourcePane.getTitle());
+        newPane.setOriginalTitle(sourcePane.getOriginalTitle());
         SplitLeafNode newLeaf = new SplitLeafNode(newPane);
         
         // 2. Adopt the widget and settings from sourcePane

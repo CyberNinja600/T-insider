@@ -549,6 +549,7 @@ public final class ThemeApplicator {
         String rgbaHexSideNavHoverBg = toRgba(sideNavHoverBg,globalButtonHoverOpacity);
 
         String dynamicCss = ".root { -fx-background-color: " + hexWinBg + "; -fx-border-color: " + hexWinBorder + "; -fx-border-width: 1px; -fx-background-radius: 0px; -fx-border-radius: 0px; }\n" +
+            ".root.popup, .popup { -fx-background-color: transparent; -fx-border-color: transparent; -fx-border-width: 0px; -fx-background-insets: 0; -fx-padding: 0; }\n" +
             ".custom-title-bar { -fx-background-color: " + hexTitleBg + "; -fx-border-color: " + hexTitleBorder + "; -fx-border-width: 0 0 1 0; -fx-background-radius: 0px; }\n" +
             ".button.title-btn { -fx-background-color: transparent; -fx-border-color: transparent; -fx-border-width: 0px; -fx-pref-width: 46px; -fx-pref-height: 36px; -fx-min-width: 46px; -fx-min-height: 36px; -fx-max-width: 46px; -fx-max-height: 36px; -fx-padding: 0; -fx-alignment: center; -fx-text-fill: " + hexTitleBtnFg + "; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; }\n" +
             ".button.title-btn:hover { -fx-background-color: " + hexTitleBtnHoverBg + "; -fx-text-fill: " + hexTitleBtnHoverFg + "; }\n" +
@@ -588,8 +589,8 @@ public final class ThemeApplicator {
             ".combo-box > .list-cell, .dialog-pane .combo-box > .list-cell { -fx-text-fill: " + hexComboFg + "; -fx-background-radius: 3px; -fx-border-radius: 3px;}\n" +
             ".combo-box:hover, .dialog-pane .combo-box:hover { -fx-background-color: " + rgbaComboHoverBg + "; }\n" +
             ".combo-box.theme-dropdown:hover { -fx-background-color: " + rgbaComboHoverBg + "; }\n" +
-            ".combo-box:hover > .list-cell, .dialog-pane .combo-box:hover > .list-cell { -fx-text-fill: " + dropItemFg + "; }\n" +
-            ".combo-box:hover .arrow-button .arrow, .dialog-pane .combo-box:hover .arrow-button .arrow { -fx-background-color: " + dropItemFg + "; }\n" +
+            ".combo-box:hover > .list-cell, .dialog-pane .combo-box:hover > .list-cell { -fx-text-fill: " + hexDropItemFg + "; }\n" +
+            ".combo-box:hover .arrow-button .arrow, .dialog-pane .combo-box:hover .arrow-button .arrow { -fx-background-color: " + hexDropItemFg + "; }\n" +
             ".combo-box:focused, .dialog-pane .combo-box:focused { -fx-border-color: " + hexComboBorder + "; }\n" +
             ".combo-box:disabled, .dialog-pane .combo-box:disabled { -fx-opacity: 0.5; }\n" +
             ".text-field { -fx-background-color: " + rgbaSearchBg + "; -fx-text-fill: " + hexSearchFg + "; -fx-border-color: " + hexSearchBorder + "; -fx-prompt-text-fill: "+ hexColorPickerFg +";}\n" +
