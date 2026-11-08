@@ -7,6 +7,15 @@
     -fx-border-width: 1px;
 }
 
+/* Ensure popups (ContextMenu, Tooltip, etc.) do not inherit the square window border/background */
+.root.popup, .popup {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0px;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
 /* Flat button styling */
 .button {
     -fx-background-color: #161B30;
