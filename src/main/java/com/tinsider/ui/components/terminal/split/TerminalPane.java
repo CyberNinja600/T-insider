@@ -29,6 +29,9 @@ import javafx.scene.shape.Rectangle;
 import javax.swing.SwingUtilities;
 
 public class TerminalPane extends StackPane {
+    public static final double MIN_SPLIT_WIDTH = 240.0;
+    public static final double MIN_SPLIT_HEIGHT = 100.0;
+
     private final TerminalSplitPane splitPane;
     private String sessionType;     // "LOCAL" or "SSH"
     private String localShellType;  // "CMD", "PowerShell", "Bash"
@@ -98,16 +101,22 @@ public class TerminalPane extends StackPane {
 
         getStyleClass().add("terminal-pane");
         setStyle("-fx-border-color: #2a3356; -fx-border-width: 1.5px; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-background-color: #090F22;");
+        setMinWidth(0);
+        setMinHeight(0);
 
         // Main content layout
         mainLayout = new BorderPane();
+        mainLayout.setMinWidth(0);
+        mainLayout.setMinHeight(0);
         
         // 1. Build Header Bar
         headerBar = new HBox(8);
+        headerBar.setMinWidth(0);
         headerBar.getStyleClass().add("terminal-pane-header");
         headerBar.setStyle("-fx-background-color: #11172a; -fx-padding: 4px 8px; -fx-alignment: center-left; -fx-border-color: transparent transparent #2a3356 transparent; -fx-border-width: 0 0 1px 0; -fx-background-radius: 5px 5px 0 0;");
 
         titleLabel = new Label(this.title);
+        titleLabel.setMinWidth(0);
         titleLabel.getStyleClass().add("terminal-pane-title");
         titleLabel.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 11px; -fx-font-weight: bold;");
         titleLabel.setMaxWidth(Double.MAX_VALUE);
@@ -157,6 +166,7 @@ public class TerminalPane extends StackPane {
         dragOverlay.getStyleClass().add("drag-overlay");
         dragOverlay.setStyle("-fx-background-color: rgba(0, 173, 181, 0.2);");
         dragOverlay.setMouseTransparent(true);
+        dragOverlay.setManaged(false);
         dragOverlay.setVisible(false);
         getChildren().add(dragOverlay);
 
@@ -357,32 +367,33 @@ public class TerminalPane extends StackPane {
     }
 
     public void showDragOverlay(DropPosition pos) {
-        dragOverlay.setVisible(true);
         double w = getWidth();
         double h = getHeight();
 
         switch (pos) {
             case LEFT:
-                StackPane.setMargin(dragOverlay, new Insets(0, w / 2.0, 0, 0));
+                dragOverlay.resizeRelocate(0, 0, w / 2.0, h);
                 break;
             case RIGHT:
-                StackPane.setMargin(dragOverlay, new Insets(0, 0, 0, w / 2.0));
+                dragOverlay.resizeRelocate(w / 2.0, 0, w / 2.0, h);
                 break;
             case TOP:
-                StackPane.setMargin(dragOverlay, new Insets(0, 0, h / 2.0, 0));
+                dragOverlay.resizeRelocate(0, 0, w, h / 2.0);
                 break;
             case BOTTOM:
-                StackPane.setMargin(dragOverlay, new Insets(h / 2.0, 0, 0, 0));
+                dragOverlay.resizeRelocate(0, h / 2.0, w, h / 2.0);
                 break;
             case CENTER:
             default:
-                StackPane.setMargin(dragOverlay, Insets.EMPTY);
+                dragOverlay.resizeRelocate(0, 0, w, h);
                 break;
         }
+        dragOverlay.setVisible(true);
     }
 
     public void hideDragOverlay() {
         dragOverlay.setVisible(false);
+        StackPane.clearConstraints(dragOverlay);
     }
 
     public void showConnectingState() {
@@ -427,8 +438,19 @@ public class TerminalPane extends StackPane {
         this.widget = widget;
         this.swingNode = TerminalTabFactory.createSwingNode(widget);
 
-        // Register Swing-side mouse click listener to sync active pane focus with JavaFX!
+        // Ensure small minimum size on adopted/new widget and register mouse click listener
         SwingUtilities.invokeLater(() -> {
+            try {
+                widget.setMinimumSize(new java.awt.Dimension(10, 10));
+                widget.setPreferredSize(new java.awt.Dimension(10, 10));
+                if (widget.getTerminalPanel() != null) {
+                    widget.getTerminalPanel().setMinimumSize(new java.awt.Dimension(10, 10));
+                    widget.getTerminalPanel().setPreferredSize(new java.awt.Dimension(10, 10));
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
             java.awt.Component panel = widget.getTerminalPanel();
             if (panel != null) {
                 panel.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -839,6 +861,18 @@ class SwingNodeWrapper extends javafx.scene.layout.Pane {
     public SwingNodeWrapper(SwingNode swingNode) {
         this.swingNode = swingNode;
         getChildren().add(swingNode);
+        setMinWidth(0);
+        setMinHeight(0);
+    }
+
+    @Override
+    protected double computeMinWidth(double height) {
+        return 0;
+    }
+
+    @Override
+    protected double computeMinHeight(double width) {
+        return 0;
     }
 
     @Override
