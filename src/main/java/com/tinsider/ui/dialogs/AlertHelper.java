@@ -4,6 +4,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
@@ -26,6 +28,22 @@ public class AlertHelper {
         alert.setHeaderText(title);
         alert.setContentText(content);
         showModal(alert);
+    }
+
+    public static boolean showConfirmationAlert(String title, String content) {
+        return showConfirmationAlert(title, content, "Delete");
+    }
+
+    public static boolean showConfirmationAlert(String title, String content, String confirmText) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirm");
+        alert.setHeaderText(title);
+        alert.setContentText(content);
+        ButtonType confirmBtn = new ButtonType(confirmText, ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        alert.getButtonTypes().setAll(confirmBtn, cancelBtn);
+        Optional<ButtonType> result = showModal(alert);
+        return result.isPresent() && result.get() == confirmBtn;
     }
 
     public static void themeDialog(Dialog<?> dialog) {

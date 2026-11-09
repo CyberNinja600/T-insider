@@ -6,14 +6,17 @@ import com.tinsider.storage.StorageManager;
 import com.tinsider.ui.dialogs.AlertHelper;
 import com.tinsider.ui.dialogs.SnippetDialog;
 import com.tinsider.util.ActivityLogger;
+import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -68,18 +71,6 @@ public class SnippetsDashboardView extends VBox {
         addSnippetIcon.getStyleClass().add("button-icon");
         addSnippetBtn.setGraphic(addSnippetIcon);
 
-        Button editSnippetBtn = new Button("Edit");
-        Label editSnippetIcon = new Label("\uEA73");
-        editSnippetIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
-        editSnippetIcon.getStyleClass().add("button-icon");
-        editSnippetBtn.setGraphic(editSnippetIcon);
-
-        Button deleteSnippetBtn = new Button("Delete");
-        Label deleteSnippetIcon = new Label("\uEA81");
-        deleteSnippetIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
-        deleteSnippetIcon.getStyleClass().add("button-icon");
-        deleteSnippetBtn.setGraphic(deleteSnippetIcon);
-
         Button addPackageBtn = new Button("Add Package");
         Label addPackageIcon = new Label("\uEA60");
         addPackageIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
@@ -92,25 +83,10 @@ public class SnippetsDashboardView extends VBox {
         deletePackageIcon.getStyleClass().add("button-icon");
         deletePackageBtn.setGraphic(deletePackageIcon);
 
-        snippetButtons.getChildren().addAll(addSnippetBtn, editSnippetBtn, deleteSnippetBtn, addPackageBtn, deletePackageBtn);
+        snippetButtons.getChildren().addAll(addSnippetBtn, addPackageBtn, deletePackageBtn);
         snippetButtons.setAlignment(Pos.CENTER_LEFT);
 
-        editSnippetBtn.disableProperty().bind(selectedSnippet.isNull());
-        deleteSnippetBtn.disableProperty().bind(selectedSnippet.isNull());
-
         addSnippetBtn.setOnAction(e -> showAddSnippetDialog(null));
-        editSnippetBtn.setOnAction(e -> {
-            Snippet selected = selectedSnippet.get();
-            if (selected != null) showAddSnippetDialog(selected);
-        });
-        deleteSnippetBtn.setOnAction(e -> {
-            Snippet selected = selectedSnippet.get();
-            if (selected != null) {
-                snippets.remove(selected);
-                StorageManager.saveSnippets(new ArrayList<>(snippets));
-                selectedSnippet.set(null);
-            }
-        });
 
         addPackageBtn.setOnAction(e -> {
             TextInputDialog dialog = new TextInputDialog();
@@ -284,15 +260,48 @@ public class SnippetsDashboardView extends VBox {
         details.getChildren().addAll(titleLabel, previewLabel);
         card.getChildren().addAll(badge, details);
 
+        // Double click to edit
         card.setOnMouseClicked(event -> {
-            selectedSnippet.set(item);
-            clearDashboardSnippetSelection();
-            card.getStyleClass().add("selected");
+            if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+                showAddSnippetDialog(item);
+            }
         });
 
-        if (selectedSnippet.get() == item) {
+        // Right-click context menu
+        ContextMenu contextMenu = new ContextMenu();
+        contextMenu.addEventHandler(ActionEvent.ACTION, e -> contextMenu.hide());
+
+        MenuItem editItem = new MenuItem("Edit");
+        Label editIcon = new Label("\uEA73");
+        editIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        editIcon.getStyleClass().add("button-icon");
+        editItem.setGraphic(editIcon);
+        editItem.setOnAction(e -> {
+            contextMenu.hide();
+            Platform.runLater(() -> showAddSnippetDialog(item));
+        });
+
+        MenuItem deleteItem = new MenuItem("Delete");
+        Label deleteIcon = new Label("\uEA81");
+        deleteIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deleteIcon.getStyleClass().add("button-icon");
+        deleteItem.setGraphic(deleteIcon);
+        deleteItem.setOnAction(e -> {
+            contextMenu.hide();
+            Platform.runLater(() -> handleDeleteSnippet(item));
+        });
+
+        contextMenu.getItems().addAll(editItem, deleteItem);
+        card.getProperties().put("contextMenu", contextMenu);
+
+        contextMenu.setOnHidden(e -> card.getStyleClass().remove("selected"));
+
+        card.setOnContextMenuRequested(event -> {
+            clearDashboardSnippetSelection();
             card.getStyleClass().add("selected");
-        }
+            contextMenu.show(card, event.getScreenX(), event.getScreenY());
+            event.consume();
+        });
 
         return card;
     }
@@ -326,6 +335,25 @@ public class SnippetsDashboardView extends VBox {
             snippets.add(snippet);
             StorageManager.saveSnippets(new ArrayList<>(snippets));
         });
+    }
+
+    protected void handleDeleteSnippet(Snippet item) {
+        if (item == null) return;
+        String snippetTitle = (item.getTitle() != null && !item.getTitle().trim().isEmpty())
+                ? item.getTitle()
+                : "this snippet";
+        boolean confirmed = AlertHelper.showConfirmationAlert(
+                "Delete Snippet",
+                "Are you sure you want to delete '" + snippetTitle + "'?"
+        );
+        if (confirmed) {
+            snippets.remove(item);
+            StorageManager.saveSnippets(new ArrayList<>(snippets));
+            ActivityLogger.logUserAction("DELETE_SNIPPET", "User deleted snippet: " + item.getTitle());
+            if (selectedSnippet.get() == item) {
+                selectedSnippet.set(null);
+            }
+        }
     }
 
     public ObjectProperty<Snippet> selectedSnippetProperty() {

@@ -6,14 +6,17 @@ import com.tinsider.storage.StorageManager;
 import com.tinsider.ui.dialogs.AlertHelper;
 import com.tinsider.ui.dialogs.HighlightDialog;
 import com.tinsider.util.ActivityLogger;
+import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -74,18 +77,6 @@ public class HighlightsDashboardView extends VBox {
         addHighlightIcon.getStyleClass().add("button-icon");
         addHighlightBtn.setGraphic(addHighlightIcon);
 
-        Button editHighlightBtn = new Button("Edit");
-        Label editHighlightIcon = new Label("\uEA73");
-        editHighlightIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
-        editHighlightIcon.getStyleClass().add("button-icon");
-        editHighlightBtn.setGraphic(editHighlightIcon);
-
-        Button deleteHighlightBtn = new Button("Delete");
-        Label deleteHighlightIcon = new Label("\uEA81");
-        deleteHighlightIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
-        deleteHighlightIcon.getStyleClass().add("button-icon");
-        deleteHighlightBtn.setGraphic(deleteHighlightIcon);
-
         Button addHighlightPackageBtn = new Button("Add Package");
         Label addHighlightPackageIcon = new Label("\uEA60");
         addHighlightPackageIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
@@ -98,36 +89,10 @@ public class HighlightsDashboardView extends VBox {
         deleteHighlightPackageIcon.getStyleClass().add("button-icon");
         deleteHighlightPackageBtn.setGraphic(deleteHighlightPackageIcon);
 
-        highlightButtons.getChildren().addAll(addHighlightBtn, editHighlightBtn, deleteHighlightBtn, addHighlightPackageBtn, deleteHighlightPackageBtn);
+        highlightButtons.getChildren().addAll(addHighlightBtn, addHighlightPackageBtn, deleteHighlightPackageBtn);
         highlightButtons.setAlignment(Pos.CENTER_LEFT);
 
-        editHighlightBtn.disableProperty().bind(selectedHighlight.isNull());
-        deleteHighlightBtn.disableProperty().bind(selectedHighlight.isNull());
-
         addHighlightBtn.setOnAction(e -> showAddHighlightDialog(null));
-        editHighlightBtn.setOnAction(e -> {
-            WordHighlight selected = selectedHighlight.get();
-            if (selected != null) {
-                if (StorageManager.isDefaultHighlight(selected.getId())) {
-                    AlertHelper.showErrorAlert("Built-in Highlight", "Cannot edit built-in highlights.");
-                    return;
-                }
-                showAddHighlightDialog(selected);
-            }
-        });
-        deleteHighlightBtn.setOnAction(e -> {
-            WordHighlight selected = selectedHighlight.get();
-            if (selected != null) {
-                if (StorageManager.isDefaultHighlight(selected.getId())) {
-                    AlertHelper.showErrorAlert("Built-in Highlight", "Cannot delete built-in highlights.");
-                    return;
-                }
-                highlights.remove(selected);
-                StorageManager.saveHighlights(new ArrayList<>(highlights));
-                selectedHighlight.set(null);
-                notifyHighlightsChanged();
-            }
-        });
 
         addHighlightPackageBtn.setOnAction(e -> {
             TextInputDialog dialog = new TextInputDialog();
@@ -330,15 +295,58 @@ public class HighlightsDashboardView extends VBox {
 
         card.getChildren().addAll(colorBox, details);
 
+        // Double click to edit
         card.setOnMouseClicked(event -> {
-            selectedHighlight.set(wh);
-            clearDashboardHighlightSelection();
-            card.getStyleClass().add("selected");
+            if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+                if (StorageManager.isDefaultHighlight(wh.getId())) {
+                    AlertHelper.showErrorAlert("Built-in Highlight", "Cannot edit built-in highlights.");
+                    return;
+                }
+                showAddHighlightDialog(wh);
+            }
         });
 
-        if (selectedHighlight.get() == wh) {
+        // Right-click context menu
+        ContextMenu contextMenu = new ContextMenu();
+        contextMenu.addEventHandler(ActionEvent.ACTION, e -> contextMenu.hide());
+
+        MenuItem editItem = new MenuItem("Edit");
+        Label editIcon = new Label("\uEA73");
+        editIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        editIcon.getStyleClass().add("button-icon");
+        editItem.setGraphic(editIcon);
+        editItem.setOnAction(e -> {
+            contextMenu.hide();
+            Platform.runLater(() -> {
+                if (StorageManager.isDefaultHighlight(wh.getId())) {
+                    AlertHelper.showErrorAlert("Built-in Highlight", "Cannot edit built-in highlights.");
+                    return;
+                }
+                showAddHighlightDialog(wh);
+            });
+        });
+
+        MenuItem deleteItem = new MenuItem("Delete");
+        Label deleteIcon = new Label("\uEA81");
+        deleteIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deleteIcon.getStyleClass().add("button-icon");
+        deleteItem.setGraphic(deleteIcon);
+        deleteItem.setOnAction(e -> {
+            contextMenu.hide();
+            Platform.runLater(() -> handleDeleteHighlight(wh));
+        });
+
+        contextMenu.getItems().addAll(editItem, deleteItem);
+        card.getProperties().put("contextMenu", contextMenu);
+
+        contextMenu.setOnHidden(e -> card.getStyleClass().remove("selected"));
+
+        card.setOnContextMenuRequested(event -> {
+            clearDashboardHighlightSelection();
             card.getStyleClass().add("selected");
-        }
+            contextMenu.show(card, event.getScreenX(), event.getScreenY());
+            event.consume();
+        });
 
         return card;
     }
@@ -360,7 +368,7 @@ public class HighlightsDashboardView extends VBox {
         }
     }
 
-    private void showAddHighlightDialog(WordHighlight existing) {
+    public void showAddHighlightDialog(WordHighlight existing) {
         HighlightDialog dialog = new HighlightDialog(existing, highlightPackages);
         Optional<WordHighlight> result = AlertHelper.showModal(dialog);
         result.ifPresent(wh -> {
@@ -376,6 +384,31 @@ public class HighlightsDashboardView extends VBox {
             rebuild();
             notifyHighlightsChanged();
         });
+    }
+
+    public void handleDeleteHighlight(WordHighlight item) {
+        if (item == null) return;
+        if (StorageManager.isDefaultHighlight(item.getId())) {
+            AlertHelper.showErrorAlert("Built-in Highlight", "Cannot delete built-in highlights.");
+            return;
+        }
+        String displayName = item.getName() != null && !item.getName().trim().isEmpty()
+                ? item.getName()
+                : (item.getWord() != null ? item.getWord() : "this highlight");
+        boolean confirmed = AlertHelper.showConfirmationAlert(
+                "Delete Highlight",
+                "Are you sure you want to delete '" + displayName + "'?"
+        );
+        if (confirmed) {
+            highlights.remove(item);
+            StorageManager.saveHighlights(new ArrayList<>(highlights));
+            ActivityLogger.logUserAction("DELETE_HIGHLIGHT", "User deleted highlight: " + item.getWord());
+            if (selectedHighlight.get() == item) {
+                selectedHighlight.set(null);
+            }
+            rebuild();
+            notifyHighlightsChanged();
+        }
     }
 
     private void notifyHighlightsChanged() {
