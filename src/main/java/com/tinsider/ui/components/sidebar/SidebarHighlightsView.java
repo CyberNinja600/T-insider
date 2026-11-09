@@ -6,20 +6,27 @@ import com.tinsider.model.WordHighlight;
 import com.tinsider.storage.StorageManager;
 import com.tinsider.ui.components.terminal.split.TerminalPane;
 import com.tinsider.ui.components.terminal.split.TerminalSplitPane;
+import com.tinsider.ui.dialogs.AlertHelper;
+import com.tinsider.ui.dialogs.HighlightDialog;
 import com.tinsider.ui.theme.ThemeApplicator;
+import com.tinsider.util.ActivityLogger;
+import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -31,6 +38,8 @@ public class SidebarHighlightsView extends VBox {
     private final ObservableList<WordHighlight> highlights;
     private final ObservableList<HighlightPackage> highlightPackages;
     private final Supplier<TerminalSplitPane> activeSplitPaneSupplier;
+    private final Consumer<WordHighlight> onEditHighlight;
+    private final Consumer<WordHighlight> onDeleteHighlight;
     private final Set<String> expandedPackageIds = new HashSet<>();
 
     private final TextField sidebarHighlightsSearchField;
@@ -41,10 +50,22 @@ public class SidebarHighlightsView extends VBox {
         ObservableList<HighlightPackage> highlightPackages,
         Supplier<TerminalSplitPane> activeSplitPaneSupplier
     ) {
+        this(highlights, highlightPackages, activeSplitPaneSupplier, null, null);
+    }
+
+    public SidebarHighlightsView(
+        ObservableList<WordHighlight> highlights,
+        ObservableList<HighlightPackage> highlightPackages,
+        Supplier<TerminalSplitPane> activeSplitPaneSupplier,
+        Consumer<WordHighlight> onEditHighlight,
+        Consumer<WordHighlight> onDeleteHighlight
+    ) {
         super(10);
         this.highlights = highlights;
         this.highlightPackages = highlightPackages;
         this.activeSplitPaneSupplier = activeSplitPaneSupplier;
+        this.onEditHighlight = onEditHighlight;
+        this.onDeleteHighlight = onDeleteHighlight;
 
         VBox.setVgrow(this, Priority.ALWAYS);
 
@@ -366,22 +387,111 @@ public class SidebarHighlightsView extends VBox {
 
         card.getChildren().addAll(indicator, wordLabel, spacer, caseIcon, eyeIcon);
 
+        // Only PRIMARY (left) click toggles highlight activation
         card.setOnMouseClicked(e -> {
-            boolean currentlyActive = activePane.getActiveHighlightIds().contains(wh.getId());
-            boolean nextState = !currentlyActive;
-            activePane.toggleHighlight(wh.getId(), nextState);
+            if (e.getButton() == MouseButton.PRIMARY) {
+                boolean currentlyActive = activePane.getActiveHighlightIds().contains(wh.getId());
+                boolean nextState = !currentlyActive;
+                activePane.toggleHighlight(wh.getId(), nextState);
 
-            if (nextState) {
-                if (!card.getStyleClass().contains("active")) {
-                    card.getStyleClass().add("active");
+                if (nextState) {
+                    if (!card.getStyleClass().contains("active")) {
+                        card.getStyleClass().add("active");
+                    }
+                    eyeIcon.setText("\uEB79");
+                } else {
+                    card.getStyleClass().remove("active");
+                    eyeIcon.setText("\uEB7A");
                 }
-                eyeIcon.setText("\uEB79");
-            } else {
-                card.getStyleClass().remove("active");
-                eyeIcon.setText("\uEB7A");
             }
         });
 
+        // Right-click ContextMenu for Editing and Deleting Highlights
+        boolean isDefault = StorageManager.isDefaultHighlight(wh.getId());
+        ContextMenu contextMenu = new ContextMenu();
+        contextMenu.addEventHandler(ActionEvent.ACTION, e -> contextMenu.hide());
+
+        MenuItem editItem = new MenuItem("Edit");
+        Label editIcon = new Label("\uEA73");
+        editIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        editItem.setGraphic(editIcon);
+        if (isDefault) {
+            editItem.setDisable(true);
+        }
+        editItem.setOnAction(e -> {
+            contextMenu.hide();
+            if (isDefault) {
+                return;
+            }
+            Platform.runLater(() -> editHighlight(wh));
+        });
+
+        MenuItem deleteItem = new MenuItem("Delete");
+        Label deleteIcon = new Label("\uEA81");
+        deleteIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
+        deleteItem.setGraphic(deleteIcon);
+        if (isDefault) {
+            deleteItem.setDisable(true);
+        }
+        deleteItem.setOnAction(e -> {
+            contextMenu.hide();
+            if (isDefault) {
+                return;
+            }
+            Platform.runLater(() -> deleteHighlight(wh));
+        });
+
+        contextMenu.getItems().addAll(editItem, deleteItem);
+        card.getProperties().put("contextMenu", contextMenu);
+
+        contextMenu.setOnHidden(e -> card.getStyleClass().remove("selected"));
+
+        card.setOnContextMenuRequested(event -> {
+            card.getStyleClass().add("selected");
+            contextMenu.show(card, event.getScreenX(), event.getScreenY());
+            event.consume();
+        });
+
         return card;
+    }
+
+    private void editHighlight(WordHighlight wh) {
+        if (wh != null && StorageManager.isDefaultHighlight(wh.getId())) {
+            return;
+        }
+        if (onEditHighlight != null) {
+            onEditHighlight.accept(wh);
+        } else {
+            HighlightDialog dialog = new HighlightDialog(wh, highlightPackages);
+            Optional<WordHighlight> result = AlertHelper.showModal(dialog);
+            result.ifPresent(updated -> {
+                ActivityLogger.logUserAction("EDIT_HIGHLIGHT", "User edited highlight: " + updated.getWord());
+                highlights.remove(wh);
+                highlights.add(updated);
+                StorageManager.saveHighlights(new ArrayList<>(highlights));
+            });
+        }
+    }
+
+    private void deleteHighlight(WordHighlight wh) {
+        if (wh != null && StorageManager.isDefaultHighlight(wh.getId())) {
+            return;
+        }
+        if (onDeleteHighlight != null) {
+            onDeleteHighlight.accept(wh);
+        } else {
+            String displayName = wh.getName() != null && !wh.getName().trim().isEmpty()
+                    ? wh.getName()
+                    : (wh.getWord() != null ? wh.getWord() : "this highlight");
+            boolean confirmed = AlertHelper.showConfirmationAlert(
+                    "Delete Highlight",
+                    "Are you sure you want to delete '" + displayName + "'?"
+            );
+            if (confirmed) {
+                highlights.remove(wh);
+                StorageManager.saveHighlights(new ArrayList<>(highlights));
+                ActivityLogger.logUserAction("DELETE_HIGHLIGHT", "User deleted highlight: " + wh.getWord());
+            }
+        }
     }
 }

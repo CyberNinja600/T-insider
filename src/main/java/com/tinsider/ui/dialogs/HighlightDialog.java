@@ -127,8 +127,16 @@ public class HighlightDialog extends Dialog<WordHighlight> {
             saveIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
             saveIcon.getStyleClass().add("button-icon");
             saveBtn.setGraphic(saveIcon);
+            if (existing != null && com.tinsider.storage.StorageManager.isDefaultHighlight(existing.getId())) {
+                saveBtn.setDisable(true);
+            }
 
             saveBtn.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+                if (existing != null && com.tinsider.storage.StorageManager.isDefaultHighlight(existing.getId())) {
+                    AlertHelper.showErrorAlert("Built-in Highlight", "Cannot edit built-in highlights.");
+                    event.consume();
+                    return;
+                }
                 if (wordField.getText() == null || wordField.getText().trim().isEmpty()) {
                     AlertHelper.showErrorAlert("Required Field", "Please enter a word or pattern to highlight.");
                     event.consume();
@@ -143,6 +151,9 @@ public class HighlightDialog extends Dialog<WordHighlight> {
 
         setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
+                if (existing != null && com.tinsider.storage.StorageManager.isDefaultHighlight(existing.getId())) {
+                    return null;
+                }
                 String id = existing == null ? UUID.randomUUID().toString() : existing.getId();
                 javafx.scene.paint.Color color = colorPicker.getValue();
                 String hexColor = String.format("#%02X%02X%02X",

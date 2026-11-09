@@ -295,11 +295,12 @@ public class HighlightsDashboardView extends VBox {
 
         card.getChildren().addAll(colorBox, details);
 
+        boolean isDefault = StorageManager.isDefaultHighlight(wh.getId());
+
         // Double click to edit
         card.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
-                if (StorageManager.isDefaultHighlight(wh.getId())) {
-                    AlertHelper.showErrorAlert("Built-in Highlight", "Cannot edit built-in highlights.");
+                if (isDefault) {
                     return;
                 }
                 showAddHighlightDialog(wh);
@@ -315,15 +316,15 @@ public class HighlightsDashboardView extends VBox {
         editIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
         editIcon.getStyleClass().add("button-icon");
         editItem.setGraphic(editIcon);
+        if (isDefault) {
+            editItem.setDisable(true);
+        }
         editItem.setOnAction(e -> {
             contextMenu.hide();
-            Platform.runLater(() -> {
-                if (StorageManager.isDefaultHighlight(wh.getId())) {
-                    AlertHelper.showErrorAlert("Built-in Highlight", "Cannot edit built-in highlights.");
-                    return;
-                }
-                showAddHighlightDialog(wh);
-            });
+            if (isDefault) {
+                return;
+            }
+            Platform.runLater(() -> showAddHighlightDialog(wh));
         });
 
         MenuItem deleteItem = new MenuItem("Delete");
@@ -331,8 +332,14 @@ public class HighlightsDashboardView extends VBox {
         deleteIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
         deleteIcon.getStyleClass().add("button-icon");
         deleteItem.setGraphic(deleteIcon);
+        if (isDefault) {
+            deleteItem.setDisable(true);
+        }
         deleteItem.setOnAction(e -> {
             contextMenu.hide();
+            if (isDefault) {
+                return;
+            }
             Platform.runLater(() -> handleDeleteHighlight(wh));
         });
 
@@ -369,6 +376,9 @@ public class HighlightsDashboardView extends VBox {
     }
 
     public void showAddHighlightDialog(WordHighlight existing) {
+        if (existing != null && StorageManager.isDefaultHighlight(existing.getId())) {
+            return;
+        }
         HighlightDialog dialog = new HighlightDialog(existing, highlightPackages);
         Optional<WordHighlight> result = AlertHelper.showModal(dialog);
         result.ifPresent(wh -> {

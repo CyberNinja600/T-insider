@@ -106,8 +106,16 @@ public class StorageManager {
         return false;
     }
 
+    public static List<WordHighlight> getDefaultHighlights() {
+        return new ArrayList<>(DEFAULT_HIGHLIGHTS);
+    }
+
     public static boolean isDefaultPackage(String id) {
         return DEFAULT_PACKAGE_ID.equals(id);
+    }
+
+    public static HighlightPackage getDefaultPackage() {
+        return DEFAULT_PACKAGE;
     }
 
     public static Map<String, String> loadSettings() {

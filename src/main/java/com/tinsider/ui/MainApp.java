@@ -197,7 +197,9 @@ public class MainApp extends Application {
             () -> {
                 Tab selectedTab = workspace.getTabPane().getSelectionModel().getSelectedItem();
                 return selectedTab != null ? sessionManager.getSplitPaneForTab(selectedTab) : null;
-            }
+            },
+            highlightsView::showAddHighlightDialog,
+            highlightsView::handleDeleteHighlight
         );
 
         terminalSidebar = new TerminalSidebar(sidebarSnippetsView, sidebarHighlightsView);
