@@ -47,7 +47,7 @@ public class HostDialog extends Dialog<HostProfile> {
         urlRadio.setToggleGroup(typeGroup);
 
         TextField urlField = new TextField();
-        urlField.setPromptText("ssh://user@hostname:port");
+        urlField.setPromptText("user@domain.com:port");
 
         // Listeners to enable/disable fields
         ipPortRadio.setOnAction(e -> {
