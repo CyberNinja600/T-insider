@@ -33,11 +33,13 @@ import com.tinsider.ui.theme.ThemeApplicator;
 import com.tinsider.util.ActivityLogger;
 import com.tinsider.util.LiveReloader;
 import com.tinsider.util.StartupSignal;
+import com.tinsider.util.WindowDimensionHelper;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.geometry.Dimension2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
 import javafx.scene.image.Image;
@@ -263,7 +265,11 @@ public class MainApp extends Application {
 
         ModalOverlayManager.init(modalOverlay, root);
 
-        Scene scene = new Scene(appRoot, 1280 , 720 );
+        Dimension2D sceneDimensions = WindowDimensionHelper.calculateInitialSceneDimensions();
+        ActivityLogger.logSystemEvent("WINDOW_INIT", String.format("Auto-detected initial scene resolution: %.0fx%.0f (16:9 ratio)",
+                sceneDimensions.getWidth(), sceneDimensions.getHeight()));
+
+        Scene scene = new Scene(appRoot, sceneDimensions.getWidth(), sceneDimensions.getHeight());
         String styleCss = getClass().getResource("/style.css") != null ? getClass().getResource("/style.css").toExternalForm() : "";
         if (!styleCss.isEmpty()) {
             scene.getStylesheets().add(styleCss);
@@ -271,6 +277,8 @@ public class MainApp extends Application {
 
         registerKeyboardAccelerators(scene);
         primaryStage.setScene(scene);
+        primaryStage.setMinWidth(WindowDimensionHelper.MIN_WINDOW_WIDTH);
+        primaryStage.setMinHeight(WindowDimensionHelper.MIN_WINDOW_HEIGHT);
 
         // 10. Listen for newly opened dialogs/windows to apply theme and DWM styling
         DwmUtil.registerWindowStylingListener(scene, () -> currentTheme);
@@ -279,6 +287,7 @@ public class MainApp extends Application {
         setupLiveReloader();
 
         primaryStage.show();
+        primaryStage.centerOnScreen();
         StartupSignal.signalApplicationShown();
         applyTheme(currentTheme);
 
