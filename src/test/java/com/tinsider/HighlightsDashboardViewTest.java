@@ -2,6 +2,7 @@ package com.tinsider;
 
 import com.tinsider.model.HighlightPackage;
 import com.tinsider.model.WordHighlight;
+import com.tinsider.storage.StorageManager;
 import com.tinsider.ui.dashboard.HighlightsDashboardView;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -177,6 +178,68 @@ public class HighlightsDashboardViewTest {
             } catch (Throwable t) {
                 failure.set(t);
             } finally {
+                latch.countDown();
+            }
+        });
+
+        assertTrue(latch.await(5, TimeUnit.SECONDS), "Test timed out");
+        if (failure.get() != null) {
+            throw new AssertionError("Test failed", failure.get());
+        }
+    }
+
+    @Test
+    public void testDefaultHighlightIsNotEditable() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+
+        Platform.runLater(() -> {
+            Stage stage = new Stage();
+            try {
+                ObservableList<WordHighlight> highlights = FXCollections.observableArrayList();
+                WordHighlight defaultHl = StorageManager.getDefaultHighlights().get(0);
+                highlights.add(defaultHl);
+
+                ObservableList<HighlightPackage> packages = FXCollections.observableArrayList(StorageManager.loadHighlightPackages());
+
+                AtomicBoolean editTriggered = new AtomicBoolean(false);
+
+                HighlightsDashboardView view = new HighlightsDashboardView(highlights, packages, () -> {}) {
+                    @Override
+                    public void showAddHighlightDialog(WordHighlight existing) {
+                        super.showAddHighlightDialog(existing);
+                        editTriggered.set(true);
+                    }
+                };
+
+                Scene scene = new Scene(view, 600, 400);
+                stage.setScene(scene);
+                stage.show();
+
+                Node cardNode = findHighlightCard(view);
+                assertNotNull(cardNode, "Highlight card should exist");
+
+                // Verify context menu Edit and Delete items are disabled
+                ContextMenu contextMenu = (ContextMenu) cardNode.getProperties().get("contextMenu");
+                assertNotNull(contextMenu);
+                MenuItem editItem = contextMenu.getItems().get(0);
+                MenuItem deleteItem = contextMenu.getItems().get(1);
+
+                assertTrue(editItem.isDisable(), "Edit menu item must be disabled for default highlight");
+                assertTrue(deleteItem.isDisable(), "Delete menu item must be disabled for default highlight");
+
+                // Double click should NOT trigger edit dialog
+                MouseEvent doubleClick = new MouseEvent(
+                        MouseEvent.MOUSE_CLICKED, 0, 0, 0, 0,
+                        MouseButton.PRIMARY, 2,
+                        false, false, false, false, false, false, false, false, false, false, null
+                );
+                cardNode.fireEvent(doubleClick);
+                assertFalse(editTriggered.get(), "Double click must not trigger edit dialog for default highlight");
+            } catch (Throwable t) {
+                failure.set(t);
+            } finally {
+                stage.close();
                 latch.countDown();
             }
         });
