@@ -59,6 +59,13 @@
     -fx-background-color: white;
     -fx-background-insets: 0;
 }
+.combo-box .arrow-button .arrow.codicon-arrow,
+.dialog-pane .combo-box .arrow-button .arrow.codicon-arrow {
+    -fx-shape: "";
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-padding: 0;
+}
 .combo-box:hover,
 .dialog-pane .combo-box:hover {
     -fx-background-color: rgba(33, 40, 70, 0.15);
@@ -68,6 +75,7 @@
     -fx-border-color: #00adb5;
 }
 .combo-box > .list-cell,
+.combo-box .list-cell,
 .dialog-pane .combo-box > .list-cell {
     -fx-text-fill: white;
     -fx-padding: 4px 8px;
@@ -101,6 +109,45 @@
     -fx-background-color: rgba(9, 15, 34, 0.15); /* Swapped: focused is #090F22 with 0.15 alpha */
     -fx-text-fill: #00adb5;
     -fx-background-insets: 1px 0px 1px 0px;
+}
+
+/* Searchable ComboBox Popup Styles */
+.searchable-combo-popup {
+    -fx-background-color: #090F22;
+    -fx-border-color: #161B30;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.5), 10, 0, 0, 4);
+    -fx-padding: 8px;
+}
+.searchable-combo-popup .search-input-container {
+    -fx-padding: 0 0 6px 0;
+}
+.searchable-combo-popup .search-input {
+    -fx-background-color: #161B30;
+    -fx-text-fill: white;
+    -fx-border-color: #212846;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+    -fx-padding: 6px 10px;
+    -fx-font-size: 12px;
+}
+.searchable-combo-popup .search-input:focused {
+    -fx-border-color: #00adb5;
+}
+.searchable-combo-popup .option-list-container {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: #090F22;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-translate-y: 0px;
+}
+.searchable-combo-popup .no-matches-label {
+    -fx-text-fill: rgba(255, 255, 255, 0.4);
+    -fx-font-size: 12px;
+    -fx-padding: 12px;
+    -fx-alignment: center;
 }
 
 /* Dropdown popup specific scrollbar */
