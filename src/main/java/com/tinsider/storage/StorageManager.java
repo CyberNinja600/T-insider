@@ -210,12 +210,18 @@ public class StorageManager {
         }
     }
 
-    public static List<WordHighlight> loadHighlights() {
+    private static volatile List<WordHighlight> cachedHighlights = null;
+
+    public static synchronized List<WordHighlight> loadHighlights() {
+        if (cachedHighlights != null) {
+            return new ArrayList<>(cachedHighlights);
+        }
         List<WordHighlight> list = new ArrayList<>();
         list.addAll(DEFAULT_HIGHLIGHTS);
 
         File file = new File(HIGHLIGHTS_FILE);
         if (!file.exists()) {
+            cachedHighlights = new ArrayList<>(list);
             return list;
         }
         try (Reader reader = new FileReader(file)) {
@@ -228,6 +234,7 @@ public class StorageManager {
                     }
                 }
             }
+            cachedHighlights = new ArrayList<>(list);
             return list;
         } catch (Exception e) {
             e.printStackTrace();
@@ -235,7 +242,8 @@ public class StorageManager {
         }
     }
 
-    public static void saveHighlights(List<WordHighlight> highlights) {
+    public static synchronized void saveHighlights(List<WordHighlight> highlights) {
+        cachedHighlights = null;
         List<WordHighlight> toSave = new ArrayList<>();
         if (highlights != null) {
             for (WordHighlight wh : highlights) {
@@ -246,6 +254,7 @@ public class StorageManager {
         }
         try (Writer writer = new FileWriter(HIGHLIGHTS_FILE)) {
             gson.toJson(toSave, writer);
+            cachedHighlights = new ArrayList<>(highlights != null ? highlights : DEFAULT_HIGHLIGHTS);
         } catch (Exception e) {
             e.printStackTrace();
         }

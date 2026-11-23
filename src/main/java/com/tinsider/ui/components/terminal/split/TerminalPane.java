@@ -5,6 +5,7 @@ import com.tinsider.config.TerminalTheme;
 import com.tinsider.model.HostProfile;
 import com.tinsider.model.WordHighlight;
 import com.tinsider.storage.StorageManager;
+import com.tinsider.terminal.HighlightedTextStyle;
 import com.tinsider.terminal.TerminalTabFactory;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
@@ -33,6 +34,12 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 
 import javax.swing.SwingUtilities;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TerminalPane extends StackPane {
     public static final double MIN_SPLIT_WIDTH = 240.0;
@@ -60,8 +67,8 @@ public class TerminalPane extends StackPane {
     private SwingNode swingNode;
 
     private javax.swing.Timer highlightTimer;
-    private final java.util.Set<String> activeHighlightIds = new java.util.HashSet<>();
-    private final java.util.Set<String> caseInsensitiveHighlightIds = new java.util.HashSet<>();
+    private final Set<String> activeHighlightIds = ConcurrentHashMap.newKeySet();
+    private final Set<String> caseInsensitiveHighlightIds = ConcurrentHashMap.newKeySet();
 
     private BorderPane mainLayout;
     private HBox headerBar;
@@ -901,8 +908,8 @@ public class TerminalPane extends StackPane {
 
     public void applyHighlights() {
         if (widget == null) return;
-        java.util.List<WordHighlight> allHighlights = StorageManager.loadHighlights();
-        if (allHighlights.isEmpty()) return;
+        List<WordHighlight> allHighlights = StorageManager.loadHighlights();
+        if (allHighlights == null) return;
 
         SwingUtilities.invokeLater(() -> {
             try {
@@ -912,77 +919,184 @@ public class TerminalPane extends StackPane {
                 textBuffer.lock();
                 try {
                     int lineCount = textBuffer.getHeight();
-                    for (int i = 0; i < lineCount; i++) {
-                        com.jediterm.terminal.model.TerminalLine line = textBuffer.getLine(i);
-                        if (line == null) continue;
+                    if (lineCount <= 0) return;
 
-                        String text = line.getText();
-                        if (text == null || text.trim().isEmpty()) continue;
+                    // Clean up active IDs for highlights that no longer exist
+                    Set<String> existingIds = new java.util.HashSet<>();
+                    for (WordHighlight wh : allHighlights) {
+                        existingIds.add(wh.getId());
+                    }
+                    activeHighlightIds.retainAll(existingIds);
 
+                    // 1. Gather active highlights in a map by ID
+                    Map<String, WordHighlight> activeHighlightsMap = new LinkedHashMap<>();
+                    if (!activeHighlightIds.isEmpty()) {
                         for (WordHighlight wh : allHighlights) {
-                            String word = wh.getWord();
-                            if (word == null || word.isEmpty()) continue;
-
-                            boolean isInsensitive = caseInsensitiveHighlightIds.contains(wh.getId());
-
-                            if (wh.isRegex()) {
-                                try {
-                                    int flags = isInsensitive ? java.util.regex.Pattern.CASE_INSENSITIVE : 0;
-                                    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(word, flags);
-                                    java.util.regex.Matcher matcher = pattern.matcher(text);
-                                    while (matcher.find()) {
-                                        int start = matcher.start();
-                                        int end = matcher.end();
-                                        if (start >= end) continue; // safety check
-                                        
-                                        com.jediterm.terminal.TextStyle textStyle;
-                                        if (activeHighlightIds.contains(wh.getId())) {
-                                            com.jediterm.core.Color bg = parseHexColor(wh.getColorHex());
-                                            double luminance = (0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue()) / 255.0;
-                                            com.jediterm.core.Color fg = (luminance > 0.5) ? new com.jediterm.core.Color(0, 0, 0) : new com.jediterm.core.Color(255, 255, 255);
-                                            textStyle = new com.jediterm.terminal.TextStyle(
-                                                com.jediterm.terminal.TerminalColor.fromColor(fg),
-                                                com.jediterm.terminal.TerminalColor.fromColor(bg)
-                                            );
-                                        } else {
-                                            textStyle = com.jediterm.terminal.TextStyle.EMPTY;
-                                        }
-                                        
-                                        String screenWord = text.substring(start, end);
-                                        line.writeString(start, new com.jediterm.terminal.model.CharBuffer(screenWord), textStyle);
-                                    }
-                                } catch (Exception e) {
-                                    // Ignored or logged (e.g. invalid pattern)
-                                }
-                            } else {
-                                String searchWord = isInsensitive ? word.toLowerCase() : word;
-                                String searchText = isInsensitive ? text.toLowerCase() : text;
-
-                                int idx = searchText.indexOf(searchWord);
-                                while (idx != -1) {
-                                    com.jediterm.terminal.TextStyle textStyle;
-                                    if (activeHighlightIds.contains(wh.getId())) {
-                                        com.jediterm.core.Color bg = parseHexColor(wh.getColorHex());
-                                        double luminance = (0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue()) / 255.0;
-                                        com.jediterm.core.Color fg = (luminance > 0.5) ? new com.jediterm.core.Color(0, 0, 0) : new com.jediterm.core.Color(255, 255, 255);
-                                        textStyle = new com.jediterm.terminal.TextStyle(
-                                            com.jediterm.terminal.TerminalColor.fromColor(fg),
-                                            com.jediterm.terminal.TerminalColor.fromColor(bg)
-                                        );
-                                    } else {
-                                        textStyle = com.jediterm.terminal.TextStyle.EMPTY;
-                                    }
-
-                                    // Get original text on terminal screen to preserve casing
-                                    String screenWord = text.substring(idx, Math.min(idx + word.length(), text.length()));
-                                    line.writeString(idx, new com.jediterm.terminal.model.CharBuffer(screenWord), textStyle);
-                                    idx = searchText.indexOf(searchWord, idx + word.length());
-                                }
+                            if (activeHighlightIds.contains(wh.getId()) && wh.getWord() != null && !wh.getWord().isEmpty()) {
+                                activeHighlightsMap.put(wh.getId(), wh);
                             }
                         }
                     }
 
-                    if (widget.getTerminalPanel() != null) {
+                    int scrollOrigin = 0;
+                    if (widget.getTerminalPanel() != null && widget.getTerminalPanel().getBoundedRangeModel() != null) {
+                        scrollOrigin = widget.getTerminalPanel().getBoundedRangeModel().getValue();
+                    }
+                    int minLine = Math.min(0, Math.max(scrollOrigin, -textBuffer.getHistoryLinesCount()));
+                    int maxLine = textBuffer.getHeight();
+
+                    boolean repainted = false;
+
+                    for (int i = minLine; i < maxLine; i++) {
+                        com.jediterm.terminal.model.TerminalLine line = textBuffer.getLine(i);
+                        if (line == null) continue;
+
+                        String text = line.getText();
+                        int textLen = (text != null) ? text.length() : 0;
+
+                        if (textLen == 0) {
+                            int xOffset = 0;
+                            for (com.jediterm.terminal.model.TerminalLine.TextEntry entry : line.getEntries()) {
+                                int len = entry.getLength();
+                                if (entry.getStyle() instanceof HighlightedTextStyle hts) {
+                                    line.writeString(xOffset, new com.jediterm.terminal.model.CharBuffer(entry.getText().toString()), hts.getOriginalStyle());
+                                    repainted = true;
+                                }
+                                xOffset += len;
+                            }
+                            continue;
+                        }
+
+                        // Determine target highlight for each character in this line
+                        WordHighlight[] targetHighlight = new WordHighlight[textLen];
+
+                        if (!activeHighlightsMap.isEmpty()) {
+                            List<WordHighlight> activeList = new ArrayList<>(activeHighlightsMap.values());
+                            activeList.sort((a, b) -> Integer.compare(
+                                b.getWord() != null ? b.getWord().length() : 0,
+                                a.getWord() != null ? a.getWord().length() : 0
+                            ));
+
+                            for (WordHighlight wh : activeList) {
+                                String word = wh.getWord();
+                                boolean isInsensitive = caseInsensitiveHighlightIds.contains(wh.getId());
+
+                                if (wh.isRegex()) {
+                                    try {
+                                        int flags = isInsensitive ? java.util.regex.Pattern.CASE_INSENSITIVE : 0;
+                                        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(word, flags);
+                                        java.util.regex.Matcher matcher = pattern.matcher(text);
+                                        while (matcher.find()) {
+                                            int start = matcher.start();
+                                            int end = matcher.end();
+                                            if (start >= end || end > textLen) continue;
+
+                                            boolean isClaimed = false;
+                                            for (int k = start; k < end; k++) {
+                                                if (targetHighlight[k] != null) {
+                                                    isClaimed = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (!isClaimed) {
+                                                for (int k = start; k < end; k++) {
+                                                    targetHighlight[k] = wh;
+                                                }
+                                            }
+                                        }
+                                    } catch (Exception e) {
+                                        // Ignore invalid pattern
+                                    }
+                                } else {
+                                    String searchWord = isInsensitive ? word.toLowerCase() : word;
+                                    String searchText = isInsensitive ? text.toLowerCase() : text;
+
+                                    int idx = searchText.indexOf(searchWord);
+                                    while (idx != -1) {
+                                        int start = idx;
+                                        int end = Math.min(start + word.length(), textLen);
+
+                                        boolean isClaimed = false;
+                                        for (int k = start; k < end; k++) {
+                                            if (targetHighlight[k] != null) {
+                                                isClaimed = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!isClaimed) {
+                                            for (int k = start; k < end; k++) {
+                                                targetHighlight[k] = wh;
+                                            }
+                                        }
+
+                                        idx = searchText.indexOf(searchWord, start + word.length());
+                                    }
+                                }
+                            }
+                        }
+
+                        // Reconcile line styling with targetHighlight
+                        int segStart = 0;
+                        while (segStart < textLen) {
+                            WordHighlight targetWh = targetHighlight[segStart];
+                            int segEnd = segStart + 1;
+                            while (segEnd < textLen && targetHighlight[segEnd] == targetWh) {
+                                segEnd++;
+                            }
+
+                            if (targetWh == null) {
+                                // Revert any HighlightedTextStyle in [segStart, segEnd)
+                                int revStart = segStart;
+                                while (revStart < segEnd) {
+                                    com.jediterm.terminal.TextStyle style = line.getStyleAt(revStart);
+                                    if (style instanceof HighlightedTextStyle hts) {
+                                        int revEnd = revStart + 1;
+                                        while (revEnd < segEnd) {
+                                            com.jediterm.terminal.TextStyle nextStyle = line.getStyleAt(revEnd);
+                                            if (nextStyle instanceof HighlightedTextStyle nextHts
+                                                    && java.util.Objects.equals(hts.getOriginalStyle(), nextHts.getOriginalStyle())) {
+                                                revEnd++;
+                                            } else {
+                                                break;
+                                            }
+                                        }
+                                        String sub = text.substring(revStart, revEnd);
+                                        line.writeString(revStart, new com.jediterm.terminal.model.CharBuffer(sub), hts.getOriginalStyle());
+                                        repainted = true;
+                                        revStart = revEnd;
+                                    } else {
+                                        revStart++;
+                                    }
+                                }
+                            } else {
+                                // Apply target highlight
+                                com.jediterm.core.Color bg = parseHexColor(targetWh.getColorHex());
+                                double luminance = (0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue()) / 255.0;
+                                com.jediterm.core.Color fg = (luminance > 0.5) ? new com.jediterm.core.Color(0, 0, 0) : new com.jediterm.core.Color(255, 255, 255);
+                                com.jediterm.terminal.TerminalColor termFg = com.jediterm.terminal.TerminalColor.fromColor(fg);
+                                com.jediterm.terminal.TerminalColor termBg = com.jediterm.terminal.TerminalColor.fromColor(bg);
+
+                                if (applyHighlightSpan(line, text, segStart, segEnd, targetWh.getId(), termFg, termBg)) {
+                                    repainted = true;
+                                }
+                            }
+
+                            segStart = segEnd;
+                        }
+
+                        // Revert any leftover HighlightedTextStyle beyond textLen
+                        int xOffset = 0;
+                        for (com.jediterm.terminal.model.TerminalLine.TextEntry entry : line.getEntries()) {
+                            int len = entry.getLength();
+                            if (xOffset >= textLen && entry.getStyle() instanceof HighlightedTextStyle hts) {
+                                line.writeString(xOffset, new com.jediterm.terminal.model.CharBuffer(entry.getText().toString()), hts.getOriginalStyle());
+                                repainted = true;
+                            }
+                            xOffset += len;
+                        }
+                    }
+
+                    if (repainted && widget.getTerminalPanel() != null) {
                         widget.getTerminalPanel().repaint();
                     }
                 } finally {
@@ -992,6 +1106,68 @@ public class TerminalPane extends StackPane {
                 e.printStackTrace();
             }
         });
+    }
+
+    private boolean applyHighlightSpan(
+        com.jediterm.terminal.model.TerminalLine line,
+        String text,
+        int start,
+        int end,
+        String highlightId,
+        com.jediterm.terminal.TerminalColor termFg,
+        com.jediterm.terminal.TerminalColor termBg
+    ) {
+        boolean alreadyStyled = true;
+        for (int k = start; k < end; k++) {
+            com.jediterm.terminal.TextStyle s = line.getStyleAt(k);
+            if (s instanceof HighlightedTextStyle hts) {
+                if (!highlightId.equals(hts.getHighlightId()) || !termBg.equals(hts.getBackground())) {
+                    alreadyStyled = false;
+                    break;
+                }
+            } else {
+                alreadyStyled = false;
+                break;
+            }
+        }
+        if (alreadyStyled) {
+            return false;
+        }
+
+        int segStart = start;
+        while (segStart < end) {
+            com.jediterm.terminal.TextStyle currentStyle = line.getStyleAt(segStart);
+            com.jediterm.terminal.TextStyle originalStyle;
+            if (currentStyle instanceof HighlightedTextStyle hts) {
+                originalStyle = hts.getOriginalStyle();
+            } else {
+                originalStyle = (currentStyle != null) ? currentStyle : com.jediterm.terminal.TextStyle.EMPTY;
+            }
+
+            int segEnd = segStart + 1;
+            while (segEnd < end) {
+                com.jediterm.terminal.TextStyle nextStyle = line.getStyleAt(segEnd);
+                com.jediterm.terminal.TextStyle nextOriginal = (nextStyle instanceof HighlightedTextStyle nextHts)
+                    ? nextHts.getOriginalStyle()
+                    : ((nextStyle != null) ? nextStyle : com.jediterm.terminal.TextStyle.EMPTY);
+                if (!java.util.Objects.equals(originalStyle, nextOriginal)) {
+                    break;
+                }
+                segEnd++;
+            }
+
+            HighlightedTextStyle newStyle = new HighlightedTextStyle(
+                termFg,
+                termBg,
+                highlightId,
+                originalStyle
+            );
+
+            String screenWord = text.substring(segStart, segEnd);
+            line.writeString(segStart, new com.jediterm.terminal.model.CharBuffer(screenWord), newStyle);
+            segStart = segEnd;
+        }
+        return true;
     }
 
     private com.jediterm.core.Color parseHexColor(String hex) {
