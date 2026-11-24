@@ -73,7 +73,7 @@ public class TopToolBar extends HBox {
         }
     }
 
-    private final ComboBox<DropdownItem> shellOptions;
+    private final SearchableComboBox<DropdownItem> shellOptions;
     private final Label selectLabel;
     private final Button toggleSidebarBtn;
     private final Button homeBtn;
@@ -110,7 +110,7 @@ public class TopToolBar extends HBox {
         selectLabel = new Label("Shell / Host:");
         selectLabel.managedProperty().bind(selectLabel.visibleProperty());
 
-        shellOptions = new ComboBox<>();
+        shellOptions = new SearchableComboBox<>();
         shellOptions.getStyleClass().add("shell-dropdown");
         shellOptions.managedProperty().bind(shellOptions.visibleProperty());
 

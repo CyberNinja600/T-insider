@@ -584,13 +584,15 @@ public final class ThemeApplicator {
             ".combo-box, .dialog-pane .combo-box { -fx-background-color: " + hexComboBg + "; -fx-text-fill: " + hexComboFg + "; -fx-border-color: " + hexComboBorder + "; -fx-background-insets: 0; -fx-background-radius: 4px; -fx-border-radius: 4px; -fx-border-width: 0px; }\n" +
             ".combo-box .arrow-button, .dialog-pane .combo-box .arrow-button { -fx-background-color: transparent; -fx-background-insets: 0; -fx-background-radius: 0; }\n" +
             ".combo-box .arrow-button .arrow, .dialog-pane .combo-box .arrow-button .arrow { -fx-background-color: " + hexComboFg + "; -fx-background-insets: 0; }\n" +
+            ".combo-box .arrow-button .arrow.codicon-arrow, .dialog-pane .combo-box .arrow-button .arrow.codicon-arrow { -fx-shape: \"\"; -fx-background-color: transparent; -fx-text-fill: " + hexComboFg + "; -fx-padding: 0; }\n" +
             ".combo-box.shell-dropdown { -fx-pref-width: 140px; -fx-max-width: 140px; }\n" +
             ".combo-box.theme-dropdown { -fx-border-color: transparent; -fx-border-width: 0px; }\n" +
-            ".combo-box > .list-cell, .dialog-pane .combo-box > .list-cell { -fx-text-fill: " + hexComboFg + "; -fx-background-radius: 3px; -fx-border-radius: 3px;}\n" +
+            ".combo-box > .list-cell, .combo-box .list-cell, .dialog-pane .combo-box > .list-cell { -fx-text-fill: " + hexComboFg + "; -fx-background-radius: 3px; -fx-border-radius: 3px; -fx-padding: 4px 8px; }\n" +
             ".combo-box:hover, .dialog-pane .combo-box:hover { -fx-background-color: " + rgbaComboHoverBg + "; }\n" +
             ".combo-box.theme-dropdown:hover { -fx-background-color: " + rgbaComboHoverBg + "; }\n" +
-            ".combo-box:hover > .list-cell, .dialog-pane .combo-box:hover > .list-cell { -fx-text-fill: " + hexDropItemFg + "; }\n" +
+            ".combo-box:hover > .list-cell, .combo-box:hover .list-cell, .dialog-pane .combo-box:hover > .list-cell { -fx-text-fill: " + hexDropItemFg + "; }\n" +
             ".combo-box:hover .arrow-button .arrow, .dialog-pane .combo-box:hover .arrow-button .arrow { -fx-background-color: " + hexDropItemFg + "; }\n" +
+            ".combo-box:hover .arrow-button .arrow.codicon-arrow, .dialog-pane .combo-box:hover .arrow-button .arrow.codicon-arrow { -fx-text-fill: " + hexDropItemFg + "; }\n" +
             ".combo-box:focused, .dialog-pane .combo-box:focused { -fx-border-color: " + hexComboBorder + "; }\n" +
             ".combo-box:disabled, .dialog-pane .combo-box:disabled { -fx-opacity: 0.5; }\n" +
             ".text-field { -fx-background-color: " + rgbaSearchBg + "; -fx-text-fill: " + hexSearchFg + "; -fx-border-color: " + hexSearchBorder + "; -fx-prompt-text-fill: "+ hexColorPickerFg +";}\n" +
@@ -609,6 +611,10 @@ public final class ThemeApplicator {
                 ".combo-box-popup .list-view .list-cell, .dialog-pane .combo-box-popup .list-view .list-cell { -fx-text-fill: " + hexDropItemFg + "; -fx-background-color: " + hexDropHoverBg + "; -fx-padding: 6px 12px; -fx-background-insets: 1px 0px 1px 0px; }\n" +
                 ".combo-box-popup .list-view .list-cell:hover, .dialog-pane .combo-box-popup .list-view .list-cell:hover { -fx-background-color: " + rgbaDropItemHoverBg + "; -fx-text-fill: " + hexDropHoverFg + "; -fx-background-insets: 1px 0px 1px 0px; }\n" +
                 ".combo-box-popup .list-view .list-cell:selected, .dialog-pane .combo-box-popup .list-view .list-cell:selected { -fx-background-color: " + rgbaDropItemHoverBg + "; -fx-text-fill: " + hexDropHoverFg + "; -fx-background-insets: 1px 0px 1px 0px; }\n" +
+            ".searchable-combo-popup { -fx-background-color: " + hexDropListBg + "; -fx-border-color: " + hexDropListBorder + "; -fx-border-width: 1px; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 10, 0, 0, 4); -fx-padding: 8px; }\n" +
+            ".searchable-combo-popup .search-input { -fx-background-color: " + rgbaSearchBg + "; -fx-text-fill: " + hexSearchFg + "; -fx-border-color: " + hexSearchBorder + "; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-padding: 6px 10px; -fx-font-size: 12px; }\n" +
+            ".searchable-combo-popup .search-input:focused { -fx-background-color: " + hexSearchActiveBg + "; -fx-border-color: " + hexSearchActiveBorder + "; }\n" +
+            ".searchable-combo-popup .no-matches-label { -fx-text-fill: " + hexCardsItemSub + "; -fx-font-size: 12px; -fx-padding: 12px; -fx-alignment: center; }\n" +
             ".combo-box-popup .list-view .scroll-bar { -fx-background-color: transparent; }\n" +
             ".combo-box-popup .list-view .scroll-bar:horizontal { -fx-pref-height: 8px; -fx-max-height: 8px; }\n" +
             ".combo-box-popup .list-view .scroll-bar:vertical { -fx-pref-width: 13px; -fx-max-width: 13px; -fx-padding: 0 0 0 5px; }\n" +
