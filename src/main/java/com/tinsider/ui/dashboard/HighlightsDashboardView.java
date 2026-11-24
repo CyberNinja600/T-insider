@@ -5,6 +5,7 @@ import com.tinsider.model.WordHighlight;
 import com.tinsider.storage.StorageManager;
 import com.tinsider.ui.dialogs.AlertHelper;
 import com.tinsider.ui.dialogs.HighlightDialog;
+import com.tinsider.ui.dialogs.PackageDialog;
 import com.tinsider.util.ActivityLogger;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
@@ -95,9 +96,7 @@ public class HighlightsDashboardView extends VBox {
         addHighlightBtn.setOnAction(e -> showAddHighlightDialog(null));
 
         addHighlightPackageBtn.setOnAction(e -> {
-            TextInputDialog dialog = new TextInputDialog();
-            dialog.setTitle("New Highlight Package");
-            dialog.setContentText("Package Name:");
+            PackageDialog dialog = new PackageDialog("New Highlight Package");
             Optional<String> result = AlertHelper.showModal(dialog);
             result.ifPresent(name -> {
                 if (name.length() > 12) {

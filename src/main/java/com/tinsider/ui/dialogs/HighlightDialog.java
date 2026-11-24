@@ -13,6 +13,13 @@ import java.util.UUID;
 
 public class HighlightDialog extends Dialog<WordHighlight> {
 
+    private final TextField wordField;
+    private final TextField nameField;
+    private final ColorPicker colorPicker;
+    private final ComboBox<HighlightPackage> packageCombo;
+    private final CheckBox regexCheckBox;
+    private final Button saveBtn;
+
     public HighlightDialog(WordHighlight existing, List<HighlightPackage> packages) {
         setTitle(existing == null ? "Add Highlight" : "Edit Highlight");
 
@@ -24,13 +31,13 @@ public class HighlightDialog extends Dialog<WordHighlight> {
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
-        TextField wordField = new TextField();
+        wordField = new TextField();
         wordField.setPromptText("Enter word to highlight...");
         
-        TextField nameField = new TextField();
+        nameField = new TextField();
         nameField.setPromptText("Friendly name (optional)...");
         
-        ColorPicker colorPicker = new ColorPicker(javafx.scene.paint.Color.YELLOW);
+        colorPicker = new ColorPicker(javafx.scene.paint.Color.YELLOW);
 
         if (existing != null) {
             wordField.setText(existing.getWord());
@@ -41,6 +48,14 @@ public class HighlightDialog extends Dialog<WordHighlight> {
                 colorPicker.setValue(javafx.scene.paint.Color.YELLOW);
             }
         }
+
+        // Clear error styling when the user types in wordField
+        wordField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && !newVal.trim().isEmpty()) {
+                wordField.setStyle("");
+                wordField.setPromptText("Enter word to highlight...");
+            }
+        });
 
         grid.add(new Label("Word/Regex:"), 0, 0);
         grid.add(wordField, 1, 0);
@@ -55,7 +70,7 @@ public class HighlightDialog extends Dialog<WordHighlight> {
         HighlightPackage nonePackage = new HighlightPackage("(None)");
         nonePackage.setId(null);
 
-        ComboBox<HighlightPackage> packageCombo = new ComboBox<>();
+        packageCombo = new ComboBox<>();
         packageCombo.getItems().add(nonePackage);
         if (packages != null) {
             packageCombo.getItems().addAll(packages);
@@ -73,9 +88,7 @@ public class HighlightDialog extends Dialog<WordHighlight> {
 
         Button newPackageBtn = new Button("+ New");
         newPackageBtn.setOnAction(e -> {
-            TextInputDialog inputDlg = new TextInputDialog();
-            inputDlg.setTitle("New Highlight Package");
-            inputDlg.setContentText("Package Name:");
+            PackageDialog inputDlg = new PackageDialog("New Highlight Package");
             Optional<String> result = AlertHelper.showModal(inputDlg);
             result.ifPresent(name -> {
                 if (name.length() > 12) {
@@ -115,13 +128,13 @@ public class HighlightDialog extends Dialog<WordHighlight> {
         grid.add(new Label("Package:"), 0, 3);
         grid.add(packageBox, 1, 3);
 
-        CheckBox regexCheckBox = new CheckBox("Regex Highlight");
+        regexCheckBox = new CheckBox("Regex Highlight");
         if (existing != null) {
             regexCheckBox.setSelected(existing.isRegex());
         }
         grid.add(regexCheckBox, 1, 4);
 
-        Button saveBtn = (Button) getDialogPane().lookupButton(saveButtonType);
+        saveBtn = (Button) getDialogPane().lookupButton(saveButtonType);
         if (saveBtn != null) {
             Label saveIcon = new Label("\uEB4B");
             saveIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 12px;");
@@ -137,8 +150,7 @@ public class HighlightDialog extends Dialog<WordHighlight> {
                     event.consume();
                     return;
                 }
-                if (wordField.getText() == null || wordField.getText().trim().isEmpty()) {
-                    AlertHelper.showErrorAlert("Required Field", "Please enter a word or pattern to highlight.");
+                if (!validateAndHighlight()) {
                     event.consume();
                 }
             });
@@ -150,7 +162,7 @@ public class HighlightDialog extends Dialog<WordHighlight> {
         Platform.runLater(wordField::requestFocus);
 
         setResultConverter(dialogButton -> {
-            if (dialogButton == saveButtonType) {
+            if (dialogButton == saveButtonType && isInputValid()) {
                 if (existing != null && com.tinsider.storage.StorageManager.isDefaultHighlight(existing.getId())) {
                     return null;
                 }
@@ -182,5 +194,37 @@ public class HighlightDialog extends Dialog<WordHighlight> {
             }
             return null;
         });
+    }
+
+    public boolean isInputValid() {
+        String word = wordField.getText() != null ? wordField.getText().trim() : "";
+        return !word.isEmpty();
+    }
+
+    public boolean validateAndHighlight() {
+        String word = wordField.getText() != null ? wordField.getText().trim() : "";
+        if (word.isEmpty()) {
+            wordField.setText("");
+            wordField.setPromptText("Required");
+            wordField.setStyle("-fx-border-color: #ff5555; -fx-prompt-text-fill: #ff5555;");
+            wordField.requestFocus();
+            return false;
+        } else {
+            wordField.setStyle("");
+            wordField.setPromptText("Enter word to highlight...");
+            return true;
+        }
+    }
+
+    public TextField getWordField() {
+        return wordField;
+    }
+
+    public TextField getNameField() {
+        return nameField;
+    }
+
+    public Button getSaveButton() {
+        return saveBtn;
     }
 }

@@ -2,6 +2,7 @@ package com.tinsider.ui.dialogs;
 
 import com.tinsider.model.HostProfile;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
@@ -9,14 +10,24 @@ import javafx.scene.layout.HBox;
 import java.util.UUID;
 
 public class HostDialog extends Dialog<HostProfile> {
-    
+
+    private final TextField nameField;
+    private final TextField ipField;
+    private final TextField portField;
+    private final TextField userField;
+    private final PasswordField passField;
+    private final RadioButton ipPortRadio;
+    private final RadioButton urlRadio;
+    private final TextField urlField;
+    private final Button saveBtn;
+
     public HostDialog(HostProfile existing) {
         setTitle(existing == null ? "Add Host Profile" : "Edit Host Profile");
 
         ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
         getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
 
-        Button saveBtn = (Button) getDialogPane().lookupButton(saveButtonType);
+        saveBtn = (Button) getDialogPane().lookupButton(saveButtonType);
         if (saveBtn != null) {
             Label saveIcon = new Label("\uEB4B");
             saveIcon.setStyle("-fx-font-family: 'codicon'; -fx-font-size: 14px;");
@@ -29,32 +40,34 @@ public class HostDialog extends Dialog<HostProfile> {
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
-        TextField nameField = new TextField();
+        nameField = new TextField();
         nameField.setPromptText("My Server");
-        TextField ipField = new TextField();
+        ipField = new TextField();
         ipField.setPromptText("192.168.1.100");
-        TextField portField = new TextField("22");
+        portField = new TextField("22");
         portField.setPromptText("22");
-        TextField userField = new TextField();
+        userField = new TextField();
         userField.setPromptText("username");
-        PasswordField passField = new PasswordField();
+        passField = new PasswordField();
         passField.setPromptText("password");
 
         ToggleGroup typeGroup = new ToggleGroup();
-        RadioButton ipPortRadio = new RadioButton("IP / Port");
+        ipPortRadio = new RadioButton("IP / Port");
         ipPortRadio.setToggleGroup(typeGroup);
-        RadioButton urlRadio = new RadioButton("Connection URL");
+        urlRadio = new RadioButton("Connection URL");
         urlRadio.setToggleGroup(typeGroup);
 
-        TextField urlField = new TextField();
+        urlField = new TextField();
         urlField.setPromptText("user@domain.com:port");
 
-        // Listeners to enable/disable fields
+        // Listeners to enable/disable fields and clear errors on mode switch
         ipPortRadio.setOnAction(e -> {
             ipField.setDisable(false);
             portField.setDisable(false);
             userField.setDisable(false);
             urlField.setDisable(true);
+            urlField.setStyle("");
+            urlField.setPromptText("user@domain.com:port");
         });
 
         urlRadio.setOnAction(e -> {
@@ -62,6 +75,10 @@ public class HostDialog extends Dialog<HostProfile> {
             portField.setDisable(true);
             userField.setDisable(false);
             urlField.setDisable(false);
+            ipField.setStyle("");
+            ipField.setPromptText("192.168.1.100");
+            portField.setStyle("");
+            portField.setPromptText("22");
         });
 
         if (existing != null) {
@@ -84,6 +101,47 @@ public class HostDialog extends Dialog<HostProfile> {
         } else {
             ipPortRadio.setSelected(true);
             urlField.setDisable(true);
+        }
+
+        // Clear error styling when the user types in any field
+        nameField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && !newVal.trim().isEmpty()) {
+                nameField.setStyle("");
+                nameField.setPromptText("My Server");
+            }
+        });
+        ipField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && !newVal.trim().isEmpty()) {
+                ipField.setStyle("");
+                ipField.setPromptText("192.168.1.100");
+            }
+        });
+        portField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (isPortValid(newVal)) {
+                portField.setStyle("");
+                portField.setPromptText("22");
+            }
+        });
+        userField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && !newVal.trim().isEmpty()) {
+                userField.setStyle("");
+                userField.setPromptText("username");
+            }
+        });
+        urlField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && !newVal.trim().isEmpty()) {
+                urlField.setStyle("");
+                urlField.setPromptText("user@domain.com:port");
+            }
+        });
+
+        // Intercept Save action: validate fields and display "Required" on empty fields
+        if (saveBtn != null) {
+            saveBtn.addEventFilter(ActionEvent.ACTION, event -> {
+                if (!validateAndHighlight()) {
+                    event.consume();
+                }
+            });
         }
 
         grid.add(new Label("Profile Name:"), 0, 0);
@@ -112,7 +170,7 @@ public class HostDialog extends Dialog<HostProfile> {
         Platform.runLater(nameField::requestFocus);
 
         setResultConverter(dialogButton -> {
-            if (dialogButton == saveButtonType) {
+            if (dialogButton == saveButtonType && isInputValid()) {
                 String id = existing == null ? UUID.randomUUID().toString() : existing.getId();
                 HostProfile profile = new HostProfile();
                 profile.setId(id);
@@ -135,5 +193,145 @@ public class HostDialog extends Dialog<HostProfile> {
             }
             return null;
         });
+    }
+
+    public boolean isInputValid() {
+        String name = nameField.getText() != null ? nameField.getText().trim() : "";
+        if (name.isEmpty()) {
+            return false;
+        }
+
+        String username = userField.getText() != null ? userField.getText().trim() : "";
+        if (username.isEmpty()) {
+            return false;
+        }
+
+        if (urlRadio.isSelected()) {
+            String url = urlField.getText() != null ? urlField.getText().trim() : "";
+            return !url.isEmpty();
+        } else {
+            String ip = ipField.getText() != null ? ipField.getText().trim() : "";
+            return !ip.isEmpty() && isPortValid(portField.getText());
+        }
+    }
+
+    public boolean validateAndHighlight() {
+        boolean valid = true;
+        TextField firstInvalid = null;
+
+        String name = nameField.getText() != null ? nameField.getText().trim() : "";
+        if (name.isEmpty()) {
+            nameField.setText("");
+            nameField.setPromptText("Required");
+            nameField.setStyle("-fx-border-color: #ff5555; -fx-prompt-text-fill: #ff5555;");
+            valid = false;
+            if (firstInvalid == null) firstInvalid = nameField;
+        } else {
+            nameField.setStyle("");
+            nameField.setPromptText("My Server");
+        }
+
+        String username = userField.getText() != null ? userField.getText().trim() : "";
+        if (username.isEmpty()) {
+            userField.setText("");
+            userField.setPromptText("Required");
+            userField.setStyle("-fx-border-color: #ff5555; -fx-prompt-text-fill: #ff5555;");
+            valid = false;
+            if (firstInvalid == null) firstInvalid = userField;
+        } else {
+            userField.setStyle("");
+            userField.setPromptText("username");
+        }
+
+        if (urlRadio.isSelected()) {
+            String url = urlField.getText() != null ? urlField.getText().trim() : "";
+            if (url.isEmpty()) {
+                urlField.setText("");
+                urlField.setPromptText("Required");
+                urlField.setStyle("-fx-border-color: #ff5555; -fx-prompt-text-fill: #ff5555;");
+                valid = false;
+                if (firstInvalid == null) firstInvalid = urlField;
+            } else {
+                urlField.setStyle("");
+                urlField.setPromptText("user@domain.com:port");
+            }
+        } else {
+            String ip = ipField.getText() != null ? ipField.getText().trim() : "";
+            if (ip.isEmpty()) {
+                ipField.setText("");
+                ipField.setPromptText("Required");
+                ipField.setStyle("-fx-border-color: #ff5555; -fx-prompt-text-fill: #ff5555;");
+                valid = false;
+                if (firstInvalid == null) firstInvalid = ipField;
+            } else {
+                ipField.setStyle("");
+                ipField.setPromptText("192.168.1.100");
+            }
+
+            if (!isPortValid(portField.getText())) {
+                portField.setText("");
+                portField.setPromptText("Required");
+                portField.setStyle("-fx-border-color: #ff5555; -fx-prompt-text-fill: #ff5555;");
+                valid = false;
+                if (firstInvalid == null) firstInvalid = portField;
+            } else {
+                portField.setStyle("");
+                portField.setPromptText("22");
+            }
+        }
+
+        if (firstInvalid != null) {
+            firstInvalid.requestFocus();
+        }
+
+        return valid;
+    }
+
+    private boolean isPortValid(String portText) {
+        if (portText == null || portText.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            int port = Integer.parseInt(portText.trim());
+            return port > 0 && port <= 65535;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    public TextField getNameField() {
+        return nameField;
+    }
+
+    public TextField getIpField() {
+        return ipField;
+    }
+
+    public TextField getPortField() {
+        return portField;
+    }
+
+    public TextField getUserField() {
+        return userField;
+    }
+
+    public PasswordField getPassField() {
+        return passField;
+    }
+
+    public RadioButton getIpPortRadio() {
+        return ipPortRadio;
+    }
+
+    public RadioButton getUrlRadio() {
+        return urlRadio;
+    }
+
+    public TextField getUrlField() {
+        return urlField;
+    }
+
+    public Button getSaveButton() {
+        return saveBtn;
     }
 }
