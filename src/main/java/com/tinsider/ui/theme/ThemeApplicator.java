@@ -516,6 +516,7 @@ public final class ThemeApplicator {
         String hexColorPickerCustomToggleSelectedFg = toHex(colorPickerCustomToggleSelectedFg);
         String hexInputBorder = toHex(inputBorder);
         String hexInputFg = toHex(inputFg);
+        String rgbaInputPrompt = toRgba(inputFg, 0.45);
 
         String hexConnBg = toHex(connBg);
         String hexConnIcon = toHex(connIcon);
@@ -527,6 +528,7 @@ public final class ThemeApplicator {
         String rgbaSearchBg = toRgba(searchBg, searchBarBgOpacity);
         String hexSearchBorder = toHex(searchBorder);
         String hexSearchFg = toHex(searchFg);
+        String rgbaSearchPrompt = toRgba(searchFg, 0.45);
         String hexSearchHoverBg = toHex(searchHoverBg);
         String hexSearchActiveBorder = toHex(searchActiveBorder);
         String hexSearchActiveBg = toHex(searchActiveBg);
@@ -595,7 +597,7 @@ public final class ThemeApplicator {
             ".combo-box:hover .arrow-button .arrow.codicon-arrow, .dialog-pane .combo-box:hover .arrow-button .arrow.codicon-arrow { -fx-text-fill: " + hexDropItemFg + "; }\n" +
             ".combo-box:focused, .dialog-pane .combo-box:focused { -fx-border-color: " + hexComboBorder + "; }\n" +
             ".combo-box:disabled, .dialog-pane .combo-box:disabled { -fx-opacity: 0.5; }\n" +
-            ".text-field { -fx-background-color: " + rgbaSearchBg + "; -fx-text-fill: " + hexSearchFg + "; -fx-border-color: " + hexSearchBorder + "; -fx-prompt-text-fill: "+ hexColorPickerFg +";}\n" +
+            ".text-field { -fx-background-color: " + rgbaSearchBg + "; -fx-text-fill: " + hexSearchFg + "; -fx-border-color: " + hexSearchBorder + "; -fx-prompt-text-fill: " + rgbaSearchPrompt + "; }\n" +
             ".text-field:hover { -fx-background-color: " + hexSearchHoverBg + "; }\n" +
             ".text-field:focused { -fx-background-color: " + hexSearchActiveBg + "; -fx-border-color: " + hexSearchActiveBorder + "; }\n" +
             ".scroll-pane { -fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0; -fx-border-color: transparent; }\n" +
@@ -707,7 +709,7 @@ public final class ThemeApplicator {
             ".dialog-pane .dialog-header-title { -fx-text-fill: " + hexDialogHeaderFg + "; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px 0 10px 0; }\n" +
             ".dialog-pane .label { -fx-text-fill: " + hexLabelFg + "; }\n" +
             ".dialog-pane .button-bar { -fx-padding: 10px 15px; }\n" +
-            ".dialog-pane .text-field, .dialog-pane .text-area, .dialog-pane .password-field { -fx-background-color: " + hexInputBorder + "; -fx-text-fill: " + hexInputFg + "; -fx-border-color: " + hexInputBorder + "; }\n" +
+            ".dialog-pane .text-field, .dialog-pane .text-area, .dialog-pane .password-field { -fx-background-color: " + hexInputBorder + "; -fx-text-fill: " + hexInputFg + "; -fx-border-color: " + hexInputBorder + "; -fx-prompt-text-fill: " + rgbaInputPrompt + "; }\n" +
             ".dialog-pane .text-area .content, .dialog-pane .text-area:focused .content { -fx-background-color: transparent; -fx-text-fill: " + hexInputFg + "; }\n" +
             ".dialog-pane .text-field:disabled, .dialog-pane .text-area:disabled, .dialog-pane .password-field:disabled { -fx-opacity: 0.5; }\n" +
             ".dialog-pane .radio-button { -fx-text-fill: " + hexLabelFg + "; }\n" +

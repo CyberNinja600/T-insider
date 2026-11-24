@@ -1,1 +1,6 @@
-/* Dialog-specific overrides (if any) */
+/* Dialog-specific overrides */
+.dialog-pane .text-field,
+.dialog-pane .text-area,
+.dialog-pane .password-field {
+    -fx-prompt-text-fill: rgba(255, 255, 255, 0.45);
+}

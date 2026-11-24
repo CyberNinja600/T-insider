@@ -197,12 +197,19 @@
     -fx-border-radius: 4px;
     -fx-background-radius: 4px;
     -fx-padding: 6px;
+    -fx-prompt-text-fill: rgba(255, 255, 255, 0.45);
 }
 .text-field:hover {
     -fx-background-color: #212846;
 }
 .text-field:focused {
     -fx-border-color: #00adb5;
+}
+
+.dialog-pane .text-field,
+.dialog-pane .text-area,
+.dialog-pane .password-field {
+    -fx-prompt-text-fill: rgba(255, 255, 255, 0.45);
 }
 
 /* Label styling */

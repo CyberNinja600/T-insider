@@ -4,6 +4,7 @@ import com.tinsider.model.Snippet;
 import com.tinsider.model.SnippetPackage;
 import com.tinsider.storage.StorageManager;
 import com.tinsider.ui.dialogs.AlertHelper;
+import com.tinsider.ui.dialogs.PackageDialog;
 import com.tinsider.ui.dialogs.SnippetDialog;
 import com.tinsider.util.ActivityLogger;
 import javafx.application.Platform;
@@ -89,9 +90,7 @@ public class SnippetsDashboardView extends VBox {
         addSnippetBtn.setOnAction(e -> showAddSnippetDialog(null));
 
         addPackageBtn.setOnAction(e -> {
-            TextInputDialog dialog = new TextInputDialog();
-            dialog.setTitle("Add Package");
-            dialog.setContentText("Package Name:");
+            PackageDialog dialog = new PackageDialog("Add Package");
             Optional<String> result = AlertHelper.showModal(dialog);
             result.ifPresent(name -> {
                 if (!name.trim().isEmpty()) {
